@@ -38,6 +38,7 @@ import { useUpdateMutation } from "@/shared/hooks/use-update-mutation";
 import { useDropzone } from "react-dropzone";
 import { UploadCloud, UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useStoreScope } from "@/lib/providers/store-scope-provider";
 
 type Props = {
   productId: string;
@@ -48,6 +49,7 @@ type FormValues = any; // keep any if you don’t want to fight types here
 const emptyLinks = { related: [], upsell: [], cross_sell: [] };
 
 export function EditProduct({ productId }: Props) {
+  const { activeStoreId } = useStoreScope();
   const { createCategory } = useCategories();
   const { data: session, status } = useSession();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -169,6 +171,7 @@ export function EditProduct({ productId }: Props) {
       links: values.links ?? emptyLinks,
       metadata: md,
       base64Image: values.base64Image?.trim() || undefined,
+      storeId: activeStoreId,
     };
   };
 

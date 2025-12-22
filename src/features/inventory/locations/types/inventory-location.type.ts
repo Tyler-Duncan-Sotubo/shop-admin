@@ -2,6 +2,7 @@ import { InventoryLocationFormValues } from "../schema/inventory-locations.schem
 
 export type InventoryLocation = {
   id: string;
+  locationId: string;
   companyId: string;
   name: string;
   code?: string | null;
