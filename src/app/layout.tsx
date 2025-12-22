@@ -6,6 +6,8 @@ import { NextAuthProvider } from "@/lib/providers/next-auth-providers";
 import ReactQueryProvider from "@/lib/providers/react-query-provider";
 import { ThemeProvider } from "@/lib/providers/theme-provider";
 import { StoreScopeProvider } from "@/lib/providers/store-scope-provider";
+import { Suspense } from "react";
+import Loading from "@/shared/ui/loading";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -26,16 +28,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${jakarta.variable} antialiased`}>
-        <NextAuthProvider>
-          <StoreScopeProvider>
-            <ReactQueryProvider>
-              <ThemeProvider>
-                {children}
-                <Toaster />
-              </ThemeProvider>
-            </ReactQueryProvider>
-          </StoreScopeProvider>
-        </NextAuthProvider>
+        <Suspense fallback={<Loading />}>
+          <NextAuthProvider>
+            <StoreScopeProvider>
+              <ReactQueryProvider>
+                <ThemeProvider>
+                  {children}
+                  <Toaster />
+                </ThemeProvider>
+              </ReactQueryProvider>
+            </StoreScopeProvider>
+          </NextAuthProvider>
+        </Suspense>
       </body>
     </html>
   );
