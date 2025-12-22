@@ -15,7 +15,7 @@ import {
 import { useGetProductFull } from "@/features/products/core/hooks/use-product";
 import { ProductCombobox } from "@/features/products/core/ui/combobox/product-combo-box";
 import { VariantCombobox } from "@/features/products/core/ui/combobox/variant-combo-box";
-import { FullProduct } from "@/features/products/types/product.type";
+import { FullProduct } from "@/features/products/core/types/product.type";
 
 type ProductListItem = { id: string; name: string };
 
