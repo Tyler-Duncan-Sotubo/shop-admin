@@ -6,8 +6,8 @@ import { z } from "zod";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { isAxiosError } from "@/shared/api/axios";
 import { getErrorMessage } from "@/shared/utils/get-error-message";
-import { newPasswordSchema } from "@/features/auth/forgot-password/model/password.schema";
 import { apiResetPassword } from "./reset-password.api";
+import { newPasswordSchema } from "./reset-password.schema";
 
 export type NewPasswordFormValues = z.infer<typeof newPasswordSchema>;
 
