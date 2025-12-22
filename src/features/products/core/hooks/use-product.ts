@@ -14,7 +14,7 @@ export type GetProductsParams = {
   status?: string;
   limit?: number;
   offset?: number;
-  storeId?: string;
+  storeId?: string | null;
 };
 
 export function useCreateProduct() {
@@ -38,7 +38,7 @@ export function useGetProducts(
     status: params.status || undefined,
     limit: params.limit ?? 50,
     offset: params.offset ?? 0,
-    storeId: params.storeId || undefined,
+    storeId: params.storeId || null,
   };
 
   const hasToken = Boolean(session?.backendTokens?.accessToken);
