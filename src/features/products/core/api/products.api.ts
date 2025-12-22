@@ -1,5 +1,5 @@
 import { AxiosInstance } from "axios";
-import { CreateProductPayload, Product } from "../../types/product.type";
+import { CreateProductPayload, Product } from "../types/product.type";
 
 export async function createProductApi(
   axiosInstance: AxiosInstance,
