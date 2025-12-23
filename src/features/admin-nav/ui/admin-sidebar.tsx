@@ -23,6 +23,7 @@ import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { Badge } from "@/shared/ui/badge";
 import { useOrdersTotalCount } from "@/features/orders/hooks/use-orders-total-count";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
+import Image from "next/image";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -137,7 +138,14 @@ export default function AdminSidebar({ isCollapsed, onToggle }: SidebarProps) {
       >
         <div className="flex items-center justify-between px-3 py-3">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="font-bold text-lg tracking-tight">shop</span>
+            <span className="font-bold text-lg tracking-tight">
+              <Image
+                src="/apple-touch-icon.png"
+                alt="Logo"
+                width={32}
+                height={32}
+              />
+            </span>
           </Link>
         </div>
 

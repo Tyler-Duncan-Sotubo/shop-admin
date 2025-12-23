@@ -278,7 +278,7 @@ export const main: readonly MenuItem[] = [
       },
       {
         title: "Payments",
-        link: "/billing/payments",
+        link: "/dashboard",
         icon: <FaReceipt size={18} />,
         permissions: ["billing.payments.read"],
       },
@@ -288,7 +288,7 @@ export const main: readonly MenuItem[] = [
   {
     title: "Analytics",
     icon: <MdBarChart size={22} />,
-    link: "/analytics",
+    link: "/dashboard",
     permissions: ["products.read"],
   },
 
