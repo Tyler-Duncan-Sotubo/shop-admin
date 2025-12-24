@@ -39,6 +39,7 @@ import { useDropzone } from "react-dropzone";
 import { UploadCloud, UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
+import { TiptapEditor } from "@/shared/ui/tiptap-editor";
 
 type Props = {
   productId: string;
@@ -302,10 +303,10 @@ export function EditProduct({ productId }: Props) {
                     <FormItem>
                       <FormLabel>Details</FormLabel>
                       <FormControl>
-                        <Textarea
+                        <TiptapEditor
                           value={field.value ?? ""}
                           onChange={field.onChange}
-                          className="h-24 resize-none"
+                          placeholder="Write your post…"
                         />
                       </FormControl>
                       <FormMessage />

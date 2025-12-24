@@ -42,8 +42,6 @@ export default function OrdersClient() {
 
   if (authStatus === "loading" || isLoading) return <Loading />;
 
-  console.log("OrdersClient render with tab:", tab, "and rows:", rows);
-
   return (
     <section className="space-y-6">
       <PageHeader

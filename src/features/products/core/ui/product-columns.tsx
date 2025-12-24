@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import Image from "next/image";
@@ -54,68 +53,59 @@ export const productColumns: ColumnDef<ProductListRow>[] = [
 
   {
     accessorKey: "stock",
-    header: ({ column }) => <SortableHeader column={column} title="Stock" />,
+    header: ({ column }) => <SortableHeader column={column} title="In Stock" />,
     cell: ({ row }) => (
       <div className="tabular-nums">{row.original.stock ?? 0}</div>
     ),
   },
   {
-    accessorKey: "priceLabel",
+    accessorKey: "price_html",
     header: ({ column }) => <SortableHeader column={column} title="Price" />,
     cell: ({ row }) => {
-      const label = row.original.priceLabel;
-      if (!label) return <div className="text-muted-foreground">—</div>;
+      const priceHtml = row.original.price_html;
 
-      // if label is "9000 - 10000" or "10000", you can format nicely here:
-      const parts = label.split("-").map((s) => s.trim());
-      const fmt = new Intl.NumberFormat("en-NG", {
-        style: "currency",
-        currency: "NGN",
-      });
+      if (!priceHtml) {
+        return <div className="text-muted-foreground">—</div>;
+      }
 
+      // case 1: contains <del>/<ins> (on sale)
+      if (priceHtml.includes("<")) {
+        const formatted = formatPriceHtml(priceHtml);
+
+        return (
+          <div
+            className="tabular-nums [&_del]:text-muted-foreground [&_del]:mr-2 [&_del]:line-through [&_ins]:font-semibold [&_ins]:text-green-600"
+            dangerouslySetInnerHTML={{ __html: formatted }}
+          />
+        );
+      }
+
+      // case 2: normal range or single price ("42000 - 65000")
+      const parts = priceHtml.split("-").map((p) => p.trim());
       const formatted =
         parts.length === 2
-          ? `${fmt.format(Number(parts[0]))} - ${fmt.format(Number(parts[1]))}`
-          : fmt.format(Number(parts[0]));
+          ? `${ngn.format(+parts[0])} - ${ngn.format(+parts[1])}`
+          : ngn.format(+parts[0]);
 
       return <div className="tabular-nums">{formatted}</div>;
     },
   },
   {
     accessorKey: "categories",
-    header: () => <div>Categories</div>,
+    header: () => <div>Collections</div>,
     cell: ({ row }) => {
       const cats = row.original.categories ?? [];
       if (!cats.length) return <div className="text-muted-foreground">—</div>;
 
       return (
         <div className="flex flex-wrap gap-1">
-          {cats.slice(0, 3).map((c) => (
+          {cats.slice(0, 2).map((c) => (
             <Badge key={c.id}>{c.name}</Badge>
           ))}
         </div>
       );
     },
     enableSorting: false,
-  },
-  {
-    accessorKey: "createdAt",
-    header: ({ column }) => <SortableHeader column={column} title="Created" />,
-    cell: ({ row }) => {
-      const raw = row.original.createdAt as any;
-      const date = raw ? new Date(raw) : null;
-      if (!date) return <div className="text-muted-foreground">—</div>;
-
-      return (
-        <div>
-          {new Intl.DateTimeFormat("en-GB", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          }).format(date)}
-        </div>
-      );
-    },
   },
   {
     accessorKey: "actions",
@@ -135,3 +125,14 @@ export const productColumns: ColumnDef<ProductListRow>[] = [
     enableSorting: false,
   },
 ];
+
+const ngn = new Intl.NumberFormat("en-NG", {
+  style: "currency",
+  currency: "NGN",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+function formatPriceHtml(priceHtml: string) {
+  return priceHtml.replace(/\d+/g, (match) => ngn.format(Number(match)));
+}

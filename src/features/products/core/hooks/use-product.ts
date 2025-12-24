@@ -49,6 +49,7 @@ export function useGetProducts(
       const res = await axios.get("/api/catalog/products", {
         params: normalizedParams,
       });
+      console.log("Fetched products:", res.data);
       return (res.data.data ?? res.data) as ProductListRow[];
     },
     enabled: hasToken, // ✅ correct guard
@@ -68,6 +69,7 @@ export function useGetProduct(
       const res = await axios.get(`/api/catalog/products/${productId}/edit`);
       return (res.data.data ?? res.data) as Product;
     },
+
     enabled: !!productId && hasToken,
   });
 }

@@ -176,13 +176,13 @@ export default function AdminSidebar({ isCollapsed, onToggle }: SidebarProps) {
                 className={`flex items-center gap-2 px-3 py-1.5 rounded transition-colors cursor-pointer ${
                   isActiveTopLevel
                     ? "text-primary font-extrabold"
-                    : "hover:bg-muted font-semibold text-muted-foreground"
+                    : "hover:bg-muted font-semibold text-gray-500"
                 }`}
               >
                 {item.icon}
 
                 {!isCollapsed && (
-                  <span className="flex items-center justify-between w-full text-sm">
+                  <span className="flex items-center justify-between w-full text-[13px]">
                     <span className="flex items-center gap-2">
                       {item.title}
                       {showOrdersCount && (
@@ -257,10 +257,10 @@ export default function AdminSidebar({ isCollapsed, onToggle }: SidebarProps) {
                                 return (
                                   <Link
                                     href={sub.link!}
-                                    className={`flex items-center gap-2 px-6 py-2 text-sm rounded transition-colors ${
+                                    className={`flex items-center gap-2 px-8 py-2 text-[13px] rounded transition-colors ${
                                       isActiveSub
                                         ? "text-primary font-bold"
-                                        : "hover:bg-muted text-muted-foreground"
+                                        : "hover:bg-muted text-black font-medium"
                                     }`}
                                   >
                                     <span>{sub.title}</span>

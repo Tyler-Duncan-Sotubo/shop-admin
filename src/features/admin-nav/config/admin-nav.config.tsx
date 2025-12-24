@@ -4,14 +4,9 @@ import {
   MdShoppingCart,
   MdOutlineInventory2,
   MdBarChart,
+  MdArticle,
 } from "react-icons/md";
-import {
-  FaBoxOpen,
-  FaTag,
-  FaReceipt,
-  FaCog,
-  FaMapMarkedAlt,
-} from "react-icons/fa";
+import { FaBoxOpen, FaTag, FaReceipt, FaMapMarkedAlt } from "react-icons/fa";
 import { TbUsers } from "react-icons/tb";
 import { hasPermission } from "@/lib/auth/has-permission";
 import { BsFillBoxSeamFill } from "react-icons/bs";
@@ -278,7 +273,7 @@ export const main: readonly MenuItem[] = [
       },
       {
         title: "Payments",
-        link: "/dashboard",
+        link: "/billing/payments",
         icon: <FaReceipt size={18} />,
         permissions: ["billing.payments.read"],
       },
@@ -288,10 +283,15 @@ export const main: readonly MenuItem[] = [
   {
     title: "Analytics",
     icon: <MdBarChart size={22} />,
-    link: "/dashboard",
+    link: "/analytics",
     permissions: ["products.read"],
   },
-
+  {
+    title: "Blogpost",
+    icon: <MdArticle size={22} />, // swap to a better icon if you want (e.g. MdArticle)
+    link: "/blog",
+    permissions: ["blog.posts.read"],
+  },
   {
     title: "Divider",
     name: "Management",
@@ -302,18 +302,5 @@ export const main: readonly MenuItem[] = [
     link: "/stores",
     icon: <FaStore size={20} />,
     permissions: ["inventory.transfers.read"],
-  },
-
-  {
-    title: "Divider",
-    name: "Tools",
-    type: "divider",
-  },
-
-  {
-    title: "Settings",
-    icon: <FaCog size={20} />,
-    link: "/settings",
-    permissions: ["settings.read"],
   },
 ] as const;

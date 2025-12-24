@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import {
   Form,
   FormField,
@@ -23,63 +24,110 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-
-import { CreateProductSchema } from "../schema/create-product.schema";
-import { CreateProductPayload } from "../types/product.type";
-import { useCreateProduct } from "../hooks/use-product";
-import { SectionHeading } from "@/shared/ui/section-heading";
-import Image from "next/image";
-import { CategoryCheckboxPicker } from "@/features/categories/ui/category-checkbox-picker";
-import { useCategories } from "@/features/categories/hooks/use-categories";
-import { ProductUpsellCrossSellLinks } from "./product-upsell-cross-sell-link";
 import PageHeader from "@/shared/ui/page-header";
+import { SectionHeading } from "@/shared/ui/section-heading";
+import { cn } from "@/lib/utils";
+import { Switch } from "@/shared/ui/switch";
+import Image from "next/image";
 import { useDropzone } from "react-dropzone";
 import { UploadCloud, UserIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { TiptapEditor } from "@/shared/ui/tiptap-editor";
+import { BlogProductsPicker } from "./blog-products-picker";
+import { useGetBlogPost, useUpdateBlogPost } from "../hooks/use-blog-post";
+import { BlogPostStatus, CreateBlogPostPayload } from "../types/blog-post.type";
+import { slugify } from "@/shared/utils/slugify";
+import { CreateBlogPostSchema } from "../schema/create-blog-post.schema";
+import { useSession } from "next-auth/react";
 
-type AddProductPageProps = {
-  afterCreatePath?: (productId: string) => string;
+type EditBlogPostProps = {
+  postId: string;
+  afterSavePath?: (id: string) => string;
+  uploadEndpoint?: string; // same as tiptap: "/api/media/editor-image"
+  session?: { backendTokens?: { accessToken?: string } } | null;
 };
 
-export function AddProduct({ afterCreatePath }: AddProductPageProps) {
-  const { activeStoreId } = useStoreScope();
+export function EditBlogPost({
+  postId,
+  afterSavePath,
+  uploadEndpoint = "/api/media/editor-image",
+}: EditBlogPostProps) {
   const router = useRouter();
-  const { createProduct } = useCreateProduct();
-  const { createCategory } = useCategories();
+  const { data: session } = useSession();
+  const { data: post, isLoading } = useGetBlogPost(postId, session);
+  const { updateBlogPost } = useUpdateBlogPost(postId);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+
+  // cover image preview (existing URL or new base64)
+  const [uploadedCover, setUploadedCover] = useState<string | null>(null);
 
   const form = useForm({
-    resolver: zodResolver(CreateProductSchema),
+    resolver: zodResolver(CreateBlogPostSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      status: "draft", // ✅ add this
-      productType: "variable",
-      categoryIds: [],
-      links: { related: [], upsell: [], cross_sell: [] }, // ✅ backend-aligned
+      title: "",
+      slug: "",
+      excerpt: "",
+      content: "",
+      status: "draft" as BlogPostStatus,
+      isFeatured: false,
       seoTitle: "",
       seoDescription: "",
-      howItFeelsAndLooks: "",
-      whyYouWillLoveIt: "",
-      details: "",
+      coverImageUrl: "",
+      base64CoverImage: null as string | null,
+      products: [],
     },
     mode: "onSubmit",
   });
 
+  // Fill form from server post
+  useEffect(() => {
+    if (!post) return;
+
+    form.reset({
+      title: post.title ?? "",
+      slug: post.slug ?? "",
+      excerpt: post.excerpt ?? "",
+      content: post.content ?? "",
+      status: (post.status ?? "draft") as any,
+      isFeatured: !!post.isFeatured,
+      seoTitle: post.seoTitle ?? "",
+      seoDescription: post.seoDescription ?? "",
+      coverImageUrl: post.coverImageUrl ?? "",
+      base64CoverImage: null,
+      products:
+        (post.products ?? []).map((p: any) => ({
+          productId: p.productId ?? p.id, // depends on your API shape
+          sortOrder: p.sortOrder ?? 0,
+        })) ?? [],
+    });
+
+    setUploadedCover(post.coverImageUrl ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [post]);
+
+  // readonly slug: keep it derived from title BUT don't overwrite existing slug unless empty
+  const titleValue = form.watch("title");
+  useEffect(() => {
+    const currentSlug = form.getValues("slug") as string;
+    if (!currentSlug) {
+      form.setValue("slug", slugify(titleValue ?? ""), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [titleValue]);
+
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
-      const file = acceptedFiles[0];
+      const file = acceptedFiles?.[0];
       if (!file) return;
 
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result as string;
-        setUploadedImage(base64);
+        setUploadedCover(base64);
 
-        form.setValue("base64Image", base64, {
+        form.setValue("base64CoverImage", base64, {
           shouldDirty: true,
           shouldValidate: true,
         });
@@ -97,85 +145,80 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
 
   const isSubmitting = form.formState.isSubmitting;
 
-  const buildPayload = (values: any): CreateProductPayload => {
-    const md: Record<string, any> = {
-      how_it_feels_and_looks: values.howItFeelsAndLooks ?? "",
-      why_you_will_love_it: values.whyYouWillLoveIt ?? "",
-      details: values.details ?? "",
-    };
-
-    // remove empty strings
-    Object.keys(md).forEach((k) => {
-      if (typeof md[k] === "string" && md[k].trim() === "") delete md[k];
-    });
-
+  const buildPayload = (values: any): CreateBlogPostPayload => {
     return {
-      storeId: activeStoreId, // ✅ add storeId to payload
-      name: values.name,
-      description: values.description ?? null,
+      title: values.title,
+      slug: values.slug, // readonly; keep existing
+      excerpt: values.excerpt ?? null,
+      content: values.content,
       status: values.status ?? "draft",
-      productType: values.productType as any,
+      isFeatured: values.isFeatured ?? false,
       seoTitle: values.seoTitle ?? null,
       seoDescription: values.seoDescription ?? null,
-      categoryIds: values.categoryIds ?? [],
-      links: values.links ?? { related: [], upsell: [], cross_sell: [] }, // ✅
-      metadata: md,
-      base64Image: values.base64Image?.trim() || undefined,
-    };
+
+      // ✅ only send base64 if user changed image
+      base64CoverImage: values.base64CoverImage?.trim() || undefined,
+
+      // linked products
+      products: values.products ?? [],
+    } as any;
   };
 
   const onSubmit: SubmitHandler<any> = async (values) => {
     setSubmitError(null);
 
     const payload = buildPayload(values);
-    const created = await createProduct(payload, (msg) => setSubmitError(msg));
-    const productId = created?.id ?? created?.data?.id;
+    const updated = await updateBlogPost(payload, (msg: string) =>
+      setSubmitError(msg)
+    );
 
-    if (productId) {
-      const next = afterCreatePath
-        ? afterCreatePath(productId)
-        : `/products/${productId}/variants`;
-      router.push(next);
-      return;
-    }
-
-    router.push(`/products`);
+    const id = updated?.id ?? postId;
+    router.push(afterSavePath ? afterSavePath(id) : "/blog");
   };
+
+  if (isLoading || !post) {
+    return (
+      <div className="mt-6 rounded-lg border p-6 text-sm text-muted-foreground">
+        Loading blog post…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 mt-6">
       <PageHeader
-        title="Add product"
-        description="Create the product shell first. You’ll set options/variants in step 2."
+        title="Edit blog post"
+        description="Update your post, cover image, and linked products."
       >
-        <Button type="submit" form="add-product-form" disabled={isSubmitting}>
-          {isSubmitting ? "Creating..." : "Create & continue"}
+        <Button
+          type="submit"
+          form="edit-blog-post-form"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Saving..." : "Save changes"}
         </Button>
       </PageHeader>
 
       <Form {...form}>
         <form
-          id="add-product-form"
-          onSubmit={form.handleSubmit((values) => {
-            onSubmit(values);
-          })}
+          id="edit-blog-post-form"
+          onSubmit={form.handleSubmit((values) => onSubmit(values))}
           className="space-y-6"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* LEFT COLUMN */}
+            {/* LEFT */}
             <div className="lg:col-span-8 space-y-6">
-              {/* Basics */}
               <div className="rounded-lg border p-4 space-y-4">
                 <SectionHeading>Basic information</SectionHeading>
 
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>Title</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. Classic T-Shirt" {...field} />
+                        <Input placeholder="Post title" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -184,18 +227,33 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
 
                 <FormField
                   control={form.control}
-                  name="description"
+                  name="slug"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description</FormLabel>
+                      <FormLabel>Slug</FormLabel>
+                      <FormControl>
+                        <Input {...field} readOnly className="bg-muted/40" />
+                      </FormControl>
+                      <div className="text-xs text-muted-foreground">
+                        Slug is read-only on edit.
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="excerpt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Excerpt</FormLabel>
                       <FormControl>
                         <Textarea
                           value={field.value ?? ""}
                           onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
-                          className="h-44 resize-none"
+                          className="h-24 resize-none"
+                          placeholder="Short summary (optional)"
                         />
                       </FormControl>
                       <FormMessage />
@@ -204,65 +262,21 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                 />
               </div>
 
-              {/* Product details */}
               <div className="rounded-lg border p-4 space-y-4">
-                <SectionHeading>Product details</SectionHeading>
-
+                <SectionHeading>Content</SectionHeading>
                 <FormField
                   control={form.control}
-                  name="howItFeelsAndLooks"
+                  name="content"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>How it feels and looks</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Write how the product feels, looks, fit, texture..."
-                          value={field.value ?? ""}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
-                          className="h-24 resize-none"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="whyYouWillLoveIt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Why you will love it</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Key benefits, reasons to buy, unique selling points..."
-                          value={field.value ?? ""}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
-                          className="h-24 resize-none"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="details"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Details</FormLabel>
+                      <FormLabel>Body</FormLabel>
                       <FormControl>
                         <TiptapEditor
                           value={field.value ?? ""}
                           onChange={field.onChange}
                           placeholder="Write your post…"
+                          uploadEndpoint={uploadEndpoint}
+                          maxCharacters={20000}
                         />
                       </FormControl>
                       <FormMessage />
@@ -271,7 +285,6 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                 />
               </div>
 
-              {/* SEO */}
               <div className="rounded-lg border p-4 space-y-4">
                 <SectionHeading>SEO</SectionHeading>
 
@@ -286,9 +299,6 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                           placeholder="Optional"
                           value={field.value ?? ""}
                           onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
                         />
                       </FormControl>
                       <FormMessage />
@@ -307,9 +317,6 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                           placeholder="Optional"
                           value={field.value ?? ""}
                           onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
                           className="h-24 resize-none"
                         />
                       </FormControl>
@@ -326,56 +333,28 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
               </div>
             </div>
 
-            {/* RIGHT COLUMN */}
+            {/* RIGHT */}
             <div className="lg:col-span-4 space-y-6">
               <div className="rounded-lg border p-4 space-y-4">
-                <div className="space-y-2">
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Select
-                            value={field.value ?? undefined} // ✅ don’t coerce to ""
-                            onValueChange={field.onChange}
-                          >
-                            <SelectTrigger className="w-64">
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="draft">Draft</SelectItem>
-                              <SelectItem value="active">Publish</SelectItem>
-                              <SelectItem value="archived">Archive</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-              {/* Product type */}
-              <div className="rounded-lg border p-4 space-y-4">
-                <SectionHeading>Product type</SectionHeading>
+                <SectionHeading>Publishing</SectionHeading>
 
                 <FormField
                   control={form.control}
-                  name="productType"
+                  name="status"
                   render={({ field }) => (
                     <FormItem>
+                      <FormLabel>Status</FormLabel>
                       <FormControl>
                         <Select
-                          value={field.value}
+                          value={field.value ?? "draft"}
                           onValueChange={field.onChange}
                         >
                           <SelectTrigger className="w-64">
-                            <SelectValue placeholder="Select type" />
+                            <SelectValue placeholder="Select status" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="variable">Variable</SelectItem>
-                            <SelectItem value="simple">Simple</SelectItem>
+                            <SelectItem value="draft">Draft</SelectItem>
+                            <SelectItem value="published">Published</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -383,28 +362,62 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="isFeatured"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between rounded-md border p-3">
+                      <div>
+                        <FormLabel>Featured</FormLabel>
+                        <div className="text-xs text-muted-foreground">
+                          Show this post in featured sections
+                        </div>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={!!field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
+              {/* Cover */}
               <div className="rounded-lg border p-4 space-y-4">
-                <SectionHeading>Default image</SectionHeading>
+                <SectionHeading>Cover image</SectionHeading>
 
                 <div
                   {...getRootProps()}
                   className={cn(
                     "border rounded-lg w-full flex flex-col items-center justify-center p-6",
-                    "border-dashed cursor-pointer hover:border-primary"
+                    "border-dashed cursor-pointer hover:border-primary",
+                    isDragActive && "border-primary"
                   )}
                 >
                   <input {...getInputProps()} />
 
-                  {uploadedImage ? (
-                    <Image
-                      src={uploadedImage}
-                      alt="Product image"
-                      className="rounded-lg object-cover"
-                      width={220}
-                      height={220}
-                    />
+                  {uploadedCover ? (
+                    uploadedCover.startsWith("data:") ? (
+                      <Image
+                        src={uploadedCover}
+                        alt="Cover preview"
+                        className="rounded-lg object-cover"
+                        width={220}
+                        height={220}
+                      />
+                    ) : (
+                      <Image
+                        src={uploadedCover}
+                        alt="Cover preview"
+                        className="rounded-lg object-cover"
+                        width={220}
+                        height={220}
+                      />
+                    )
                   ) : (
                     <div className="flex h-40 w-full items-center justify-center rounded-lg bg-muted/30">
                       <UserIcon className="h-10 w-10 text-muted-foreground" />
@@ -423,33 +436,29 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                   </div>
                 </div>
 
-                {/* keep base64Image in the form */}
+                {/* keep base64CoverImage in the form */}
                 <FormField
                   control={form.control}
-                  name="base64Image"
+                  name="base64CoverImage"
                   render={() => (
                     <FormItem>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                <div className="text-xs text-muted-foreground">
+                  Uploading a new image will replace the existing cover image.
+                </div>
               </div>
 
-              {/* Categories */}
-              <div className="rounded-lg border p-4 space-y-2">
-                <SectionHeading>Categories</SectionHeading>
-                <CategoryCheckboxPicker
-                  name="categoryIds"
-                  onCreateCategory={async (payload, setError) => {
-                    return createCategory(payload, setError);
-                  }}
-                />
-              </div>
-
-              {/* Linked Products */}
+              {/* Linked products */}
               <div className="rounded-lg border p-4 space-y-2">
                 <SectionHeading>Linked products</SectionHeading>
-                <ProductUpsellCrossSellLinks />
+                <BlogProductsPicker session={session} />
+                <div className="text-xs text-muted-foreground">
+                  Post categories can be derived from linked products.
+                </div>
               </div>
             </div>
           </div>

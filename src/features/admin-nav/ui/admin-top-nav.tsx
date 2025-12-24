@@ -1,15 +1,18 @@
 "use client";
 
-import { Bell, Search, MapPin } from "lucide-react";
-import { Input } from "@/shared/ui/input";
+import { Bell, MapPin } from "lucide-react";
 import { NativeSelect, NativeSelectOption } from "@/shared/ui/native-select";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { useStores } from "@/features/stores/hooks/use-stores";
 import { UserMenu } from "./user-menu";
+import { FaCog } from "react-icons/fa";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 
 export function AdminTopNav() {
+  const pathname = usePathname();
   const { data: session } = useSession();
   const avatar = session?.user?.avatar || "";
 
@@ -45,20 +48,21 @@ export function AdminTopNav() {
         </NativeSelect>
       </div>
 
-      {/* Search */}
-      <Input
-        type="text"
-        placeholder="Search.."
-        leftIcon={<Search size={18} className="text-gray-500" />}
-        className="w-96 h-10"
-      />
-
       {/* Right Section */}
-      <div className="ml-auto flex items-center gap-6">
+      <div className="ml-auto flex items-center gap-4">
         <button className="relative flex items-center justify-center text-gray-600 hover:text-black">
           <Bell size={22} />
           <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
         </button>
+
+        <Link href="/settings">
+          <FaCog
+            size={23}
+            className={`text-gray-600 hover:text-primary cursor-pointer ${
+              pathname === "/settings" ? "text-primary" : ""
+            }`}
+          />
+        </Link>
 
         <UserMenu
           name={session?.user?.firstName}

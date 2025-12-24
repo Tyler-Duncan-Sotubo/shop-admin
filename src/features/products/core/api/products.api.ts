@@ -33,6 +33,5 @@ export async function getProductsApi(
       Authorization: accessToken ? `Bearer ${accessToken}` : undefined,
     },
   });
-
   return (res.data.data ?? res.data) as Product[];
 }

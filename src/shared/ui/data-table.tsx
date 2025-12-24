@@ -13,6 +13,7 @@ import {
   ColumnFiltersState,
   SortingState,
   VisibilityState,
+  PaginationState,
 } from "@tanstack/react-table";
 
 import {
@@ -30,10 +31,17 @@ import { FaSearch } from "react-icons/fa";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[] | undefined;
+
   filterKey?: string; // e.g. "name"
-  filterPlaceholder?: string; // e.g. "Filter by employee name..."
+  filterPlaceholder?: string; // e.g. "Filter by name..."
   showSearch?: boolean;
+
   onRowClick?: (row: TData) => void;
+
+  /** Pagination controls */
+  defaultPageSize?: number; // default 20
+  pageSizeOptions?: number[]; // default [10,20,50,100]
+  allowCustomPageSize?: boolean; // default true
 }
 
 export function DataTable<TData, TValue>({
@@ -43,6 +51,10 @@ export function DataTable<TData, TValue>({
   filterPlaceholder,
   showSearch = true,
   onRowClick,
+
+  defaultPageSize = 20,
+  pageSizeOptions = [10, 20, 50, 100],
+  allowCustomPageSize = true,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -52,24 +64,48 @@ export function DataTable<TData, TValue>({
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
+  const [pagination, setPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: defaultPageSize,
+  });
+
+  // Used only when allowCustomPageSize is enabled
+  const [customOpen, setCustomOpen] = React.useState(false);
+  const [customValue, setCustomValue] = React.useState<string>("");
+
   const table = useReactTable({
     data: data ?? [],
     columns,
+
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
+
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
+
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination,
     },
   });
+
+  const pageSize = table.getState().pagination.pageSize;
+
+  const applyCustomPageSize = (value: string) => {
+    setCustomValue(value);
+    const n = Number(value);
+    if (Number.isFinite(n) && n > 0) {
+      table.setPageSize(n);
+    }
+  };
 
   return (
     <div className="w-full mt-6">
@@ -110,6 +146,7 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
+
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
@@ -124,7 +161,7 @@ export function DataTable<TData, TValue>({
                   }
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-4 font-medium">
+                    <TableCell key={cell.id} className="py-5 font-medium">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -147,27 +184,72 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between py-4">
-        <div className="text-sm text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} total record(s)
+      {/* Footer */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-4">
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-muted-foreground">
+            {table.getFilteredRowModel().rows.length} total record(s)
+          </div>
         </div>
-        <div className="space-x-2">
-          <Button
-            variant="clean"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="clean"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-4">
+          {/* Page size control */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Rows:</span>
+
+            <select
+              className="h-9 rounded-md border bg-background px-2 text-sm"
+              value={customOpen ? "custom" : String(pageSize)}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "custom") {
+                  setCustomOpen(true);
+                  // keep current pageSize as starting point
+                  setCustomValue(String(pageSize));
+                } else {
+                  setCustomOpen(false);
+                  setCustomValue("");
+                  table.setPageSize(Number(v));
+                }
+              }}
+            >
+              {pageSizeOptions.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+              {allowCustomPageSize && <option value="custom">Custom…</option>}
+            </select>
+
+            {allowCustomPageSize && customOpen && (
+              <Input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                placeholder="e.g. 25"
+                className="w-24"
+                value={customValue}
+                onChange={(e) => applyCustomPageSize(e.target.value)}
+              />
+            )}
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="clean"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="clean"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
     </div>

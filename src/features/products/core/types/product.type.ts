@@ -15,6 +15,7 @@ export type ProductListRow = {
 
   imageUrl: string | null;
   categories: { id: string; name: string }[];
+  price_html: string;
 };
 
 export type Product = {
