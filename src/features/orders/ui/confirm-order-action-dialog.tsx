@@ -29,6 +29,7 @@ type Props = {
 
   /** Optional extra safety: user must type this exact string */
   requireText?: string;
+  error?: string | null;
 };
 
 export function ConfirmOrderActionDialog({
@@ -41,6 +42,7 @@ export function ConfirmOrderActionDialog({
   isLoading,
   onConfirm,
   requireText,
+  error,
 }: Props) {
   const [typed, setTyped] = useState("");
 
@@ -66,8 +68,8 @@ export function ConfirmOrderActionDialog({
             <span className="block">{description}</span>
 
             {needsText && (
-              <div className="space-y-2">
-                <span className="text-sm">
+              <div>
+                <span className="text-sm ">
                   Type <span className="font-mono">{requireText}</span> to
                   confirm.
                 </span>
@@ -75,9 +77,11 @@ export function ConfirmOrderActionDialog({
                   value={typed}
                   onChange={(e) => setTyped(e.target.value)}
                   placeholder={requireText}
+                  className="mt-2"
                 />
               </div>
             )}
+            {error && <p className="text-sm text-destructive">{error}</p>}
           </AlertDialogDescription>
         </AlertDialogHeader>
 

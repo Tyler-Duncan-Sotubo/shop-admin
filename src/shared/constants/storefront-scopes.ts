@@ -21,4 +21,10 @@ export const STOREFRONT_API_SCOPES = [
   // 📦 Orders
   "orders.create",
   "orders.read",
+
+  // 💬 Quotes
+  "quotes.create",
+  "quotes.read",
+  "quotes.update",
+  "quotes.delete",
 ];

@@ -8,32 +8,58 @@ import { productColumns } from "./product-columns";
 import type { ProductListRow } from "../types/product.type";
 import { useGetProducts } from "../hooks/use-product";
 import { useSession } from "next-auth/react";
-
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"; // adjust path if needed
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
+import useAxiosAuth from "@/shared/hooks/use-axios-auth";
+import { TabLabel } from "@/shared/ui/tab-label";
+import { useProductCountsForTabs } from "../hooks/use-product-counts";
 
-type StatusTab = "all" | "active" | "draft" | "archived";
+type StatusTab = "active" | "draft" | "archived";
 
 export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
   const { data: session, status: authStatus } = useSession();
-  const [statusTab, setStatusTab] = useState<StatusTab>("active");
-  const { activeStoreId } = useStoreScope(); // ✅ your store scope
+  const axios = useAxiosAuth();
+  const { activeStoreId } = useStoreScope();
 
+  const [statusTab, setStatusTab] = useState<StatusTab>("active");
+
+  // ✅ query for current tab
   const query = useMemo(
     () => ({
-      storeId: activeStoreId, // ✅ REQUIRED
+      storeId: activeStoreId || undefined,
       limit: 50,
       offset: 0,
+      // backend default status is "active" when status is undefined
       status: statusTab === "active" ? undefined : statusTab,
     }),
     [statusTab, activeStoreId]
   );
 
-  const { data: products = [], isLoading } = useGetProducts(query, session);
+  // ✅ list (rows + total)
+  const { data: list, isLoading: isListLoading } = useGetProducts(
+    query,
+    session
+  );
 
-  if (authStatus === "loading" || isLoading) return <Loading />;
+  // ✅ tab counts (all/active/archived/draft)
+  const { counts, isLoading: isCountsLoading } = useProductCountsForTabs(
+    session,
+    axios,
+    {
+      storeId: activeStoreId || undefined,
+      statuses: [
+        { key: "active", status: "active" },
+        { key: "draft", status: "draft" },
+        { key: "archived", status: "archived" },
+      ],
+    }
+  );
 
-  const rows = data.length ? data : products;
+  if (authStatus === "loading" || isListLoading || isCountsLoading)
+    return <Loading />;
+
+  // if server data passed in, use it; otherwise use query result
+  const rows = data.length ? data : list?.rows ?? [];
 
   return (
     <section className="space-y-4">
@@ -51,12 +77,23 @@ export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
           onValueChange={(v) => setStatusTab(v as StatusTab)}
         >
           <TabsList>
-            <TabsTrigger value="active">Published</TabsTrigger>
-            <TabsTrigger value="draft">Draft</TabsTrigger>
-            <TabsTrigger value="archived">Archived</TabsTrigger>
+            <TabsTrigger value="active">
+              <TabLabel
+                label="Published"
+                count={counts.active ?? 0}
+                // showZero={true} // default
+              />
+            </TabsTrigger>
+
+            <TabsTrigger value="draft">
+              <TabLabel label="Draft" count={counts.draft ?? 0} />
+            </TabsTrigger>
+
+            <TabsTrigger value="archived">
+              <TabLabel label="Archived" count={counts.archived ?? 0} />
+            </TabsTrigger>
           </TabsList>
 
-          {/* One content panel is enough since data changes by tab */}
           <TabsContent value={statusTab} className="mt-4">
             <DataTable
               columns={productColumns}
@@ -67,7 +104,6 @@ export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
           </TabsContent>
         </Tabs>
       ) : (
-        // when external data is passed in, just render table without tabs
         <DataTable
           columns={productColumns}
           data={rows}

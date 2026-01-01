@@ -10,7 +10,7 @@ export function useOrdersTotalCount(
 ) {
   return useQuery({
     queryKey: ["orders", "count", "total", storeId],
-    enabled: !!session?.backendTokens?.accessToken,
+    enabled: !!session?.backendTokens?.accessToken && !!storeId,
     queryFn: async (): Promise<number> => {
       const res = await axios.get("/api/orders", {
         params: { limit: 1, offset: 0, status: "pending_payment", storeId },

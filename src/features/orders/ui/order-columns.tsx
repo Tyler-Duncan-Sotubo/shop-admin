@@ -21,7 +21,7 @@ export const orderColumns: ColumnDef<Order>[] = [
       const order = row.original;
       return (
         <Link
-          href={`/orders/${order.id}`}
+          href={`/sales/orders/${order.id}`}
           className="text-primary hover:underline font-medium"
         >
           {order.orderNumber}

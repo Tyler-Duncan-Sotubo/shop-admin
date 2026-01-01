@@ -30,6 +30,7 @@ export type ReviewQuery = {
   isApproved?: boolean;
   limit?: number;
   offset?: number;
+  storeId?: string;
 };
 
 export type UpdateReviewPayload = {

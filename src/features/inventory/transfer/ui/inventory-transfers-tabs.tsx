@@ -6,7 +6,7 @@ import { StoreTransferHistoryTable } from "./store-transfer-history-client";
 
 export default function InventoryTransfersTabs() {
   return (
-    <Tabs defaultValue="transfers" className="space-y-4">
+    <Tabs defaultValue="transfers" className="space-y-4 mt-0">
       <TabsList>
         <TabsTrigger value="transfers">Transfers</TabsTrigger>
         <TabsTrigger value="history">History</TabsTrigger>

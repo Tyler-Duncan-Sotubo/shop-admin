@@ -15,7 +15,6 @@ import {
 import { Input } from "@/shared/ui/input";
 import { Mail } from "lucide-react";
 import FormError from "@/shared/ui/form-error";
-import { Checkbox } from "@/shared/ui/checkbox";
 import Link from "next/link";
 import { H3, P } from "@/shared/ui/typography";
 import { loginSchema } from "@/features/auth/login/model/login.schema";
@@ -46,7 +45,7 @@ function LoginForm() {
               Log in to your account to continue
             </P>
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4">
             <FormField
               control={form.control}
               name="email"
@@ -76,7 +75,7 @@ function LoginForm() {
                     <Input
                       type="password"
                       {...field}
-                      className="py-4"
+                      className="py-2"
                       isPassword
                     />
                   </FormControl>
@@ -87,17 +86,7 @@ function LoginForm() {
             {/* Display error message if there is one */}
             {error ? <FormError message={error} /> : ""}
 
-            <section className="flex justify-between">
-              <div className="flex items-center space-x-2">
-                <Checkbox id="terms" />
-                <label
-                  htmlFor="terms"
-                  className="text-md text-textPrimary font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Remember me
-                </label>
-              </div>
-
+            <section className="flex justify-end">
               <Link href="/forgot-password">
                 <Button
                   variant="link"
@@ -120,10 +109,7 @@ function LoginForm() {
             <DividerWithText className="my-10" />
             <div className="text-center text-textSecondary text-md flex justify-center items-center space-x-1">
               <P>Don&apos;t have an account?</P>
-              <Link
-                href="https://calendly.com/centapayroll/book-a-demo"
-                target="_blank"
-              >
+              <Link href="/" target="_blank">
                 <Button
                   variant="link"
                   className="text-buttonPrimary px-0 font-bold text-sm"

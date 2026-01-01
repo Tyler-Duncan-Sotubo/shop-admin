@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -22,6 +23,7 @@ import {
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { Badge } from "@/shared/ui/badge";
 import { useOrdersTotalCount } from "@/features/orders/hooks/use-orders-total-count";
+import { useQuotesTotalCount } from "@/features/quotes/hooks/use-quotes-total-count";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import Image from "next/image";
 
@@ -38,41 +40,60 @@ const isDivider = (
 const isLinkOrDescendant = (pathname: string, link?: string | null) =>
   !!link && (pathname === link || pathname.startsWith(link + "/"));
 
+// We only want the badge to appear on the Sales sub-items we care about
+const SALES_ORDERS_LINKS = new Set(["/sales/orders"]);
+const SALES_QUOTES_LINKS = new Set(["/sales/rfqs"]);
+
 export default function AdminSidebar({ isCollapsed, onToggle }: SidebarProps) {
   const { data: session } = useSession();
   const { activeStoreId } = useStoreScope();
   const axios = useAxiosAuth();
   const pathname = usePathname();
 
+  // ✅ counts used for badges
   const { data: ordersCount = 0 } = useOrdersTotalCount(
     session,
     axios,
     activeStoreId
   );
+
+  const { data: quotesCount = 0 } = useQuotesTotalCount(
+    session,
+    axios,
+    activeStoreId
+  );
+
+  const salesTotalCount = ordersCount + quotesCount;
+
   const userPermissions =
     (session as any)?.user?.permissions ?? (session as any)?.permissions ?? [];
 
   const filteredMenu = filterMenu(main, userPermissions);
 
+  // Are we currently on any Sales route? (so we don't show badge on Sales parent)
+  const isInSalesSection = useMemo(() => {
+    return pathname === "/sales/orders" || pathname.startsWith("/sales/");
+  }, [pathname]);
+
   const flatSubs = useMemo(
     () =>
       filteredMenu.flatMap((menu) =>
-        "subItems" in menu && menu.subItems
-          ? menu.subItems
-              .filter((s) => !s.name)
-              .map((sub) => ({ parent: menu, sub }))
+        "subItems" in menu && (menu as any).subItems
+          ? (menu as any).subItems
+              .filter((s: any) => !s.name)
+              .map((sub: any) => ({ parent: menu, sub }))
           : []
       ),
     [filteredMenu]
   );
 
   const activeSubMatch = useMemo(() => {
-    const matches = flatSubs.filter(({ sub }) =>
+    const matches = flatSubs.filter(({ sub }: any) =>
       isLinkOrDescendant(pathname, sub.link)
     );
 
     matches.sort(
-      (a, b) => (b.sub.link?.length ?? 0) - (a.sub.link?.length ?? 0)
+      (a: any, b: any) => (b.sub.link?.length ?? 0) - (a.sub.link?.length ?? 0)
     );
 
     return matches[0] ?? null;
@@ -129,6 +150,40 @@ export default function AdminSidebar({ isCollapsed, onToggle }: SidebarProps) {
     });
   };
 
+  // ✅ close any open section when navigating to a top-level item
+  // that has NO subItems (a "parent" link without children).
+  const closeAllSections = useEffectEvent(() => {
+    setOpenSection(null);
+    setSuppressedSection(null);
+  });
+
+  useEffect(() => {
+    const activeTopNoSub = filteredMenu.find((m: any) => {
+      const hasSub = "subItems" in m && m.subItems?.length;
+      if (hasSub) return false;
+      return isLinkOrDescendant(pathname, m.link);
+    });
+
+    if (activeTopNoSub) closeAllSections();
+  }, [pathname, filteredMenu]);
+
+  /**
+   * Badge rules:
+   * - Show badge on Sales ONLY when Sales is CLOSED/collapsed AND user is NOT already in /sales/*
+   * - Show badge ONLY on Orders & Quote Requests sub-items when Sales is OPEN (expanded) or user is inside /sales/*
+   */
+  const getSubBadge = (link?: string | null) => {
+    if (!link) return null;
+
+    if (SALES_ORDERS_LINKS.has(link) && ordersCount > 0) return ordersCount;
+    if (SALES_QUOTES_LINKS.has(link) && quotesCount > 0) return quotesCount;
+
+    return null;
+  };
+
+  const salesParentBadgeVisible = (isSectionOpen: boolean) =>
+    salesTotalCount > 0 && (isCollapsed || !isSectionOpen) && !isInSalesSection;
+
   return (
     <TooltipProvider>
       <motion.aside
@@ -162,14 +217,21 @@ export default function AdminSidebar({ isCollapsed, onToggle }: SidebarProps) {
               ) : null;
             }
 
-            const hasSub = Boolean(item.subItems?.length);
+            const hasSub = Boolean((item as any).subItems?.length);
             const isSectionOpen = hasSub && openSection === item.title;
 
             const isActiveTopLevel = !hasSub
-              ? isLinkOrDescendant(pathname, item.link)
+              ? isLinkOrDescendant(pathname, (item as any).link)
               : false;
 
-            const showOrdersCount = item.link === "/orders" && ordersCount > 0;
+            // ✅ Show combined badge on Sales parent only when rules allow
+            const showTopBadge =
+              item.title === "Sales"
+                ? salesParentBadgeVisible(isSectionOpen)
+                : false;
+
+            // ✅ IMPORTANT: do NOT show badge on any other top-level items
+            const topBadge = showTopBadge ? salesTotalCount : null;
 
             const TopLevelContent = (
               <div
@@ -179,17 +241,15 @@ export default function AdminSidebar({ isCollapsed, onToggle }: SidebarProps) {
                     : "hover:bg-muted font-semibold text-gray-500"
                 }`}
               >
-                {item.icon}
+                {(item as any).icon}
 
                 {!isCollapsed && (
                   <span className="flex items-center justify-between w-full text-[13px]">
                     <span className="flex items-center gap-2">
                       {item.title}
-                      {showOrdersCount && (
-                        <Badge className="h-5 px-2 text-xs">
-                          {ordersCount}
-                        </Badge>
-                      )}
+                      {topBadge ? (
+                        <Badge className="h-5 px-2 text-xs">{topBadge}</Badge>
+                      ) : null}
                     </span>
 
                     {hasSub && (
@@ -209,12 +269,13 @@ export default function AdminSidebar({ isCollapsed, onToggle }: SidebarProps) {
               <div key={item.title}>
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
-                    {item.link ? (
+                    {(item as any).link ? (
                       <Link
-                        href={item.link}
+                        href={(item as any).link}
                         className="block"
                         onClick={() => {
                           if (hasSub) toggleSection(item.title);
+                          else closeAllSections();
                         }}
                       >
                         {TopLevelContent}
@@ -237,7 +298,7 @@ export default function AdminSidebar({ isCollapsed, onToggle }: SidebarProps) {
 
                 {hasSub && !isCollapsed && isSectionOpen && (
                   <ul className="mt-1 space-y-1">
-                    {item.subItems!.map((sub) =>
+                    {(item as any).subItems!.map((sub: any) =>
                       sub.name ? (
                         <li
                           key={sub.name}
@@ -254,16 +315,25 @@ export default function AdminSidebar({ isCollapsed, onToggle }: SidebarProps) {
                                   !!sub.link &&
                                   activeSubMatch?.sub.link === sub.link;
 
+                                const subBadge = getSubBadge(sub.link);
+
                                 return (
                                   <Link
                                     href={sub.link!}
-                                    className={`flex items-center gap-2 px-8 py-2 text-[13px] rounded transition-colors ${
+                                    className={`flex items-center justify-between px-8 py-2 text-[13px] rounded transition-colors ${
                                       isActiveSub
                                         ? "text-primary font-bold"
                                         : "hover:bg-muted text-black font-medium"
                                     }`}
                                   >
-                                    <span>{sub.title}</span>
+                                    <span className="flex items-center gap-2">
+                                      {sub.title}
+                                      {subBadge ? (
+                                        <Badge className="h-5 px-2 text-xs">
+                                          {subBadge}
+                                        </Badge>
+                                      ) : null}
+                                    </span>
                                   </Link>
                                 );
                               })()}

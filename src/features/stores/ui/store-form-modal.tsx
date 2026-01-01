@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -30,6 +31,11 @@ import {
 import { StoreFormValues, StoreSchema } from "../schema/stores.schema";
 import { slugify } from "@/shared/utils/slugify";
 
+import Image from "next/image";
+import { useDropzone } from "react-dropzone";
+import { UploadCloud, ImageIcon, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 export function StoreFormModal({
   open,
   mode,
@@ -45,9 +51,16 @@ export function StoreFormModal({
       defaultCurrency: "NGN",
       defaultLocale: "en-NG",
       isActive: true,
-    },
+
+      // ✅ image fields
+      base64Image: null,
+      coverImageAltText: "",
+      removeImage: false,
+    } as any,
     mode: "onChange",
   });
+
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Watch name as user types
   const nameValue = useWatch({
@@ -77,7 +90,15 @@ export function StoreFormModal({
         defaultCurrency: store.defaultCurrency ?? "NGN",
         defaultLocale: store.defaultLocale ?? "en-NG",
         isActive: store.isActive,
-      });
+        // ✅ reset image fields
+        base64Image: null,
+        coverImageAltText: (store as any).imageAltText ?? "",
+        removeImage: false,
+      } as any);
+
+      // ✅ preview existing store image (url)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPreviewImage((store as any).imageUrl ?? null);
     }
 
     if (mode === "create" && !store) {
@@ -87,9 +108,68 @@ export function StoreFormModal({
         defaultCurrency: "NGN",
         defaultLocale: "en-NG",
         isActive: true,
-      });
+
+        base64Image: null,
+        coverImageAltText: "",
+        removeImage: false,
+      } as any);
+
+      setPreviewImage(null);
     }
   }, [store, mode, form]);
+
+  // ✅ dropzone for cover image
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      const file = acceptedFiles[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+
+        // UI preview uses base64
+        setPreviewImage(base64);
+
+        // push to form so backend can upload to S3
+        form.setValue("base64Image" as any, base64 as any, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+
+        // if user had chosen "remove image", undo it
+        form.setValue("removeImage" as any, false as any, {
+          shouldDirty: true,
+          shouldValidate: false,
+        });
+      };
+
+      reader.readAsDataURL(file);
+    },
+    [form]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { "image/*": [] },
+    multiple: false,
+  });
+
+  const clearImage = () => {
+    setPreviewImage(null);
+    form.setValue("base64Image" as any, null as any, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+
+    // only set removeImage in edit mode (so backend deletes/unsets url)
+    if (mode === "edit") {
+      form.setValue("removeImage" as any, true as any, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+    }
+  };
 
   const handleSubmit = async (values: StoreFormValues) => {
     await onSubmit(values);
@@ -107,6 +187,85 @@ export function StoreFormModal({
     >
       <Form {...form}>
         <div className="space-y-4">
+          {/* ✅ Store Cover Image */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold">Store cover image</div>
+                <div className="text-xs text-muted-foreground">
+                  Upload a logo/cover image for the store.
+                </div>
+              </div>
+
+              {previewImage ? (
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  className="inline-flex items-center gap-2 text-xs text-destructive hover:underline"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Remove
+                </button>
+              ) : null}
+            </div>
+
+            <div
+              {...getRootProps()}
+              className={cn(
+                "border rounded-lg w-full flex flex-col items-center justify-center p-6",
+                "border-dashed cursor-pointer hover:border-primary",
+                isDragActive && "border-primary"
+              )}
+            >
+              <input {...getInputProps()} />
+
+              {previewImage ? (
+                <Image
+                  src={previewImage}
+                  alt="Store cover"
+                  className="rounded-lg object-cover"
+                  width={100}
+                  height={80}
+                />
+              ) : (
+                <div className="flex h-10 w-full items-center justify-center rounded-lg bg-muted/30">
+                  <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                </div>
+              )}
+
+              <div className="mt-4 text-center text-sm text-muted-foreground">
+                {isDragActive ? (
+                  <p className="text-primary">Drop the file here…</p>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <UploadCloud className="h-5 w-5" />
+                    <p>Drag & drop or click to upload</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* keep base64Image + removeImage in the form */}
+            <FormField
+              control={form.control}
+              name={"base64Image" as any}
+              render={() => (
+                <FormItem>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name={"removeImage" as any}
+              render={() => (
+                <FormItem>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
           {/* Name */}
           <FormField
             control={form.control}
@@ -118,7 +277,7 @@ export function StoreFormModal({
                   <Input
                     placeholder="My Store"
                     {...field}
-                    value={field.value ?? ""} // keep controlled
+                    value={field.value ?? ""}
                   />
                 </FormControl>
                 <FormMessage />
@@ -126,7 +285,7 @@ export function StoreFormModal({
             )}
           />
 
-          {/* Slug (auto, disabled) */}
+          {/* Slug (auto, disabled)
           <FormField
             control={form.control}
             name="slug"
@@ -137,7 +296,7 @@ export function StoreFormModal({
                   <Input
                     placeholder="my-store"
                     {...field}
-                    value={field.value ?? ""} // keep controlled
+                    value={field.value ?? ""}
                     disabled
                   />
                 </FormControl>
@@ -147,7 +306,7 @@ export function StoreFormModal({
                 <FormMessage />
               </FormItem>
             )}
-          />
+          /> */}
 
           {/* Currency */}
           <FormField
@@ -210,7 +369,7 @@ export function StoreFormModal({
                 <FormControl>
                   <input
                     type="checkbox"
-                    checked={!!field.value} // always boolean
+                    checked={!!field.value}
                     onChange={(e) => field.onChange(e.target.checked)}
                   />
                 </FormControl>

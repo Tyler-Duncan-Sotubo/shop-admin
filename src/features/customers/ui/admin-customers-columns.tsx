@@ -17,7 +17,7 @@ function YesNoBadge({
   no?: string;
 }) {
   return (
-    <Badge variant={ok ? ("success" as any) : ("secondary" as any)}>
+    <Badge variant={ok ? ("success" as any) : ("clean" as any)}>
       {ok ? yes : no}
     </Badge>
   );
@@ -73,7 +73,7 @@ export const adminCustomersColumns: ColumnDef<AdminCustomerRow>[] = [
     accessorKey: "marketingOptIn",
     header: "Marketing",
     cell: ({ row }) => (
-      <YesNoBadge ok={row.original.marketingOptIn} yes="Opted in" no="—" />
+      <YesNoBadge ok={row.original.marketingOptIn} yes="Opted in" no="no" />
     ),
   },
   {

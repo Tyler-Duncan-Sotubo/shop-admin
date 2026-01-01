@@ -81,6 +81,9 @@ export default function StoreSection() {
           defaultCurrency: values.defaultCurrency,
           defaultLocale: values.defaultLocale,
           isActive: values.isActive,
+          base64Image: values.base64Image,
+          coverImageAltText: values.coverImageAltText,
+          removeImage: values.removeImage,
         },
         setSubmitError,
         undefined, // no form.reset here, modal form handles its own reset on open
@@ -94,6 +97,9 @@ export default function StoreSection() {
           defaultCurrency: values.defaultCurrency,
           defaultLocale: values.defaultLocale,
           isActive: values.isActive,
+          base64Image: values.base64Image,
+          coverImageAltText: values.coverImageAltText,
+          removeImage: values.removeImage,
         },
         setSubmitError,
         closeModal

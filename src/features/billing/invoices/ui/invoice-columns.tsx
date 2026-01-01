@@ -45,7 +45,7 @@ export const invoiceColumns = (): ColumnDef<Invoice>[] => [
       // keep this link clickable even when the row is clickable
       return (
         <Link
-          href={`/orders/${orderId}`}
+          href={`/sales/orders/${orderId}`}
           className="text-primary underline"
           onClick={(e) => e.stopPropagation()}
         >

@@ -38,22 +38,29 @@ export function useGetProducts(
     status: params.status || undefined,
     limit: params.limit ?? 50,
     offset: params.offset ?? 0,
-    storeId: params.storeId || null,
+    storeId: params.storeId || undefined,
   };
 
   const hasToken = Boolean(session?.backendTokens?.accessToken);
 
   return useQuery({
     queryKey: ["products", normalizedParams],
+    enabled: hasToken,
+    staleTime: 10_000,
     queryFn: async () => {
-      const res = await axios.get("/api/catalog/products", {
+      const res = await axios.get("/api/catalog/products/admin", {
         params: normalizedParams,
       });
-      console.log("Fetched products:", res.data);
-      return (res.data.data ?? res.data) as ProductListRow[];
+
+      const payload = res.data.data ?? res.data;
+
+      return {
+        rows: (payload.items ?? []) as ProductListRow[],
+        total: Number(payload.total ?? 0),
+        limit: Number(payload.limit ?? normalizedParams.limit),
+        offset: Number(payload.offset ?? normalizedParams.offset),
+      };
     },
-    enabled: hasToken, // ✅ correct guard
-    staleTime: 10_000,
   });
 }
 

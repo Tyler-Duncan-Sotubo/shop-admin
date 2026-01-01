@@ -11,6 +11,7 @@ export type AdminCustomersQuery = {
   limit?: number;
   offset?: number;
   includeInactive?: boolean;
+  storeId?: string | null;
 };
 
 function toQueryString(q?: AdminCustomersQuery) {
@@ -23,6 +24,8 @@ function toQueryString(q?: AdminCustomersQuery) {
 
   sp.set("limit", String(q.limit ?? 50));
   sp.set("offset", String(q.offset ?? 0));
+
+  if (q.storeId) sp.set("storeId", q.storeId);
 
   const qs = sp.toString();
   return qs ? `?${qs}` : "";

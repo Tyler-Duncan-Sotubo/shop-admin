@@ -18,6 +18,7 @@ import { formatMoneyNGN } from "@/shared/utils/format-to-naira";
 import { Button } from "@/shared/ui/button";
 import { useState } from "react";
 import { AddManualOrderItemsModal } from "./add-manual-order-items-modal";
+import { useManualOrders } from "../hooks/use-manual-orders";
 
 function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
   if (status === "paid") return <Badge>Paid</Badge>;
@@ -32,6 +33,7 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   const axios = useAxiosAuth();
   const { data, isLoading } = useGetOrder(session, axios, orderId);
   const [isOpen, setIsOpen] = useState(false);
+  const { createManualPayment } = useManualOrders(orderId);
 
   if (authStatus === "loading" || isLoading) return <Loading />;
   if (!data) return null;
@@ -41,6 +43,10 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   // ✅ fallback: if billing is null, use shipping
   const billingOrShipping = order.billingAddress ?? order.shippingAddress;
 
+  const handleCreateManualPayment = () => {
+    createManualPayment();
+  };
+
   return (
     <section className="space-y-6">
       <PageHeader
@@ -48,12 +54,19 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
         description="Order details and actions."
         tooltip="On hold = pending payment. Completed = fulfilled."
       >
-        {order.channel === "manual" && (
-          <Button onClick={() => setIsOpen(true)}>
-            <FaRegEdit />
-            Add Item
-          </Button>
-        )}
+        {order.channel === "manual" &&
+          order.status !== "pending_payment" &&
+          order.status !== "paid" && (
+            <>
+              <Button onClick={() => setIsOpen(true)}>
+                <FaRegEdit />
+                Add Item
+              </Button>
+              <Button onClick={() => handleCreateManualPayment()}>
+                Submit For Payment
+              </Button>
+            </>
+          )}
       </PageHeader>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">

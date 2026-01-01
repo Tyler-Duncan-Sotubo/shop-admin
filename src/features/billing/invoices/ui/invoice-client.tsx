@@ -61,7 +61,7 @@ export function InvoiceClient() {
         <DataTable
           columns={cols}
           data={invoices}
-          onRowClick={(inv) => router.push(`/billing/invoices/${inv.id}`)}
+          onRowClick={(inv) => router.push(`/sales/invoices/${inv.id}`)}
         />
       </div>
     </div>

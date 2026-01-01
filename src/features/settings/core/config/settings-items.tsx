@@ -64,6 +64,14 @@ export const settingsItems = [
     link: "/settings/audit-logs",
     icon: <FaClipboardCheck size={20} />,
   },
+  {
+    category: "Account Settings",
+    title: "Storefront Config",
+    description:
+      "Manage your storefront configuration including theme, header, pages, and advanced settings.",
+    link: "/settings/storefront-config",
+    icon: <FaStore size={20} />,
+  },
 
   // Billing Settings
   {

@@ -2,8 +2,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "next-auth";
 import type { AxiosInstance } from "axios";
-import type { Invoice, InvoiceWithLines } from "../types/invoice.type";
+import type {
+  Invoice,
+  InvoiceWithLines,
+  RecordInvoicePaymentInput,
+} from "../types/invoice.type";
 import type { UpdateInvoiceLineValues } from "../schema/invoice.schema";
+import { useCreateMutation } from "@/shared/hooks/use-create-mutation";
 
 /* -----------------------------
  * List invoices (headers only)
@@ -199,6 +204,35 @@ export function useGenerateInvoicePublicLink(
         invoiceId: string;
         enabled: boolean;
       };
+    },
+  });
+}
+
+export function useRecordInvoicePayment(
+  invoiceId: string,
+  form: any,
+  setSubmitError: any,
+  onClose: any
+) {
+  // useCreateMutation returns: (data, setError?, resetForm?, onClose?) => Promise<any>
+  return useCreateMutation<RecordInvoicePaymentInput>({
+    endpoint: `/api/invoices/${invoiceId}/payments`,
+    successMessage: "Payment recorded successfully.",
+    refetchKey: [
+      { key: "billing", params: undefined },
+      { key: "billing", params: ["payments"] },
+      { key: "billing", params: ["invoices", "detail", invoiceId] },
+      { key: "billing", params: ["invoices", "list"] },
+      { key: "billing", params: ["payments", "list"] },
+      { key: "billing", params: ["payments"] },
+    ],
+    onSuccess: () => {
+      form.reset();
+      setSubmitError(null);
+      onClose();
+    },
+    onError: (errorMessage: string) => {
+      setSubmitError(errorMessage);
     },
   });
 }

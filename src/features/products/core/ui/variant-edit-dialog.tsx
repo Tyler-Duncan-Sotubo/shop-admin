@@ -59,6 +59,10 @@ export function VariantEditDialog({
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [imageVersion, setImageVersion] = useState<number>(() => Date.now());
 
+  // ✅ NEW: filename + mimetype (from dropped file)
+  const [imageFileName, setImageFileName] = useState<string>("");
+  const [imageMimeType, setImageMimeType] = useState<string>("image/jpeg");
+
   // ✅ use the hook mutation so invalidation matches the query key
   const { updateVariant } = useProductVariants(productId);
 
@@ -86,6 +90,10 @@ export function VariantEditDialog({
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
       if (!file) return;
+
+      // ✅ NEW: capture mimeType + fileName like your UploadImageModal
+      setImageMimeType(file.type || "image/jpeg");
+      setImageFileName(file.name || `upload-${Date.now()}.jpg`);
 
       const reader = new FileReader();
       reader.onload = () => {
@@ -135,6 +143,10 @@ export function VariantEditDialog({
     });
 
     setUploadedImage(null);
+
+    // ✅ NEW: reset metadata when opening/resetting
+    setImageFileName("");
+    setImageMimeType("image/jpeg");
   }, [variant, open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const savedImageUrl = (variant as any)?.image?.url;
@@ -144,6 +156,8 @@ export function VariantEditDialog({
   const submit = async (values: VariantFormValues) => {
     if (!variant) return;
     setSubmitError(null);
+
+    const hasNewImage = Boolean(values.base64Image?.trim());
 
     const payload: any = {
       title: values.title ?? null,
@@ -161,9 +175,16 @@ export function VariantEditDialog({
       stockQuantity: values.stockQuantity?.trim() || null,
       safetyStock: values.lowStockThreshold?.trim() || null,
 
-      base64Image: values.base64Image?.trim()
-        ? values.base64Image.trim()
-        : undefined,
+      base64Image: hasNewImage ? values.base64Image?.trim() : undefined,
+      imageAltText: values.title || null,
+
+      // ✅ NEW: include only when uploading a new image
+      ...(hasNewImage
+        ? {
+            imageFileName: imageFileName?.trim() || null,
+            imageMimeType: imageMimeType || "image/jpeg",
+          }
+        : {}),
     };
 
     try {
@@ -235,6 +256,20 @@ export function VariantEditDialog({
                     </FormItem>
                   )}
                 />
+
+                {/* Optional: show filename/mimeType for debug/visibility */}
+                {uploadedImage ? (
+                  <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                    <div>
+                      <span className="font-medium">File:</span>{" "}
+                      {imageFileName || "—"}
+                    </div>
+                    <div>
+                      <span className="font-medium">Type:</span>{" "}
+                      {imageMimeType || "—"}
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               {/* RIGHT: form */}

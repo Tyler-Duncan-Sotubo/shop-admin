@@ -15,13 +15,14 @@ import { UpdateReviewModal } from "./update-review-modal";
 import { useDebounceCallback } from "@/shared/hooks/use-debounce";
 import { LuClock, LuList } from "react-icons/lu";
 import { FaCheckCircle } from "react-icons/fa";
-import { P } from "@/shared/ui/typography";
+import { TabLabel } from "@/shared/ui/tab-label";
+import { useStoreScope } from "@/lib/providers/store-scope-provider";
 
 type StatusTab = "all" | "approved" | "pending";
 
 export function ReviewsTable() {
   const { data: session, status: authStatus } = useSession();
-
+  const { activeStoreId } = useStoreScope();
   const [statusTab, setStatusTab] = useState<StatusTab>("pending");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -37,7 +38,11 @@ export function ReviewsTable() {
   );
 
   // ✅ counts are NOT dependent on statusTab (static)
-  const counts = useReviewCounts(search.trim() || undefined, session);
+  const counts = useReviewCounts(
+    search.trim() || undefined,
+    activeStoreId || undefined,
+    session
+  );
 
   const query = useMemo(() => {
     const isApproved =
@@ -52,8 +57,9 @@ export function ReviewsTable() {
       offset: 0,
       isApproved, // boolean | undefined (hook converts to "true"/"false")
       search: search.trim() || undefined,
+      storeId: activeStoreId || undefined,
     };
-  }, [statusTab, search]);
+  }, [statusTab, search, activeStoreId]);
 
   const { data, isLoading } = useGetReviews(query, session);
   const reviews = data?.items ?? [];
@@ -90,12 +96,7 @@ export function ReviewsTable() {
               className="flex items-center gap-2 px-4 py-2"
             >
               <LuClock className="h-4 w-4 text-yellow-500" />
-              <span>Pending</span>
-              {counts.pending > 0 && (
-                <P className="text-primary not-first:mt-0">
-                  ({counts.pending})
-                </P>
-              )}
+              <TabLabel label="Pending" count={counts.pending} />
             </TabsTrigger>
 
             <TabsTrigger
@@ -103,12 +104,7 @@ export function ReviewsTable() {
               className="flex items-center gap-2 px-4 py-2"
             >
               <FaCheckCircle className="h-4 w-4 text-green-600" />
-              <span>Approved</span>
-              {counts.approved > 0 && (
-                <P className="text-primary not-first:mt-0">
-                  ({counts.approved})
-                </P>
-              )}
+              <TabLabel label="Approved" count={counts.approved} />
             </TabsTrigger>
 
             <TabsTrigger
@@ -116,10 +112,7 @@ export function ReviewsTable() {
               className="flex items-center gap-2 px-4 py-2"
             >
               <LuList className="h-4 w-4 text-blue-600" />
-              <span>All</span>
-              {counts.all > 0 && (
-                <P className="text-primary not-first:mt-0">({counts.all})</P>
-              )}
+              <TabLabel label="All" count={counts.all} />
             </TabsTrigger>
           </TabsList>
 

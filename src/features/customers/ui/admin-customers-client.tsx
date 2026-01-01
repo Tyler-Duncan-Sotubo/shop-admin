@@ -16,20 +16,26 @@ import { FaUsers } from "react-icons/fa";
 import { CreateCustomerModal } from "./create-customer-modal";
 import { FaPlus } from "react-icons/fa6";
 import { Button } from "@/shared/ui/button";
+import BulkUploadModal from "@/shared/ui/bulk-upload-modal";
+import { LuImport } from "react-icons/lu";
+import { useStoreScope } from "@/lib/providers/store-scope-provider";
 
 export default function AdminCustomersClient() {
   const axios = useAxiosAuth();
+  const { activeStoreId } = useStoreScope();
   const { data: session, status: authStatus } = useSession();
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [open, setOpen] = useState(false);
 
   const query = useMemo(
     () => ({
-      limit: 50,
+      limit: 500,
       offset: 0,
       includeInactive,
+      storeId: activeStoreId,
     }),
-    [includeInactive]
+    [activeStoreId, includeInactive]
   );
 
   const { data: customers = [], isLoading } = useAdminCustomers(
@@ -65,6 +71,21 @@ export default function AdminCustomersClient() {
             label: "Add customer",
             onClick: () => setOpen(true),
           }}
+          secondaryAction={{
+            label: "Import customers",
+            onClick: () => setIsBulkOpen(true),
+          }}
+        />
+
+        <BulkUploadModal
+          isOpen={isBulkOpen}
+          onClose={() => setIsBulkOpen(false)}
+          title="Bulk Import Customers"
+          endpoint={`/api/admin/customers/bulk/${activeStoreId}`}
+          refetchKey="customers onboarding"
+          successMessage="Customers added successfully"
+          exampleDownloadHref="https://res.cloudinary.com/dw1ltt9iz/raw/upload/v1757585682/department_ee9hgy.xlsx"
+          exampleDownloadLabel=""
         />
         <CreateCustomerModal open={open} onClose={() => setOpen(false)} />
       </section>
@@ -81,8 +102,12 @@ export default function AdminCustomersClient() {
         description="Manage customers for your company."
         tooltip="Search customers by name, email, phone. View details and manage status."
       >
+        <Button onClick={() => setIsBulkOpen(true)}>
+          <LuImport size={16} />
+          Import
+        </Button>
         <Button onClick={() => setOpen(true)}>
-          <FaPlus /> Add Customer{" "}
+          <FaPlus /> Add Customer
         </Button>
       </PageHeader>
       <div className="flex items-center justify-end gap-2">
@@ -99,7 +124,16 @@ export default function AdminCustomersClient() {
         filterKey="search"
         filterPlaceholder="Search by name, email, phone, status…"
       />
-
+      <BulkUploadModal
+        isOpen={isBulkOpen}
+        onClose={() => setIsBulkOpen(false)}
+        title="Bulk Import Customers"
+        endpoint="/api/admin/customers/bulk"
+        refetchKey="admin customers"
+        successMessage="Customers added successfully"
+        exampleDownloadHref="https://res.cloudinary.com/dw1ltt9iz/raw/upload/v1757585682/department_ee9hgy.xlsx"
+        exampleDownloadLabel=""
+      />
       <CreateCustomerModal open={open} onClose={() => setOpen(false)} />
     </section>
   );

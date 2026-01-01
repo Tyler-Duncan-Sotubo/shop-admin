@@ -30,6 +30,7 @@ export function useGetReviews(
     search: params.search?.trim() || undefined,
     limit: params.limit ?? 50,
     offset: params.offset ?? 0,
+    storeId: params.storeId || undefined,
     isApproved:
       typeof params.isApproved === "boolean"
         ? params.isApproved
@@ -82,6 +83,7 @@ async function fetchTotal(axios: AxiosInstance, params: Record<string, any>) {
 
 export function useReviewCounts(
   search: string | undefined,
+  storeId: string | undefined,
   session?: { backendTokens?: { accessToken?: string } } | null
 ) {
   const axios = useAxiosAuth();
@@ -91,6 +93,7 @@ export function useReviewCounts(
     limit: 1,
     offset: 0,
     search,
+    storeId,
   };
 
   const all = useQuery({

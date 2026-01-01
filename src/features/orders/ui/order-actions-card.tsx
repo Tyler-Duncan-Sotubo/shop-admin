@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // features/orders/components/order-actions-card.tsx
 "use client";
 
@@ -30,7 +31,11 @@ export function OrderActionsCard({
   const isMutating =
     payMut.isPending || cancelMut.isPending || fulfillMut.isPending;
 
-  const canPay = order.status === "pending_payment";
+  const cancelError = cancelMut.isError
+    ? (cancelMut.error as any)?.response?.data?.error?.message ??
+      "Unable to cancel order"
+    : null;
+
   const canCancel = order.status === "pending_payment";
   const canFulfill = order.status === "paid";
 
@@ -45,14 +50,6 @@ export function OrderActionsCard({
       </div>
 
       <div className="space-y-3 p-3">
-        <Button
-          className="w-full"
-          disabled={!canPay || isMutating}
-          onClick={() => setOpenPay(true)}
-        >
-          Mark as paid
-        </Button>
-
         <Button
           className="w-full"
           variant="secondary"
@@ -106,7 +103,7 @@ export function OrderActionsCard({
           open={openCancel}
           onOpenChange={setOpenCancel}
           title="Cancel this order?"
-          description="This will cancel the order and release reservations (only pending_payment orders)."
+          description="This will cancel the order and release reservations "
           confirmLabel="Yes, cancel order"
           confirmVariant="destructive"
           requireText={order.orderNumber} // ✅ extra safety
@@ -116,6 +113,7 @@ export function OrderActionsCard({
               onSuccess: () => setOpenCancel(false),
             })
           }
+          error={cancelError}
         />
       </div>
     </div>

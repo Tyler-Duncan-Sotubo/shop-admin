@@ -1,11 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "next-auth";
-import type { AxiosInstance } from "axios";
+import type { AxiosError, AxiosInstance } from "axios";
 import type {
   ListOrdersParams,
   Order,
   OrderWithItems,
 } from "../types/order.type";
+
+type ApiError = {
+  status: "error";
+  error?: { message?: string };
+  message?: string;
+};
 
 export function useGetOrders(
   session: Session | null,
@@ -58,6 +64,7 @@ export function usePayOrder(session: Session | null, axios: AxiosInstance) {
 
 export function useCancelOrder(session: Session | null, axios: AxiosInstance) {
   const qc = useQueryClient();
+
   return useMutation({
     mutationFn: async (id: string) => {
       const res = await axios.post(`/api/orders/${id}/cancel`);
@@ -65,6 +72,15 @@ export function useCancelOrder(session: Session | null, axios: AxiosInstance) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (err) => {
+      const e = err as AxiosError<ApiError>;
+      const msg =
+        e.response?.data?.error?.message ??
+        e.response?.data?.message ??
+        e.message;
+
+      throw new Error(msg);
     },
   });
 }

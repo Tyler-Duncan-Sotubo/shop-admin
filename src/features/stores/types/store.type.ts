@@ -20,6 +20,9 @@ export type CreateStorePayload = {
   defaultCurrency?: string;
   defaultLocale?: string;
   isActive?: boolean;
+  base64Image?: string | null;
+  coverImageAltText?: string | null;
+  removeImage?: boolean;
 };
 
 export type UpdateStorePayload = Partial<CreateStorePayload>;

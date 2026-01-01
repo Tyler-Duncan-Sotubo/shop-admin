@@ -17,7 +17,7 @@ const PageHeader = ({
   tooltip,
 }: PageHeaderProps) => {
   return (
-    <div className="md:flex justify-between items-start mb-10">
+    <div className="md:flex justify-between items-start mb-4">
       <div>
         <div className="flex gap-3">
           {icon && <div className="flex items-center">{icon}</div>}

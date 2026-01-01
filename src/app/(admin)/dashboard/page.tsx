@@ -1,8 +1,13 @@
+import { CommerceAnalyticsClient } from "@/features/analytics/overview/ui/commerce-analytics-client";
 import OnboardingChecklistDrawer from "@/features/onboarding/ui/onboarding-checklist-drawer";
-import React from "react";
 
 const page = () => {
-  return <OnboardingChecklistDrawer />;
+  return (
+    <>
+      <OnboardingChecklistDrawer />
+      <CommerceAnalyticsClient />
+    </>
+  );
 };
 
 export default page;

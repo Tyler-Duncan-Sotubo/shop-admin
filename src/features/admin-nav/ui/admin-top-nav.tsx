@@ -1,7 +1,6 @@
 "use client";
 
-import { Bell, MapPin } from "lucide-react";
-import { NativeSelect, NativeSelectOption } from "@/shared/ui/native-select";
+import { Bell } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
@@ -10,6 +9,7 @@ import { UserMenu } from "./user-menu";
 import { FaCog } from "react-icons/fa";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { StoreSelect } from "./store-select";
 
 export function AdminTopNav() {
   const pathname = usePathname();
@@ -30,22 +30,11 @@ export function AdminTopNav() {
     <div className="h-18 w-full bg-white flex items-center p-6 gap-6">
       {/* Store Selector */}
       <div className="flex items-center gap-2 text-gray-700 text-sm">
-        <MapPin size={18} className="text-gray-500" />
-        <NativeSelect
-          className="w-56"
-          value={activeStoreId ?? ""}
-          onChange={(e) => setActiveStoreId(e.target.value || null)}
-        >
-          {stores.map((store) => (
-            <NativeSelectOption
-              key={store.id}
-              value={store.id}
-              className="text-gray-900"
-            >
-              {store.name}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+        <StoreSelect
+          stores={stores}
+          value={activeStoreId}
+          onChange={setActiveStoreId}
+        />
       </div>
 
       {/* Right Section */}

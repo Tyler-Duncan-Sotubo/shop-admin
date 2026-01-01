@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
-
 import { cn } from "@/lib/utils";
 
 function Popover(props: React.ComponentProps<typeof PopoverPrimitive.Root>) {
@@ -28,7 +27,7 @@ function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          // ✅ force white background (calendar + dropdowns look premium)
+          // ✅ surface
           "bg-white text-foreground",
 
           // animations
@@ -40,8 +39,8 @@ function PopoverContent({
           "data-[side=right]:slide-in-from-left-2",
           "data-[side=top]:slide-in-from-bottom-2",
 
-          // layout + polish
-          "z-50 w-72 origin-(--radix-popover-content-transform-origin)",
+          // ✅ layout + polish (REMOVE w-72)
+          "z-50 origin-(--radix-popover-content-transform-origin)",
           "rounded-md border border-input shadow-md outline-none",
 
           className

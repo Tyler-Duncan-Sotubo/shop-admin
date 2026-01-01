@@ -50,6 +50,8 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
   const { createCategory } = useCategories();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [imageFileName, setImageFileName] = useState<string>("");
+  const [imageMimeType, setImageMimeType] = useState<string>("image/jpeg");
 
   const form = useForm({
     resolver: zodResolver(CreateProductSchema),
@@ -73,6 +75,9 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
       if (!file) return;
+
+      setImageMimeType(file.type || "image/jpeg");
+      setImageFileName(file.name || `upload-${Date.now()}.jpg`);
 
       const reader = new FileReader();
       reader.onload = () => {
@@ -121,6 +126,15 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
       links: values.links ?? { related: [], upsell: [], cross_sell: [] }, // ✅
       metadata: md,
       base64Image: values.base64Image?.trim() || undefined,
+      imageAltText: values.name || "Product image",
+
+      // ✅ NEW: send meta only when image exists
+      ...(values.base64Image?.trim()
+        ? {
+            imageFileName: imageFileName?.trim() || undefined,
+            imageMimeType: imageMimeType || "image/jpeg",
+          }
+        : {}),
     };
   };
 

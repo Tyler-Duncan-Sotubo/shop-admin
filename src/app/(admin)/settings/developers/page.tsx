@@ -1,5 +1,5 @@
-import ApiKeysClient from "@/features/settings/developers/api-keys/ui/api-keys-client";
+import DeveloperClient from "@/features/settings/developers/developer-client";
 
 export default function ApiKeysPage() {
-  return <ApiKeysClient />;
+  return <DeveloperClient />;
 }

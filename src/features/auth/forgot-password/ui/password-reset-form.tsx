@@ -69,7 +69,7 @@ const PasswordResetForm = () => {
   return (
     <section className="w-full max-w-lg mx-auto p-6">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <div className="text-center">
             <H3 className="text-3xl font-bold my-2">Forgot Your Password?</H3>
             <P className="text-xl text-gray-600">We&apos;ve got you covered</P>

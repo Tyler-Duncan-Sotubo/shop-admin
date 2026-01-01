@@ -10,9 +10,7 @@ const FormError: React.FC<FormErrorProps> = ({ message, className }) => {
   if (!message) return null;
 
   return (
-    <p
-      className={cn("mx-1 mt-1 text-md font-semibold text-red-600", className)}
-    >
+    <p className={cn("mx-1 text-sm font-semibold text-red-600", className)}>
       {message}
     </p>
   );

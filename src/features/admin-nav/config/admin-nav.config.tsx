@@ -6,7 +6,13 @@ import {
   MdBarChart,
   MdArticle,
 } from "react-icons/md";
-import { FaBoxOpen, FaTag, FaReceipt, FaMapMarkedAlt } from "react-icons/fa";
+import {
+  FaBoxOpen,
+  FaTag,
+  FaReceipt,
+  FaMapMarkedAlt,
+  FaFileAlt,
+} from "react-icons/fa";
 import { TbUsers } from "react-icons/tb";
 import { hasPermission } from "@/lib/auth/has-permission";
 import { BsFillBoxSeamFill } from "react-icons/bs";
@@ -24,6 +30,7 @@ type BaseItem = {
   icon?: ReactNode;
   permissions?: readonly Permission[];
   subItems?: readonly MenuItem[];
+  badgeKey?: "ordersCount";
 };
 
 type DividerItem = {
@@ -142,13 +149,46 @@ export const main: readonly MenuItem[] = [
     icon: <MdDashboard size={20} />,
     link: "/dashboard",
   },
-  {
-    title: "Orders",
-    icon: <MdShoppingCart size={20} />,
-    link: "/orders",
-    permissions: ["orders.read"],
-  },
 
+  {
+    title: "Sales",
+    icon: <MdShoppingCart size={18} />,
+    link: "/sales/orders",
+    permissions: [
+      "billing.invoices.read",
+      "billing.payments.read",
+      "billing.taxes.read",
+      "billing.invoiceTemplates.read",
+    ],
+    subItems: [
+      {
+        title: "Quote Requests",
+        link: "/sales/rfqs",
+        icon: <FaReceipt size={18} />,
+        permissions: ["quotes.read"],
+      },
+      {
+        title: "Orders",
+        link: "/sales/orders",
+        icon: <MdShoppingCart size={18} />,
+        permissions: ["orders.read"],
+        badgeKey: "ordersCount",
+      },
+
+      {
+        title: "Invoices",
+        link: "/sales/invoices",
+        icon: <FaReceipt size={18} />,
+        permissions: ["billing.invoices.read"],
+      },
+      {
+        title: "Payments Received",
+        link: "/sales/payments-received",
+        icon: <FaReceipt size={18} />,
+        permissions: ["billing.payments.read"],
+      },
+    ],
+  },
   {
     title: "Products",
     icon: <BsFillBoxSeamFill size={20} />,
@@ -222,6 +262,7 @@ export const main: readonly MenuItem[] = [
   },
   {
     title: "Fulfillment",
+    link: "/shipping/zones",
     icon: <FaTruckFast size={20} />,
     permissions: [
       "shipping.zones.read",
@@ -255,30 +296,6 @@ export const main: readonly MenuItem[] = [
       },
     ],
   },
-  {
-    title: "Billing",
-    icon: <FaReceipt size={20} />,
-    permissions: [
-      "billing.invoices.read",
-      "billing.payments.read",
-      "billing.taxes.read",
-      "billing.invoiceTemplates.read",
-    ],
-    subItems: [
-      {
-        title: "Invoices",
-        link: "/billing/invoices",
-        icon: <FaReceipt size={18} />,
-        permissions: ["billing.invoices.read"],
-      },
-      {
-        title: "Payments",
-        link: "/billing/payments",
-        icon: <FaReceipt size={18} />,
-        permissions: ["billing.payments.read"],
-      },
-    ],
-  },
 
   {
     title: "Analytics",
@@ -287,11 +304,24 @@ export const main: readonly MenuItem[] = [
     permissions: ["products.read"],
   },
   {
-    title: "Blogpost",
-    icon: <MdArticle size={22} />, // swap to a better icon if you want (e.g. MdArticle)
-    link: "/blog",
+    title: "Content",
+    link: "/content/files",
+    icon: <FaFileAlt size={20} />,
     permissions: ["blog.posts.read"],
+    subItems: [
+      {
+        title: "Files",
+        link: "/content/files",
+        icon: <FaTruckFast size={18} />, // see note below
+      },
+      {
+        title: "Blogpost",
+        icon: <MdArticle size={22} />, // swap to a better icon if you want (e.g. MdArticle)
+        link: "/content/blog",
+      },
+    ],
   },
+
   {
     title: "Divider",
     name: "Management",

@@ -58,6 +58,8 @@ export function EditProduct({ productId }: Props) {
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [imageVersion, setImageVersion] = useState<number>(() => Date.now());
+  const [imageFileName, setImageFileName] = useState<string>("");
+  const [imageMimeType, setImageMimeType] = useState<string>("image/jpeg");
 
   const savedImageUrl = (product as any)?.imageUrl ?? null;
 
@@ -97,6 +99,8 @@ export function EditProduct({ productId }: Props) {
       const file = acceptedFiles[0];
       if (!file) return;
 
+      setImageMimeType(file.type || "image/jpeg");
+      setImageFileName(file.name || `upload-${Date.now()}.jpg`);
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result as string;
@@ -173,6 +177,12 @@ export function EditProduct({ productId }: Props) {
       metadata: md,
       base64Image: values.base64Image?.trim() || undefined,
       storeId: activeStoreId,
+      ...(values.base64Image?.trim()
+        ? {
+            imageFileName: imageFileName?.trim() || undefined,
+            imageMimeType: imageMimeType || "image/jpeg",
+          }
+        : {}),
     };
   };
 

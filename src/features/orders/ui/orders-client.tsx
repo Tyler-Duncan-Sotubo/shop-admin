@@ -13,9 +13,9 @@ import { useGetOrders } from "../hooks/use-orders";
 import { useOrderCountsForTabs } from "../hooks/use-order-counts";
 import { OrdersTable } from "./orders-table";
 import { ORDER_TAB_TO_STATUS, OrderTab } from "../constants/order-tabs";
-import { P } from "@/shared/ui/typography";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { CreateManualOrderButton } from "./open-manual-orders-button";
+import { TabLabel } from "@/shared/ui/tab-label";
 
 export default function OrdersClient() {
   const { data: session, status: authStatus } = useSession();
@@ -56,32 +56,31 @@ export default function OrdersClient() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <TabsList>
             <TabsTrigger value="all">
-              All <P className="text-primary ml-2">({counts.all})</P>
+              <TabLabel label="All" count={counts.all} />
             </TabsTrigger>
 
             <TabsTrigger value="on_hold">
-              On hold <P className="text-primary ml-2">({counts.onHold})</P>
+              <TabLabel label="On hold" count={counts.onHold} />
             </TabsTrigger>
 
             <TabsTrigger value="paid">
-              Paid
-              {counts.paid > 0 && (
-                <P className="text-primary ml-2">({counts.paid})</P>
-              )}
+              <TabLabel label="Paid" count={counts.paid} showZero={false} />
             </TabsTrigger>
 
             <TabsTrigger value="fulfilled">
-              Fulfilled
-              {counts.fulfilled > 0 && (
-                <P className="text-primary ml-2">({counts.fulfilled})</P>
-              )}
+              <TabLabel
+                label="Fulfilled"
+                count={counts.fulfilled}
+                showZero={false}
+              />
             </TabsTrigger>
 
             <TabsTrigger value="cancelled">
-              Cancelled
-              {counts.cancelled > 0 && (
-                <P className="text-primary ml-2">({counts.cancelled})</P>
-              )}
+              <TabLabel
+                label="Cancelled"
+                count={counts.cancelled}
+                showZero={false}
+              />
             </TabsTrigger>
           </TabsList>
         </div>

@@ -1,7 +1,7 @@
-import React from "react";
+import { AnalyticsClient } from "@/features/analytics/core/ui/analytics-client";
 
 const page = () => {
-  return <div>page</div>;
+  return <AnalyticsClient />;
 };
 
 export default page;

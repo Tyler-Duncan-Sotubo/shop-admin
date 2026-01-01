@@ -42,6 +42,9 @@ interface DataTableProps<TData, TValue> {
   defaultPageSize?: number; // default 20
   pageSizeOptions?: number[]; // default [10,20,50,100]
   allowCustomPageSize?: boolean; // default true
+
+  disableRowSelection?: boolean;
+  toolbarRight?: React.ReactNode;
 }
 
 export function DataTable<TData, TValue>({
@@ -55,6 +58,8 @@ export function DataTable<TData, TValue>({
   defaultPageSize = 20,
   pageSizeOptions = [10, 20, 50, 100],
   allowCustomPageSize = true,
+  disableRowSelection = false,
+  toolbarRight,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -108,25 +113,33 @@ export function DataTable<TData, TValue>({
   };
 
   return (
-    <div className="w-full mt-6">
+    <div className="w-full">
       {/* Optional filter bar */}
-      {filterKey && showSearch && (
-        <div className="flex w-full pb-4">
-          <div className="ml-auto">
-            <Input
-              placeholder={filterPlaceholder ?? "Filter..."}
-              value={
-                (table.getColumn(filterKey)?.getFilterValue() as string) ?? ""
-              }
-              onChange={(event) =>
-                table.getColumn(filterKey)?.setFilterValue(event.target.value)
-              }
-              className="w-72 placeholder:text-xs"
-              leftIcon={<FaSearch size={15} />}
-            />
+      {(filterKey && showSearch) || toolbarRight ? (
+        <div className="flex w-full items-center justify-between pb-4 gap-3">
+          {/* Left spacer (keeps alignment consistent even without search) */}
+          <div />
+
+          <div className="flex items-center gap-2">
+            {filterKey && showSearch && (
+              <Input
+                placeholder={filterPlaceholder ?? "Filter..."}
+                value={
+                  (table.getColumn(filterKey)?.getFilterValue() as string) ?? ""
+                }
+                onChange={(event) =>
+                  table.getColumn(filterKey)?.setFilterValue(event.target.value)
+                }
+                className="w-72 placeholder:text-xs"
+                leftIcon={<FaSearch size={15} />}
+              />
+            )}
+
+            {/* ✅ injected controls */}
+            {toolbarRight}
           </div>
         </div>
-      )}
+      ) : null}
 
       <div className="rounded-md border">
         <Table>
@@ -161,7 +174,7 @@ export function DataTable<TData, TValue>({
                   }
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-5 font-medium">
+                    <TableCell key={cell.id} className="py-3 font-medium">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -185,73 +198,75 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Footer */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-4">
-        <div className="flex items-center gap-3">
-          <div className="text-sm text-muted-foreground">
-            {table.getFilteredRowModel().rows.length} total record(s)
-          </div>
-        </div>
+      {!disableRowSelection && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-4">
-          {/* Page size control */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Rows:</span>
-
-            <select
-              className="h-9 rounded-md border bg-background px-2 text-sm"
-              value={customOpen ? "custom" : String(pageSize)}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === "custom") {
-                  setCustomOpen(true);
-                  // keep current pageSize as starting point
-                  setCustomValue(String(pageSize));
-                } else {
-                  setCustomOpen(false);
-                  setCustomValue("");
-                  table.setPageSize(Number(v));
-                }
-              }}
-            >
-              {pageSizeOptions.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-              {allowCustomPageSize && <option value="custom">Custom…</option>}
-            </select>
-
-            {allowCustomPageSize && customOpen && (
-              <Input
-                type="number"
-                min={1}
-                inputMode="numeric"
-                placeholder="e.g. 25"
-                className="w-24"
-                value={customValue}
-                onChange={(e) => applyCustomPageSize(e.target.value)}
-              />
-            )}
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-muted-foreground">
+              {table.getFilteredRowModel().rows.length} total record(s)
+            </div>
           </div>
-          <div className="flex items-center justify-end gap-2">
-            <Button
-              variant="clean"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="clean"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-            </Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-4">
+            {/* Page size control */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Rows:</span>
+
+              <select
+                className="h-9 rounded-md border bg-background px-2 text-sm"
+                value={customOpen ? "custom" : String(pageSize)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "custom") {
+                    setCustomOpen(true);
+                    // keep current pageSize as starting point
+                    setCustomValue(String(pageSize));
+                  } else {
+                    setCustomOpen(false);
+                    setCustomValue("");
+                    table.setPageSize(Number(v));
+                  }
+                }}
+              >
+                {pageSizeOptions.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+                {allowCustomPageSize && <option value="custom">Custom…</option>}
+              </select>
+
+              {allowCustomPageSize && customOpen && (
+                <Input
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  placeholder="e.g. 25"
+                  className="w-24"
+                  value={customValue}
+                  onChange={(e) => applyCustomPageSize(e.target.value)}
+                />
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="clean"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="clean"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

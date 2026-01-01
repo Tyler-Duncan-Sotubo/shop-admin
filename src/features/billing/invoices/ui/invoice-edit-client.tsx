@@ -19,6 +19,8 @@ import { useGetTaxes } from "@/features/settings/tax-settings/hooks/use-taxes";
 import { InvoiceLineItemsTable } from "./invoice-line-items";
 import { DownloadInvoicePdfButton } from "./download-invoice-pdf-button";
 import { ShareInvoiceLinkButton } from "./share-invoice-link-button";
+import { RecordPaymentModal } from "./record-payment-modal";
+import { InvoicePaymentsAccordion } from "../../payments/ui/invoice-payments-accordion";
 
 function DateField({
   label,
@@ -75,6 +77,7 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
   const { data: session } = useSession();
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
+  const [open, setOpen] = useState(false);
 
   const [invoiceDate, setInvoiceDate] = useState<Date | null>(null);
   const [dueDate, setDueDate] = useState<Date | null>(null);
@@ -166,6 +169,9 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
             </>
           ) : (
             <div className="flex gap-2">
+              {inv.balanceMinor > 0 && (
+                <Button onClick={() => setOpen(true)}>Record payment</Button>
+              )}
               <DownloadInvoicePdfButton
                 invoiceId={invoiceId}
                 session={session}
@@ -183,7 +189,12 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
           )}
         </div>
       </PageHeader>
-
+      {inv.paidMinor > 0 && !isDraft && (
+        <InvoicePaymentsAccordion
+          invoiceId={invoiceId}
+          summaryOnlyConfirmed={false}
+        />
+      )}
       {/* Details + Dates */}
       <div className="rounded-2xl">
         <div className="space-y-4 mb-10">
@@ -240,6 +251,14 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
         lines={lines}
         taxes={taxes}
         isDraft={isDraft}
+      />
+
+      <RecordPaymentModal
+        open={open}
+        onClose={() => setOpen(false)}
+        invoiceId={invoiceId}
+        currency={inv.currency}
+        defaultAmountMinor={inv.balanceMinor}
       />
     </div>
   );

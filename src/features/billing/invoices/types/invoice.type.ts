@@ -68,3 +68,17 @@ export type InvoiceWithLines = {
   invoice: Invoice;
   lines: InvoiceLine[];
 };
+
+export type PaymentMethod = "bank_transfer" | "cash" | "card_manual" | "other";
+
+export type RecordInvoicePaymentInput = {
+  amount: number; // MAJOR units
+  currency: string;
+  method: PaymentMethod;
+  reference?: string;
+  meta?: any;
+
+  evidenceDataUrl?: string; // data:<mime>;base64,...
+  evidenceFileName?: string;
+  evidenceNote?: string;
+};
