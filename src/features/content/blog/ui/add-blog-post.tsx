@@ -157,7 +157,7 @@ export function AddBlogPost({ afterCreatePath }: AddBlogPostProps) {
       return;
     }
 
-    router.push("/blog");
+    router.push("/content/blog");
   };
 
   return (

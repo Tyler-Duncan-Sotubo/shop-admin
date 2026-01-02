@@ -60,7 +60,7 @@ export function BlogPostClient({ data = [] }: { data?: BlogPostListRow[] }) {
           description="Write posts and link products to drive SEO and sales."
           tooltip="Posts can link products; categories can be derived from linked products."
         >
-          <Link className="mr-2" href="/blog/new">
+          <Link className="mr-2" href="/content/blog/new">
             <Button>Add Post</Button>
           </Link>
         </PageHeader>
