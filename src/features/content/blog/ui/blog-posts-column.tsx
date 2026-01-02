@@ -52,7 +52,7 @@ export const blogPostColumns: ColumnDef<BlogPostListRow>[] = [
     cell: ({ row }) => (
       <div className="font-medium">
         <Link
-          href={`/blog/edit/${row.original.id}`}
+          href={`/content/blog/edit/${row.original.id}`}
           className="text-primary font-bold"
         >
           {row.original.title}

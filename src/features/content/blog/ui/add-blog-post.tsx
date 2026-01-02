@@ -153,7 +153,7 @@ export function AddBlogPost({ afterCreatePath }: AddBlogPostProps) {
     const id = created?.id ?? created?.data?.id;
 
     if (id) {
-      router.push(afterCreatePath ? afterCreatePath(id) : "/blog");
+      router.push(afterCreatePath ? afterCreatePath(id) : "/content/blog");
       return;
     }
 
