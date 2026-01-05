@@ -27,4 +27,8 @@ export const STOREFRONT_API_SCOPES = [
   "quotes.read",
   "quotes.update",
   "quotes.delete",
+
+  // Mails (Subscriptions & Contact messages)
+  "mail.subscribe",
+  "mail.contact",
 ];

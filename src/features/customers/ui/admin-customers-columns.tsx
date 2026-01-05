@@ -6,6 +6,7 @@ import type { AdminCustomerRow } from "../types/admin-customer.type";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { useRouter } from "next/navigation";
+import { format, isValid, parseISO } from "date-fns";
 
 function YesNoBadge({
   ok,
@@ -33,7 +34,17 @@ function ActiveBadge({ ok }: { ok: boolean }) {
 
 function name(c: AdminCustomerRow) {
   const full = [c.firstName, c.lastName].filter(Boolean).join(" ");
-  return full || "—";
+  // For subscribers, fall back to email
+  return full || c.displayName || c.email || "—";
+}
+
+function marketingLabelFromStatus(
+  status?: AdminCustomerRow["marketingStatus"] | null
+) {
+  if (!status) return null;
+  if (status === "subscribed") return { ok: true, yes: "Subscribed", no: "—" };
+  if (status === "pending") return { ok: true, yes: "Pending", no: "—" };
+  return { ok: false, yes: "—", no: "Unsubscribed" };
 }
 
 export const adminCustomersColumns: ColumnDef<AdminCustomerRow>[] = [
@@ -42,9 +53,18 @@ export const adminCustomersColumns: ColumnDef<AdminCustomerRow>[] = [
     header: "Customer",
     cell: ({ row }) => {
       const c = row.original;
+      const isSubscriber = c.entityType === "subscriber";
+
       return (
         <div className="space-y-0.5">
-          <div className="font-medium">{name(c)}</div>
+          <div className="flex items-center gap-2">
+            <div className="font-medium">{name(c)}</div>
+            {isSubscriber ? (
+              <Badge variant={"clean" as any} className="text-xs">
+                Subscriber
+              </Badge>
+            ) : null}
+          </div>
           <div className="text-xs text-muted-foreground">{c.email}</div>
         </div>
       );
@@ -60,35 +80,75 @@ export const adminCustomersColumns: ColumnDef<AdminCustomerRow>[] = [
   {
     accessorKey: "isVerified",
     header: "Verified",
-    cell: ({ row }) => (
-      <YesNoBadge ok={row.original.isVerified} yes="Verified" no="Unverified" />
-    ),
+    cell: ({ row }) => {
+      const c = row.original;
+      if (c.entityType === "subscriber") {
+        return <span className="text-sm text-muted-foreground">—</span>;
+      }
+      return (
+        <YesNoBadge ok={Boolean(c.isVerified)} yes="Verified" no="Unverified" />
+      );
+    },
   },
   {
     accessorKey: "isActive",
     header: "Status",
-    cell: ({ row }) => <ActiveBadge ok={row.original.isActive} />,
+    cell: ({ row }) => {
+      const c = row.original;
+
+      // Subscribers don't have isActive in your model
+      if (c.entityType === "subscriber") {
+        return <Badge variant={"clean" as any}>—</Badge>;
+      }
+
+      return <ActiveBadge ok={Boolean(c.isActive)} />;
+    },
   },
   {
-    accessorKey: "marketingOptIn",
+    id: "marketing",
     header: "Marketing",
-    cell: ({ row }) => (
-      <YesNoBadge ok={row.original.marketingOptIn} yes="Opted in" no="no" />
-    ),
+    cell: ({ row }) => {
+      const c = row.original;
+
+      // Prefer marketingStatus if present (subscriber rows)
+      const fromStatus = marketingLabelFromStatus(c.marketingStatus);
+      if (fromStatus) {
+        // subscribed/pending => ok true, unsubscribed => ok false
+        if (c.marketingStatus === "pending") {
+          return <Badge variant={"clean" as any}>Pending</Badge>;
+        }
+        return (
+          <YesNoBadge
+            ok={c.marketingStatus === "subscribed"}
+            yes="Subscribed"
+            no="Unsubscribed"
+          />
+        );
+      }
+
+      // Fallback to boolean (customer rows)
+      return (
+        <YesNoBadge ok={Boolean(c.marketingOptIn)} yes="Opted in" no="No" />
+      );
+    },
   },
   {
     accessorKey: "createdAt",
     header: "Created",
     cell: ({ row }) => {
       const iso = row.original.createdAt;
-      const d = new Date(iso);
+      if (!iso) return <span className="text-sm">—</span>;
+
+      const date = parseISO(iso);
+
       return (
         <span className="text-sm">
-          {Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString()}
+          {isValid(date) ? format(date, "MMM d, yyyy") : iso}
         </span>
       );
     },
   },
+
   {
     accessorKey: "lastLogin",
     header: "Last login",
@@ -113,8 +173,14 @@ export const adminCustomersColumns: ColumnDef<AdminCustomerRow>[] = [
         c.email,
         c.firstName ?? "",
         c.lastName ?? "",
+        c.displayName ?? "",
         c.phone ?? "",
-        c.isActive ? "active" : "inactive",
+        c.entityType ?? "customer",
+        c.entityType === "subscriber"
+          ? c.marketingStatus ?? ""
+          : c.isActive
+          ? "active"
+          : "inactive",
         c.isVerified ? "verified" : "unverified",
       ]
         .join(" ")
@@ -128,20 +194,35 @@ export const adminCustomersColumns: ColumnDef<AdminCustomerRow>[] = [
   {
     id: "actions",
     header: "",
-    cell: ({ row }) => <CustomerActions customerId={row.original.id} />,
+    cell: ({ row }) => (
+      <CustomerActions
+        customerId={row.original.id}
+        entityType={row.original.entityType}
+      />
+    ),
   },
 ];
 
-function CustomerActions({ customerId }: { customerId: string }) {
+function CustomerActions({
+  customerId,
+  entityType,
+}: {
+  customerId: string;
+  entityType?: "customer" | "subscriber";
+}) {
   const router = useRouter();
+  const isSubscriber = entityType === "subscriber";
+
   return (
     <div className="flex justify-end">
       <Button
         size="sm"
         variant="link"
+        disabled={isSubscriber}
         onClick={(e) => {
           e.stopPropagation?.();
-          router.push(`/customers/${customerId}`); // change route if you prefer /admin/customers/:id
+          if (isSubscriber) return;
+          router.push(`/customers/${customerId}`);
         }}
       >
         View

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useMemo, useState } from "react";
@@ -19,12 +20,18 @@ import { Button } from "@/shared/ui/button";
 import BulkUploadModal from "@/shared/ui/bulk-upload-modal";
 import { LuImport } from "react-icons/lu";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
+import type { AdminCustomerRow } from "../types/admin-customer.type";
 
 export default function AdminCustomersClient() {
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
   const { data: session, status: authStatus } = useSession();
+
   const [includeInactive, setIncludeInactive] = useState(false);
+
+  // ✅ NEW: include subscribers toggle
+  const [includeSubscribers, setIncludeSubscribers] = useState(true);
+
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -33,28 +40,35 @@ export default function AdminCustomersClient() {
       limit: 500,
       offset: 0,
       includeInactive,
+      includeSubscribers, // ✅ NEW (hook must support it)
       storeId: activeStoreId,
     }),
-    [activeStoreId, includeInactive]
+    [activeStoreId, includeInactive, includeSubscribers]
   );
 
-  const { data: customers = [], isLoading } = useAdminCustomers(
-    query,
-    session,
-    axios
-  );
+  const { data, isLoading } = useAdminCustomers(query, session, axios);
 
-  // ─────────────────────────────────────────────
+  // ✅ Normalize: support either array response or { rows } response
+  const rows: AdminCustomerRow[] = useMemo(() => {
+    if (!data) return [];
+    const raw = Array.isArray(data) ? data : (data as any).rows ?? [];
+
+    return raw.map((r: any) => ({
+      ...r,
+      email: r.email ?? r.billingEmail ?? "",
+      lastLogin: r.lastLogin ?? r.lastLoginAt ?? null,
+      entityType: r.entityType ?? "customer",
+      marketingStatus: r.marketingStatus ?? r.status ?? null,
+    }));
+  }, [data]);
+
   // Loading
-  // ─────────────────────────────────────────────
   if (authStatus === "loading" || isLoading) {
     return <Loading />;
   }
 
-  // ─────────────────────────────────────────────
-  // Empty state: no customers at all
-  // ─────────────────────────────────────────────
-  if (customers.length === 0 && !includeInactive) {
+  // Empty state
+  if (rows.length === 0 && !includeInactive) {
     return (
       <section className="space-y-4">
         <PageHeader
@@ -87,14 +101,13 @@ export default function AdminCustomersClient() {
           exampleDownloadHref="https://res.cloudinary.com/dw1ltt9iz/raw/upload/v1757585682/department_ee9hgy.xlsx"
           exampleDownloadLabel=""
         />
+
         <CreateCustomerModal open={open} onClose={() => setOpen(false)} />
       </section>
     );
   }
 
-  // ─────────────────────────────────────────────
   // Normal render
-  // ─────────────────────────────────────────────
   return (
     <section className="space-y-4">
       <PageHeader
@@ -110,20 +123,33 @@ export default function AdminCustomersClient() {
           <FaPlus /> Add Customer
         </Button>
       </PageHeader>
-      <div className="flex items-center justify-end gap-2">
-        <Switch
-          checked={includeInactive}
-          onCheckedChange={setIncludeInactive}
-        />
-        <Label className="text-sm">Include inactive</Label>
+
+      <div className="flex items-center justify-end gap-6">
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={includeInactive}
+            onCheckedChange={setIncludeInactive}
+          />
+          <Label className="text-sm">Include inactive</Label>
+        </div>
+
+        {/* ✅ NEW */}
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={includeSubscribers}
+            onCheckedChange={setIncludeSubscribers}
+          />
+          <Label className="text-sm">Include subscribers</Label>
+        </div>
       </div>
 
       <DataTable
         columns={adminCustomersColumns}
-        data={customers}
+        data={rows}
         filterKey="search"
         filterPlaceholder="Search by name, email, phone, status…"
       />
+
       <BulkUploadModal
         isOpen={isBulkOpen}
         onClose={() => setIsBulkOpen(false)}
@@ -134,6 +160,7 @@ export default function AdminCustomersClient() {
         exampleDownloadHref="https://res.cloudinary.com/dw1ltt9iz/raw/upload/v1757585682/department_ee9hgy.xlsx"
         exampleDownloadLabel=""
       />
+
       <CreateCustomerModal open={open} onClose={() => setOpen(false)} />
     </section>
   );

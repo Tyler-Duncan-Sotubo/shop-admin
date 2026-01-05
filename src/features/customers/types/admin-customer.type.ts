@@ -1,14 +1,18 @@
 export type AdminCustomerRow = {
   id: string;
+  entityType?: "customer" | "subscriber";
+  storeId?: string | null;
+  displayName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
   email: string;
-  firstName: string | null;
-  lastName: string | null;
-  phone: string | null;
-  isVerified: boolean;
-  isActive: boolean;
-  marketingOptIn: boolean;
+  phone?: string | null;
+  isVerified?: boolean | null;
+  isActive?: boolean | null;
+  marketingOptIn?: boolean | null;
+  marketingStatus?: "subscribed" | "unsubscribed" | "pending" | null;
   createdAt: string;
-  lastLogin: string | null;
+  lastLogin?: string | null;
 };
 
 export type CustomerAddress = {

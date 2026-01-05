@@ -12,6 +12,10 @@ export type AdminCustomersQuery = {
   offset?: number;
   includeInactive?: boolean;
   storeId?: string | null;
+
+  // ✅ NEW
+  includeSubscribers?: boolean; // default true on client if you want
+  marketingStatus?: "subscribed" | "unsubscribed" | "pending"; // optional filter
 };
 
 function toQueryString(q?: AdminCustomersQuery) {
@@ -19,8 +23,18 @@ function toQueryString(q?: AdminCustomersQuery) {
   if (!q) return "";
 
   if (q.search) sp.set("search", q.search);
-  if (typeof q.includeInactive === "boolean")
+
+  if (typeof q.includeInactive === "boolean") {
     sp.set("includeInactive", String(q.includeInactive));
+  }
+
+  // ✅ NEW
+  if (typeof q.includeSubscribers === "boolean") {
+    sp.set("includeSubscribers", String(q.includeSubscribers));
+  }
+  if (q.marketingStatus) {
+    sp.set("marketingStatus", q.marketingStatus);
+  }
 
   sp.set("limit", String(q.limit ?? 50));
   sp.set("offset", String(q.offset ?? 0));
@@ -48,6 +62,7 @@ export function useAdminCustomers(
   });
 }
 
+// unchanged
 export function useAdminCustomerDetail(
   customerId: string | null,
   session: Session | null,
@@ -60,7 +75,6 @@ export function useAdminCustomerDetail(
     enabled: !!customerId && !!token,
     queryFn: async () => {
       const customerRes = await axios.get(`/api/admin/customers/${customerId}`);
-
       return customerRes.data.data as CustomerDetail;
     },
   });

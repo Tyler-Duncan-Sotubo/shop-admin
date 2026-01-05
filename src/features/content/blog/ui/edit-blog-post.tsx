@@ -180,7 +180,7 @@ export function EditBlogPost({
     );
 
     const id = updated?.id ?? postId;
-    router.push(afterSavePath ? afterSavePath(id) : "/blog");
+    router.push(afterSavePath ? afterSavePath(id) : "/content/blog");
   };
 
   if (isLoading || !post) {
