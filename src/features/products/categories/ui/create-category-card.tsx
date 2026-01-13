@@ -19,7 +19,10 @@ import { Switch } from "@/shared/ui/switch";
 import { Button } from "@/shared/ui/button";
 
 import { Category } from "../types/category.type";
-import { CategorySchema, CategoryFormValues } from "../schema/category.schema";
+import {
+  CategoryUpsertSchema,
+  CategoryUpsertFormValues,
+} from "../schema/category.schema";
 import { SectionHeading } from "@/shared/ui/section-heading";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 
@@ -43,8 +46,8 @@ type Props = {
 export function CreateCategoryCard({ categories, onCreate }: Props) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const { activeStoreId } = useStoreScope();
-  const form = useForm<CategoryFormValues>({
-    resolver: zodResolver(CategorySchema),
+  const form = useForm<CategoryUpsertFormValues>({
+    resolver: zodResolver(CategoryUpsertSchema),
     defaultValues: {
       name: "",
       description: "",
@@ -55,7 +58,7 @@ export function CreateCategoryCard({ categories, onCreate }: Props) {
 
   const parentOptions = useMemo(() => categories, [categories]);
 
-  const submit = async (values: CategoryFormValues) => {
+  const submit = async (values: CategoryUpsertFormValues) => {
     setSubmitError(null);
 
     const payload = {
