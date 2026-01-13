@@ -30,14 +30,14 @@ export default function RootLayout({
       <body className={`${jakarta.variable} antialiased`}>
         <Suspense fallback={<Loading />}>
           <NextAuthProvider>
-            <StoreScopeProvider>
-              <ReactQueryProvider>
+            <ReactQueryProvider>
+              <StoreScopeProvider>
                 <ThemeProvider>
                   {children}
                   <Toaster position="top-right" />
                 </ThemeProvider>
-              </ReactQueryProvider>
-            </StoreScopeProvider>
+              </StoreScopeProvider>
+            </ReactQueryProvider>
           </NextAuthProvider>
         </Suspense>
       </body>

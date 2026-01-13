@@ -2,7 +2,6 @@
 
 import { Mail } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useEffect } from "react";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { useStores } from "@/features/settings/stores/core/hooks/use-stores";
 import { UserMenu } from "./user-menu";
@@ -27,13 +26,6 @@ export function AdminTopNav() {
     axios,
     activeStoreId
   );
-
-  // default store (first one) if none selected
-  useEffect(() => {
-    if (!activeStoreId && stores.length > 0) {
-      setActiveStoreId(stores[0].id);
-    }
-  }, [activeStoreId, stores, setActiveStoreId]);
 
   return (
     <div className="h-18 w-full bg-white flex items-center p-6 gap-6">
