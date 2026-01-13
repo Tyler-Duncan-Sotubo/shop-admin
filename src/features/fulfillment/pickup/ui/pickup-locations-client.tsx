@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
-import PageHeader from "@/shared/ui/page-header";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { Button } from "@/shared/ui/button";
 import Loading from "@/shared/ui/loading";
@@ -14,10 +13,13 @@ import {
   useCreatePickupLocation,
   useUpdatePickupLocation,
 } from "../hooks/use-pickup-locations";
-import { PickupLocationsTable } from "./pickup-locations-table";
 import { PickupLocationFormModal } from "./pickup-location-form-modal";
 import { PickupLocationValues } from "../schema/pickup-location.schema";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
+
+import { DataTable } from "@/shared/ui/data-table";
+import { pickupLocationColumns } from "./pickup-location-columns";
+import { FaPlus } from "react-icons/fa";
 
 type Mode = "create" | "edit";
 
@@ -25,6 +27,7 @@ export default function PickupLocationsClient() {
   const { data: session } = useSession();
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
+
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("create");
   const [selected, setSelected] = useState<PickupLocation | null>(null);
@@ -34,14 +37,12 @@ export default function PickupLocationsClient() {
     axios,
     activeStoreId
   );
+
   const createMut = useCreatePickupLocation(session, axios);
   const updateMut = useUpdatePickupLocation(session, axios);
-
   const isSubmitting = createMut.isPending || updateMut.isPending;
 
   if (isLoading) return <Loading />;
-
-  const hasData = locations.length > 0;
 
   const openCreate = () => {
     setMode("create");
@@ -74,27 +75,41 @@ export default function PickupLocationsClient() {
     }
   };
 
+  const hasData = locations.length > 0;
+
   return (
     <section className="space-y-6">
-      <PageHeader
-        title="Pickup Locations"
-        description="Create and manage pickup points for customers."
-        tooltip="Pickup locations are shown on checkout when customers choose pickup."
-      >
-        <Button onClick={openCreate}>Create pickup location</Button>
-      </PageHeader>
-
       {!hasData ? (
-        <EmptyState
-          title="No pickup locations yet"
-          description="Create a pickup location to enable pickup checkout."
-          primaryAction={{
-            label: "Create pickup location",
-            onClick: openCreate,
-          }}
-        />
+        <>
+          <div className="flex justify-end">
+            <Button onClick={openCreate}>
+              <FaPlus />
+              Create pickup location
+            </Button>
+          </div>
+
+          <EmptyState
+            title="No pickup locations yet"
+            description="Create a pickup location to enable pickup checkout."
+            primaryAction={{
+              label: "Create pickup location",
+              onClick: openCreate,
+            }}
+          />
+        </>
       ) : (
-        <PickupLocationsTable data={locations} onEdit={openEdit} />
+        <DataTable
+          columns={pickupLocationColumns({ onEdit: openEdit })}
+          data={locations}
+          filterKey="name"
+          filterPlaceholder="Filter pickup locations..."
+          toolbarRight={
+            <Button onClick={openCreate}>
+              <FaPlus />
+              Create pickup location
+            </Button>
+          }
+        />
       )}
 
       <PickupLocationFormModal

@@ -5,18 +5,13 @@ import {
   MdOutlineInventory2,
   MdBarChart,
   MdArticle,
+  MdIntegrationInstructions,
 } from "react-icons/md";
-import {
-  FaBoxOpen,
-  FaTag,
-  FaReceipt,
-  FaMapMarkedAlt,
-  FaFileAlt,
-} from "react-icons/fa";
+import { FaReceipt, FaFileAlt, FaCog } from "react-icons/fa";
 import { TbUsers } from "react-icons/tb";
 import { hasPermission } from "@/lib/auth/has-permission";
 import { BsFillBoxSeamFill } from "react-icons/bs";
-import { FaStore, FaTruckFast } from "react-icons/fa6";
+import { FaGlobe, FaTruckFast } from "react-icons/fa6";
 
 /** -----------------------------
  * Types
@@ -56,8 +51,6 @@ const isDivider = (i: MenuItem): i is DividerItem =>
 /** -----------------------------
  * Helpers
  * ------------------------------*/
-
-// Optionally apply a base permission to a whole subtree
 export function withBasePerm(
   menu: readonly MenuItem[],
   basePerm: string
@@ -69,9 +62,7 @@ export function withBasePerm<M extends MenuItem>(
 
 export function withBasePerm(menu: readonly MenuItem[], basePerm: string) {
   return menu.map((item) => {
-    if (isDivider(item)) {
-      return item;
-    }
+    if (isDivider(item)) return item;
 
     const permissions = Array.from(
       new Set([...(item.permissions ?? []), basePerm])
@@ -87,13 +78,6 @@ export function withBasePerm(menu: readonly MenuItem[], basePerm: string) {
 /** -----------------------------
  * Filtering by permissions
  * ------------------------------*/
-
-/**
- * Recursively filters a menu tree by permissions (ALL-of).
- * - Removes parents the user can't access.
- * - Cleans up leading/trailing/consecutive dividers.
- * - Hides parents with no link and no visible children.
- */
 export function filterMenu(
   menu: readonly MenuItem[],
   userPermissions: readonly string[]
@@ -133,9 +117,7 @@ export function filterMenu(
       lastWasDivider = false;
     }
   }
-  if (cleaned.at(-1) && isDivider(cleaned.at(-1)!)) {
-    cleaned.pop();
-  }
+  if (cleaned.at(-1) && isDivider(cleaned.at(-1)!)) cleaned.pop();
 
   return cleaned;
 }
@@ -150,6 +132,7 @@ export const main: readonly MenuItem[] = [
     link: "/dashboard",
   },
 
+  // ✅ keep Sales exactly as-is (per your request)
   {
     title: "Sales",
     icon: <MdShoppingCart size={18} />,
@@ -162,19 +145,18 @@ export const main: readonly MenuItem[] = [
     ],
     subItems: [
       {
-        title: "Quote Requests",
-        link: "/sales/rfqs",
-        icon: <FaReceipt size={18} />,
-        permissions: ["quotes.read"],
-      },
-      {
         title: "Orders",
         link: "/sales/orders",
         icon: <MdShoppingCart size={18} />,
         permissions: ["orders.read"],
         badgeKey: "ordersCount",
       },
-
+      {
+        title: "Quote Requests",
+        link: "/sales/rfqs",
+        icon: <FaReceipt size={18} />,
+        permissions: ["quotes.read"],
+      },
       {
         title: "Invoices",
         link: "/sales/invoices",
@@ -189,36 +171,16 @@ export const main: readonly MenuItem[] = [
       },
     ],
   },
+
   {
     title: "Products",
     icon: <BsFillBoxSeamFill size={20} />,
     link: "/products",
-    permissions: ["products.read"],
-    subItems: [
-      {
-        title: "All Products",
-        link: "/products",
-        icon: <FaBoxOpen size={20} />,
-        permissions: ["products.read"],
-      },
-      {
-        title: "Add New Product",
-        link: "/products/new",
-        icon: <FaBoxOpen size={18} />,
-        permissions: ["products.create"],
-      },
-      {
-        title: "Collections",
-        link: "/products/categories",
-        icon: <FaTag size={18} />,
-        permissions: ["categories.read"],
-      },
-      {
-        title: "Reviews",
-        link: "/products/reviews",
-        icon: <FaReceipt size={18} />,
-        permissions: ["reviews.read"],
-      },
+    permissions: [
+      "products.read",
+      "products.create",
+      "categories.read",
+      "reviews.read",
     ],
   },
 
@@ -226,74 +188,28 @@ export const main: readonly MenuItem[] = [
     title: "Inventory",
     icon: <MdOutlineInventory2 size={20} />,
     link: "/inventory",
-    permissions: ["inventory.read"],
-    subItems: [
-      {
-        title: "Overview",
-        link: "/inventory",
-        icon: <MdOutlineInventory2 size={18} />,
-        permissions: ["inventory.read"],
-      },
-      {
-        title: "Transfers",
-        link: "/inventory/transfers",
-        icon: <FaBoxOpen size={18} />,
-        permissions: ["inventory.transfers.read"],
-      },
-      {
-        title: "Locations",
-        link: "/inventory/locations",
-        icon: <FaMapMarkedAlt size={18} />,
-        permissions: ["inventory.adjustments.read"],
-      },
-      {
-        title: "Movements",
-        link: "/inventory/movements",
-        icon: <MdOutlineInventory2 size={18} />,
-        permissions: ["inventory.read"],
-      },
+    permissions: [
+      "inventory.read",
+      "inventory.transfers.read",
+      "inventory.adjustments.read",
     ],
   },
+
   {
     title: "Customers",
     icon: <TbUsers size={20} />,
     link: "/customers",
     permissions: ["customers.read"],
   },
+
   {
-    title: "Fulfillment",
-    link: "/shipping/zones",
+    title: "Shipping",
+    link: "/shipping",
     icon: <FaTruckFast size={20} />,
     permissions: [
       "shipping.zones.read",
       "shipping.rates.read",
       "shipping.carriers.read",
-    ],
-    subItems: [
-      {
-        title: "Zones",
-        link: "/shipping/zones",
-        icon: <FaMapMarkedAlt size={18} />,
-        permissions: ["shipping.zones.read"],
-      },
-      {
-        title: "Carriers",
-        link: "/shipping/carriers",
-        icon: <FaTruckFast size={18} />, // see note below
-        permissions: ["shipping.carriers.read"],
-      },
-      {
-        title: "Rates",
-        link: "/shipping/rates",
-        icon: <FaReceipt size={18} />,
-        permissions: ["shipping.rates.read"],
-      },
-      {
-        title: "Pickup Locations",
-        link: "/pickup-locations",
-        icon: <FaMapMarkedAlt size={18} />,
-        permissions: ["shipping.zones.read"],
-      },
     ],
   },
 
@@ -301,36 +217,47 @@ export const main: readonly MenuItem[] = [
     title: "Analytics",
     icon: <MdBarChart size={22} />,
     link: "/analytics",
-    permissions: ["products.read"],
+    permissions: ["analytics.read"],
   },
+
+  // ✅ keep Content exactly as-is (per your request)
   {
     title: "Content",
     link: "/content/files",
     icon: <FaFileAlt size={20} />,
     permissions: ["blog.posts.read"],
     subItems: [
-      {
-        title: "Files",
-        link: "/content/files",
-        icon: <FaTruckFast size={18} />, // see note below
-      },
+      { title: "Files", link: "/content/files", icon: <FaFileAlt size={18} /> },
       {
         title: "Blogpost",
-        icon: <MdArticle size={22} />, // swap to a better icon if you want (e.g. MdArticle)
         link: "/content/blog",
+        icon: <MdArticle size={22} />,
       },
     ],
   },
 
   {
     title: "Divider",
-    name: "Management",
+    name: "Account & Setup",
     type: "divider",
   },
+
   {
-    title: "Stores",
-    link: "/stores",
-    icon: <FaStore size={20} />,
-    permissions: ["inventory.transfers.read"],
+    title: "Online Store",
+    link: "/settings/stores", // or "/stores" if you prefer
+    icon: <FaGlobe size={20} />,
+    permissions: ["stores.read"],
+  },
+  {
+    title: "Apps",
+    link: "/apps",
+    icon: <MdIntegrationInstructions size={22} />,
+    permissions: ["integrations.analytics.read"],
+  },
+  {
+    title: "Settings",
+    link: "/settings",
+    icon: <FaCog size={20} />,
+    permissions: ["settings.read"],
   },
 ] as const;

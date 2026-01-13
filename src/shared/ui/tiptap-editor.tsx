@@ -22,7 +22,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { UploadCloud, X, ImageIcon } from "lucide-react";
+
+// ✅ react-icons (more understandable)
+import {
+  FaBold,
+  FaItalic,
+  FaStrikethrough,
+  FaLink,
+  FaQuoteRight,
+  FaUndo,
+  FaRedo,
+  FaHeading,
+  FaListUl,
+  FaListOl,
+  FaCode,
+  FaImage,
+  FaTimes,
+  FaCloudUploadAlt,
+} from "react-icons/fa";
 
 type TiptapEditorProps = {
   value: string;
@@ -135,7 +152,7 @@ function ImageUploadDialog({
                     variant="clean"
                     onClick={() => setPreview(null)}
                   >
-                    <X className="h-4 w-4 mr-2" />
+                    <FaTimes className="h-4 w-4 mr-2" />
                     Remove
                   </Button>
                   <Button type="button" onClick={upload} disabled={uploading}>
@@ -145,7 +162,7 @@ function ImageUploadDialog({
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                <UploadCloud className="h-6 w-6" />
+                <FaCloudUploadAlt className="h-6 w-6" />
                 <p className="text-sm">
                   Drag & drop an image here or click to choose
                 </p>
@@ -162,6 +179,14 @@ function ImageUploadDialog({
   );
 }
 
+/**
+ * ✅ Fix for "HTML changes not visible":
+ * - We apply Tailwind Typography (`prose`) to a WRAPPER around EditorContent.
+ * - We also add a small CSS block to force list markers + heading sizing,
+ *   in case your global CSS resets list-style.
+ *
+ * This means: headings, ul/ol/li, blockquotes will look correct immediately.
+ */
 export function TiptapEditor({
   value,
   onChange,
@@ -203,8 +228,8 @@ export function TiptapEditor({
     content: value || "",
     editorProps: {
       attributes: {
-        class:
-          "prose prose-sm max-w-none focus:outline-none min-h-[260px] px-3 py-3",
+        // ✅ keep this to layout only; prose goes on wrapper below
+        class: "focus:outline-none min-h-[260px] px-3 py-3",
       },
 
       // paste image -> upload -> insert
@@ -308,6 +333,9 @@ export function TiptapEditor({
   const words = editor.storage.characterCount.words();
   const overLimit = chars > maxCharacters;
 
+  // Small helper for active button styles
+  const active = (isActive: boolean) => cn(isActive && "bg-muted");
+
   return (
     <div className={cn("rounded-lg border", className)}>
       <ImageUploadDialog
@@ -319,34 +347,86 @@ export function TiptapEditor({
         }
       />
 
+      {/* ✅ Local styles to fix "no ul/ol markers" & heading sizes even if global CSS resets them */}
+      <style jsx global>{`
+        .tiptap-shell .ProseMirror ul {
+          list-style: disc;
+          padding-left: 1.25rem;
+        }
+        .tiptap-shell .ProseMirror ol {
+          list-style: decimal;
+          padding-left: 1.25rem;
+        }
+        .tiptap-shell .ProseMirror li {
+          margin: 0.25rem 0;
+        }
+        .tiptap-shell .ProseMirror h1 {
+          font-size: 1.875rem;
+          line-height: 2.25rem;
+          font-weight: 700;
+          margin: 0.75rem 0 0.5rem;
+        }
+        .tiptap-shell .ProseMirror h2 {
+          font-size: 1.5rem;
+          line-height: 2rem;
+          font-weight: 700;
+          margin: 0.75rem 0 0.5rem;
+        }
+        .tiptap-shell .ProseMirror h3 {
+          font-size: 1.25rem;
+          line-height: 1.75rem;
+          font-weight: 700;
+          margin: 0.75rem 0 0.5rem;
+        }
+        .tiptap-shell .ProseMirror blockquote {
+          border-left: 3px solid rgba(0, 0, 0, 0.15);
+          padding-left: 0.75rem;
+          margin: 0.75rem 0;
+          color: rgba(0, 0, 0, 0.75);
+        }
+        .tiptap-shell .ProseMirror img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 0.5rem;
+        }
+        .tiptap-shell .ProseMirror a {
+          text-decoration: underline;
+        }
+      `}</style>
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b p-2">
         <Button
           type="button"
           size="sm"
           variant="clean"
+          title="Bold"
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={cn(editor.isActive("bold") && "bg-muted")}
+          className={active(editor.isActive("bold"))}
         >
-          B
+          <FaBold className="h-4 w-4" />
         </Button>
+
         <Button
           type="button"
           size="sm"
           variant="clean"
+          title="Italic"
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={cn(editor.isActive("italic") && "bg-muted")}
+          className={active(editor.isActive("italic"))}
         >
-          I
+          <FaItalic className="h-4 w-4" />
         </Button>
+
         <Button
           type="button"
           size="sm"
           variant="clean"
+          title="Strike"
           onClick={() => editor.chain().focus().toggleStrike().run()}
-          className={cn(editor.isActive("strike") && "bg-muted")}
+          className={active(editor.isActive("strike"))}
         >
-          S
+          <FaStrikethrough className="h-4 w-4" />
         </Button>
 
         <span className="mx-1 h-5 w-px bg-border" />
@@ -355,34 +435,42 @@ export function TiptapEditor({
           type="button"
           size="sm"
           variant="clean"
+          title="Heading 1"
           onClick={() =>
             editor.chain().focus().toggleHeading({ level: 1 }).run()
           }
-          className={cn(editor.isActive("heading", { level: 1 }) && "bg-muted")}
+          className={active(editor.isActive("heading", { level: 1 }))}
         >
-          H1
+          <FaHeading className="h-4 w-4" />
+          <span className="ml-1 text-xs">1</span>
         </Button>
+
         <Button
           type="button"
           size="sm"
           variant="clean"
+          title="Heading 2"
           onClick={() =>
             editor.chain().focus().toggleHeading({ level: 2 }).run()
           }
-          className={cn(editor.isActive("heading", { level: 2 }) && "bg-muted")}
+          className={active(editor.isActive("heading", { level: 2 }))}
         >
-          H2
+          <FaHeading className="h-4 w-4" />
+          <span className="ml-1 text-xs">2</span>
         </Button>
+
         <Button
           type="button"
           size="sm"
           variant="clean"
+          title="Heading 3"
           onClick={() =>
             editor.chain().focus().toggleHeading({ level: 3 }).run()
           }
-          className={cn(editor.isActive("heading", { level: 3 }) && "bg-muted")}
+          className={active(editor.isActive("heading", { level: 3 }))}
         >
-          H3
+          <FaHeading className="h-4 w-4" />
+          <span className="ml-1 text-xs">3</span>
         </Button>
 
         <span className="mx-1 h-5 w-px bg-border" />
@@ -391,20 +479,46 @@ export function TiptapEditor({
           type="button"
           size="sm"
           variant="clean"
+          title="Bullet list"
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          className={active(editor.isActive("bulletList"))}
+        >
+          <FaListUl className="h-4 w-4" />
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          variant="clean"
+          title="Numbered list"
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          className={active(editor.isActive("orderedList"))}
+        >
+          <FaListOl className="h-4 w-4" />
+        </Button>
+
+        <span className="mx-1 h-5 w-px bg-border" />
+
+        <Button
+          type="button"
+          size="sm"
+          variant="clean"
+          title="Quote"
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={cn(editor.isActive("blockquote") && "bg-muted")}
+          className={active(editor.isActive("blockquote"))}
         >
-          Quote
+          <FaQuoteRight className="h-4 w-4" />
         </Button>
 
         <Button
           type="button"
           size="sm"
           variant="clean"
+          title="Code block"
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          className={cn(editor.isActive("codeBlock") && "bg-muted")}
+          className={active(editor.isActive("codeBlock"))}
         >
-          Code
+          <FaCode className="h-4 w-4" />
         </Button>
 
         <span className="mx-1 h-5 w-px bg-border" />
@@ -413,24 +527,24 @@ export function TiptapEditor({
           type="button"
           size="sm"
           variant="clean"
+          title="Add/Edit link"
           onClick={setLink}
-          className={cn(editor.isActive("link") && "bg-muted")}
+          className={active(editor.isActive("link"))}
         >
-          Link
+          <FaLink className="h-4 w-4" />
         </Button>
 
-        {/* ✅ This now opens the upload modal */}
         <Button
           type="button"
           size="sm"
           variant="clean"
+          title="Insert image"
           onClick={() => setUploadOpen(true)}
         >
-          <ImageIcon className="h-4 w-4 mr-2" />
-          Image
+          <FaImage className="h-4 w-4" />
         </Button>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3">
           {uploading ? (
             <span className="text-xs text-muted-foreground">Uploading…</span>
           ) : null}
@@ -448,24 +562,32 @@ export function TiptapEditor({
             type="button"
             size="sm"
             variant="clean"
+            title="Undo"
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
           >
-            Undo
+            <FaUndo className="h-4 w-4" />
           </Button>
+
           <Button
             type="button"
             size="sm"
             variant="clean"
+            title="Redo"
             onClick={() => editor.chain().focus().redo().run()}
             disabled={!editor.can().redo()}
           >
-            Redo
+            <FaRedo className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      <EditorContent editor={editor} />
+      {/* ✅ Typography wrapper fixes "HTML changes not visible" (headings/lists/etc.) */}
+      <div className="tiptap-shell">
+        <div className="prose prose-sm max-w-none">
+          <EditorContent editor={editor} />
+        </div>
+      </div>
     </div>
   );
 }

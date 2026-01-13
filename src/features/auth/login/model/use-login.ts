@@ -36,7 +36,6 @@ export const useLogin = () => {
         user: JSON.stringify(data.user),
         backendTokens: JSON.stringify(data.backendTokens),
         permissions: JSON.stringify(data.permissions),
-        checklist: JSON.stringify(data.checklist),
       });
 
       if (signInResult?.error) {
@@ -46,7 +45,9 @@ export const useLogin = () => {
         };
       }
 
-      if (signInResult?.ok) {
+      if (!data.onboardingCompleted) {
+        router.push("/setup");
+      } else {
         router.push("/dashboard");
       }
     } catch (err) {

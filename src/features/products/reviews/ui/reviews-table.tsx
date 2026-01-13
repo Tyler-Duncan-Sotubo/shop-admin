@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 
 import Loading from "@/shared/ui/loading";
-import PageHeader from "@/shared/ui/page-header";
 import { DataTable } from "@/shared/ui/data-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Input } from "@/shared/ui/input";
@@ -79,12 +78,6 @@ export function ReviewsTable() {
 
   return (
     <section className="space-y-4">
-      <PageHeader
-        title="Reviews"
-        description="Moderate customer reviews and control storefront visibility."
-        tooltip="Use Pending to approve reviews before they appear on the storefront."
-      />
-
       <Tabs
         value={statusTab}
         onValueChange={(v) => setStatusTab(v as StatusTab)}

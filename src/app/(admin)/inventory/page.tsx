@@ -1,8 +1,7 @@
-import { InventoryOverview } from "@/features/inventory/core/ui/inventory-overview";
-import React from "react";
+import InventoryClient from "@/features/inventory/inventory-client";
 
 const page = () => {
-  return <InventoryOverview />;
+  return <InventoryClient />;
 };
 
 export default page;

@@ -16,7 +16,7 @@ interface CustomUser {
   companyId: string;
   role: string;
   avatar: string;
-  employmentStatus: string;
+  onboardingCompleted: boolean;
   backendTokens: BackendTokens;
   permissions: string[];
 }
@@ -67,7 +67,7 @@ export const authOptions: NextAuthOptions = {
           companyId: u.companyId,
           role: u.role,
           avatar: u.avatar,
-          employmentStatus: u.employmentStatus,
+          onboardingCompleted: u.onboardingCompleted,
         };
 
         token.backendTokens = u.backendTokens;

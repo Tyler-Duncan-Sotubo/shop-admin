@@ -79,7 +79,7 @@ export const shippingRateColumns = ({
 
       return (
         <Link
-          href={`/shipping/rates/${rate.id}`}
+          href={`/shipping/rates/${rate.id}?tab=rates`}
           className="inline-flex items-center gap-1 text-blue-600 hover:underline"
         >
           <MdOutlineLayers size={16} />

@@ -4,17 +4,18 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
-import PageHeader from "@/shared/ui/page-header";
 import Loading from "@/shared/ui/loading";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { Button } from "@/shared/ui/button";
-import { FaReceipt } from "react-icons/fa";
+import { FaPlus, FaReceipt } from "react-icons/fa";
 import { useGetShippingZones } from "../../zones/hooks/use-shipping-zones";
 import { useGetShippingRates } from "../hooks/use-shipping-rates";
-import { ShippingRatesTable } from "./shipping-rates-table";
 import { ShippingRateFormModal } from "./shipping-rate-form-modal";
 import type { ShippingRate } from "../types/shipping-rate.type";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
+
+import { DataTable } from "@/shared/ui/data-table";
+import { shippingRateColumns } from "./shipping-rates-columns";
 
 type Mode = "create" | "edit";
 
@@ -22,6 +23,7 @@ export default function ShippingRatesClient() {
   const { data: session } = useSession();
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
+
   const [zoneId, setZoneId] = useState<string | null>(null);
 
   const [open, setOpen] = useState(false);
@@ -33,12 +35,15 @@ export default function ShippingRatesClient() {
     axios,
     activeStoreId
   );
+
   const { data: rates = [], isLoading } = useGetShippingRates(
     zoneId,
     activeStoreId,
     session,
     axios
   );
+
+  if (zonesLoading || isLoading) return <Loading />;
 
   const openCreate = () => {
     setMode("create");
@@ -69,44 +74,64 @@ export default function ShippingRatesClient() {
         }
       : undefined;
 
-  if (zonesLoading || isLoading) return <Loading />;
-
   const hasRates = rates.length > 0;
 
   return (
     <section className="space-y-6">
-      <PageHeader
-        title="Shipping Rates"
-        description="Define how much shipping costs per zone."
-        tooltip="Rates belong to zones and are selected based on priority and default rules."
-      >
-        <div className="flex items-center gap-3">
-          <select
-            className="h-10 rounded-md border px-3 text-sm"
-            value={zoneId ?? ""}
-            onChange={(e) => setZoneId(e.target.value || null)}
-          >
-            <option value="">All zones</option>
-            {zones.map((z) => (
-              <option key={z.id} value={z.id}>
-                {z.name}
-              </option>
-            ))}
-          </select>
-
-          <Button onClick={openCreate}>Create rate</Button>
-        </div>
-      </PageHeader>
-
       {!hasRates ? (
-        <EmptyState
-          icon={<FaReceipt />}
-          title="No shipping rates yet"
-          description="Create a rate and assign it to a zone."
-          primaryAction={{ label: "Create rate", onClick: openCreate }}
-        />
+        <>
+          <div className="flex items-center justify-end gap-3">
+            <select
+              className="h-10 rounded-md border px-3 text-sm"
+              value={zoneId ?? ""}
+              onChange={(e) => setZoneId(e.target.value || null)}
+            >
+              <option value="">All zones</option>
+              {zones.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.name}
+                </option>
+              ))}
+            </select>
+
+            <Button onClick={openCreate}>Create rate</Button>
+          </div>
+
+          <EmptyState
+            icon={<FaReceipt />}
+            title="No shipping rates yet"
+            description="Create a rate and assign it to a zone."
+            primaryAction={{ label: "Create rate", onClick: openCreate }}
+          />
+        </>
       ) : (
-        <ShippingRatesTable data={rates} onEdit={openEdit} />
+        <DataTable
+          columns={shippingRateColumns({ onEdit: openEdit })}
+          data={rates}
+          filterKey="name"
+          filterPlaceholder="Search rates..."
+          toolbarLeft={
+            <select
+              className="h-10 rounded-md border px-3 text-sm"
+              value={zoneId ?? ""}
+              onChange={(e) => setZoneId(e.target.value || null)}
+            >
+              <option value="">All zones</option>
+              {zones.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.name}
+                </option>
+              ))}
+            </select>
+          }
+          toolbarRight={
+            <Button onClick={openCreate}>
+              {" "}
+              <FaPlus />
+              Create rate
+            </Button>
+          }
+        />
       )}
 
       <ShippingRateFormModal

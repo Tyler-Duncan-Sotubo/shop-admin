@@ -53,7 +53,7 @@ export function shippingZoneColumns({
       cell: ({ row }) => {
         const z = row.original;
         return (
-          <Link href={`/shipping/zones/${z.id}`}>
+          <Link href={`/shipping/zones/${z.id}?tab=zones`}>
             <Button variant="link" className="p-0">
               View Locations
             </Button>

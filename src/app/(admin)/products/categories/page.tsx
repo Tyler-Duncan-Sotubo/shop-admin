@@ -1,4 +1,4 @@
-import { CategoriesClient } from "@/features/categories/ui/category-client";
+import { CategoriesClient } from "@/features/products/categories/ui/category-client";
 import React from "react";
 
 const page = () => {

@@ -130,7 +130,7 @@ export const blogPostColumns: ColumnDef<BlogPostListRow>[] = [
       return (
         <RowActions
           row={row.original as any}
-          editHref={`/content/blog/posts/${id}`}
+          editHref={`/content/blog/edit/${id}`}
           deleteEndpoint={`/api/blog-posts/${id}`}
           refetchKey="blog-posts"
         />

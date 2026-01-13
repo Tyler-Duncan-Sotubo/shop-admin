@@ -124,31 +124,34 @@ export default function AdminCustomersClient() {
         </Button>
       </PageHeader>
 
-      <div className="flex items-center justify-end gap-6">
-        <div className="flex items-center gap-2">
-          <Switch
-            checked={includeInactive}
-            onCheckedChange={setIncludeInactive}
-          />
-          <Label className="text-sm">Include inactive</Label>
-        </div>
+      <section className="mt-10">
+        <DataTable
+          columns={adminCustomersColumns}
+          data={rows}
+          filterKey="search"
+          filterPlaceholder="Search by name, email, phone, status…"
+          toolbarLeft={
+            <div className="flex items-center justify-end gap-6">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={includeInactive}
+                  onCheckedChange={setIncludeInactive}
+                />
+                <Label className="text-sm">Include inactive</Label>
+              </div>
 
-        {/* ✅ NEW */}
-        <div className="flex items-center gap-2">
-          <Switch
-            checked={includeSubscribers}
-            onCheckedChange={setIncludeSubscribers}
-          />
-          <Label className="text-sm">Include subscribers</Label>
-        </div>
-      </div>
-
-      <DataTable
-        columns={adminCustomersColumns}
-        data={rows}
-        filterKey="search"
-        filterPlaceholder="Search by name, email, phone, status…"
-      />
+              {/* ✅ NEW */}
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={includeSubscribers}
+                  onCheckedChange={setIncludeSubscribers}
+                />
+                <Label className="text-sm">Include subscribers</Label>
+              </div>
+            </div>
+          }
+        />
+      </section>
 
       <BulkUploadModal
         isOpen={isBulkOpen}

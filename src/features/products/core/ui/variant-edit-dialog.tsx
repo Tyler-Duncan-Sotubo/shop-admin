@@ -34,6 +34,7 @@ import {
   toStrOrZero,
 } from "@/shared/utils/number-to-string";
 import { useProductVariants } from "../hooks/use-product-variants"; // ✅ adjust path
+import { useStoreScope } from "@/lib/providers/store-scope-provider";
 
 function nairaPrefixProps() {
   return {
@@ -53,9 +54,8 @@ export function VariantEditDialog({
   productId: string; // ✅ needed to target correct queryKey
   onClose: () => void;
 }) {
+  const { activeStoreId } = useStoreScope();
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  // image upload state
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [imageVersion, setImageVersion] = useState<number>(() => Date.now());
 
@@ -157,9 +157,12 @@ export function VariantEditDialog({
     if (!variant) return;
     setSubmitError(null);
 
+    const removeSalePrice = !values.salePrice?.trim();
+
     const hasNewImage = Boolean(values.base64Image?.trim());
 
     const payload: any = {
+      storeId: activeStoreId,
       title: values.title ?? null,
       sku: values.sku?.trim() ? values.sku.trim() : null,
       barcode: values.barcode?.trim() ? values.barcode.trim() : null,
@@ -174,6 +177,7 @@ export function VariantEditDialog({
 
       stockQuantity: values.stockQuantity?.trim() || null,
       safetyStock: values.lowStockThreshold?.trim() || null,
+      removeSalePrice: removeSalePrice,
 
       base64Image: hasNewImage ? values.base64Image?.trim() : undefined,
       imageAltText: values.title || null,

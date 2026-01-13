@@ -38,7 +38,7 @@ export const productColumns: ColumnDef<ProductListRow>[] = [
       return (
         <div className="font-medium">
           <Link
-            href={`/products/${row.original.id}`}
+            href={`/products/${row.original.id}?tab=products`}
             className="text-primary font-bold"
           >
             {name}{" "}
@@ -49,14 +49,6 @@ export const productColumns: ColumnDef<ProductListRow>[] = [
         </div>
       );
     },
-  },
-
-  {
-    accessorKey: "stock",
-    header: ({ column }) => <SortableHeader column={column} title="In Stock" />,
-    cell: ({ row }) => (
-      <div className="tabular-nums">{row.original.stock ?? 0}</div>
-    ),
   },
   {
     accessorKey: "price_html",
@@ -91,22 +83,35 @@ export const productColumns: ColumnDef<ProductListRow>[] = [
     },
   },
   {
-    accessorKey: "categories",
-    header: () => <div>Collections</div>,
+    accessorKey: "status",
+    header: () => <div>Status</div>,
     cell: ({ row }) => {
-      const cats = row.original.categories ?? [];
-      if (!cats.length) return <div className="text-muted-foreground">—</div>;
-
       return (
         <div className="flex flex-wrap gap-1">
-          {cats.slice(0, 2).map((c) => (
-            <Badge key={c.id}>{c.name}</Badge>
-          ))}
+          <Badge>{row.original.status}</Badge>
         </div>
       );
     },
     enableSorting: false,
   },
+  {
+    accessorKey: "stock",
+    header: ({ column }) => <SortableHeader column={column} title="In Stock" />,
+    cell: ({ row }) => (
+      <div className="tabular-nums text-center">{row.original.stock ?? 0}</div>
+    ),
+  },
+
+  {
+    accessorKey: "variantCount",
+    header: ({ column }) => <SortableHeader column={column} title="Variants" />,
+    cell: ({ row }) => (
+      <div className="tabular-nums text-center">
+        {row.original.variantCount}
+      </div>
+    ),
+  },
+
   {
     accessorKey: "actions",
     header: () => <div className=" text-center">Action</div>,
@@ -116,7 +121,7 @@ export const productColumns: ColumnDef<ProductListRow>[] = [
       return (
         <RowActions
           row={row.original}
-          editHref={`/products/${id}`}
+          editHref={`/products/${id}?tab=products`}
           deleteEndpoint={`/api/catalog/products/${row.original.id}`}
           refetchKey="products"
         />

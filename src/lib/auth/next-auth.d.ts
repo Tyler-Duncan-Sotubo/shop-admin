@@ -17,10 +17,8 @@ declare module "next-auth" {
       companyId: string;
       role: string;
       avatar: string;
-      employmentStatus: string;
+      onboardingCompleted: boolean;
     };
-    employeeId?: string | null;
-    userAccountId?: string | null;
     backendTokens: BackendTokens;
     permissions: string[];
   }
@@ -36,10 +34,8 @@ declare module "next-auth/jwt" {
       companyId: string;
       role: string;
       avatar: string;
-      employmentStatus: string;
+      onboardingCompleted: boolean;
     };
-    employeeId?: string | null;
-    userAccountId?: string | null;
     backendTokens: BackendTokens;
     permissions: string[];
     accessTokenExpires: number;

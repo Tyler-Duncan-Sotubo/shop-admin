@@ -79,3 +79,20 @@ export function useAdminCustomerDetail(
     },
   });
 }
+
+export function useAdminCustomersOnly(
+  query: AdminCustomersQuery,
+  session: Session | null,
+  axios: AxiosInstance
+) {
+  return useQuery({
+    queryKey: ["admin", "customers", query],
+    enabled: !!session?.backendTokens?.accessToken,
+    queryFn: async (): Promise<AdminCustomerRow[]> => {
+      const res = await axios.get(
+        `/api/admin/customers/only${toQueryString(query)}`
+      );
+      return res.data.data as AdminCustomerRow[];
+    },
+  });
+}

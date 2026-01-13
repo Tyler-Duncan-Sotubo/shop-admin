@@ -16,7 +16,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
-import { useAdminCustomers } from "@/features/customers/hooks/use-admin-customers";
+import { useAdminCustomersOnly } from "@/features/customers/hooks/use-admin-customers";
 
 type Props = {
   storeId: string | null;
@@ -39,7 +39,7 @@ export function AdminCustomerCombobox({
   const { data: session } = useSession();
   const axios = useAxiosAuth();
 
-  const { data: rows = [], isLoading } = useAdminCustomers(
+  const { data: rows = [], isLoading } = useAdminCustomersOnly(
     {
       storeId,
       search: search || undefined,

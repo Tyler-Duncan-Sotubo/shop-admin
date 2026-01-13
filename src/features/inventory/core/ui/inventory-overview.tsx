@@ -5,9 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import Loading from "@/shared/ui/loading";
-import PageHeader from "@/shared/ui/page-header";
 import { DataTable } from "@/shared/ui/data-table";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 
 import {
   useGetInventoryOverview,
@@ -24,7 +23,6 @@ import { Button } from "@/shared/ui/button";
 import { CreateTransferModal } from "../../transfer/ui/create-transfer-modal";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { FaStore, FaWarehouse } from "react-icons/fa";
-import { FaBoxOpen } from "react-icons/fa6";
 
 export function InventoryOverview() {
   const { data: session, status: authStatus } = useSession();
@@ -85,8 +83,6 @@ export function InventoryOverview() {
   const currentLocationName =
     locationTabs.find((l) => l.locationId === tabsValue)?.name ?? "Location";
 
-  const isWarehouse = currentLocationName.toLowerCase().includes("warehouse");
-
   // ─────────────────────────────────────────────
   // 4) Inventory overview query
   // ─────────────────────────────────────────────
@@ -101,11 +97,7 @@ export function InventoryOverview() {
     };
   }, [tabsValue, activeStoreId]);
 
-  const { data: rows = [], isLoading } = useGetInventoryOverview(
-    query,
-    session,
-    axios
-  );
+  const { data: rows = [] } = useGetInventoryOverview(query, session, axios);
 
   // ─────────────────────────────────────────────
   // 5) Group Variants by Product
@@ -210,52 +202,28 @@ export function InventoryOverview() {
   // ─────────────────────────────────────────────
   return (
     <section className="space-y-4">
-      <PageHeader
-        title="Inventory"
-        description="View inventory by store location and manage stock levels."
-        tooltip="Inventory is tracked per location. Adjust and transfer stock across locations."
-      />
-
       <Tabs value={tabsValue} onValueChange={setLocationId}>
-        <TabsList>
-          {locationTabs.map((l) => (
-            <TabsTrigger key={l.locationId} value={l.locationId}>
-              {l.name}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        <TabsContent value={tabsValue} className="mt-4 space-y-4">
-          <div className="flex items-center justify-end">
+        <DataTable
+          columns={inventoryColumns(tabsValue, expanded, toggleExpanded)}
+          data={tableRows}
+          filterKey="productName"
+          filterPlaceholder="Search by product name or SKU..."
+          toolbarLeft={
+            <TabsList>
+              {locationTabs.map((l) => (
+                <TabsTrigger key={l.locationId} value={l.locationId}>
+                  {l.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          }
+          toolbarRight={
             <Button onClick={() => setOpenTransfer(true)} disabled={!tabsValue}>
               <ArrowRightLeft className="mr-2" size={16} />
               Transfer
             </Button>
-          </div>
-
-          {isLoading ? (
-            <Loading />
-          ) : rows.length === 0 ? (
-            <EmptyState
-              icon={<FaBoxOpen />}
-              title="No inventory yet"
-              description="This location doesn't have any inventory yet."
-              secondaryAction={{
-                label: isWarehouse
-                  ? "Add stock to warehouse"
-                  : "Transfer stock to location",
-                href: isWarehouse ? "/products/new" : "/inventory",
-              }}
-            />
-          ) : (
-            <DataTable
-              columns={inventoryColumns(tabsValue, expanded, toggleExpanded)}
-              data={tableRows}
-              filterKey="productName"
-              filterPlaceholder="Search by product name or SKU..."
-            />
-          )}
-        </TabsContent>
+          }
+        />
       </Tabs>
 
       <CreateTransferModal

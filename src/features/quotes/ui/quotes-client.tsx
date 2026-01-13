@@ -7,13 +7,15 @@ import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import PageHeader from "@/shared/ui/page-header";
 import Loading from "@/shared/ui/loading";
 import { EmptyState } from "@/shared/ui/empty-state";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { TabLabel } from "@/shared/ui/tab-label";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
-import type { ListQuotesParams } from "../types/quote.type";
+import type { ListQuotesParams, Quote } from "../types/quote.type";
 import { useGetQuotes } from "../hooks/use-quotes";
-import { QuotesTable } from "./quotes-table";
 import { useQuoteCountsForTabs } from "../hooks/use-quotes-count";
+
+import { DataTable } from "@/shared/ui/data-table";
+import { quoteColumns } from "./quote-columns";
 
 type QuoteTab = "all" | "new" | "in_progress" | "converted" | "archived";
 
@@ -32,7 +34,6 @@ export default function QuotesClient() {
 
   const [tab, setTab] = useState<QuoteTab>("all");
 
-  // ✅ counts for tabs
   const counts = useQuoteCountsForTabs(session, axios, activeStoreId);
 
   const params = useMemo<ListQuotesParams>(
@@ -47,10 +48,12 @@ export default function QuotesClient() {
   );
 
   const { data, isLoading } = useGetQuotes(session, axios, params);
-  const rows = data?.rows ?? [];
-  const hasData = rows.length > 0;
 
-  if (authStatus === "loading" || isLoading) return <Loading />;
+  // ✅ only block when auth is loading
+  if (authStatus === "loading") return <Loading />;
+
+  const rows: Quote[] = data?.rows ?? [];
+  const hasData = rows.length > 0;
 
   return (
     <section className="space-y-6">
@@ -61,46 +64,50 @@ export default function QuotesClient() {
       />
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as QuoteTab)}>
-        <TabsList>
-          <TabsTrigger value="new">
-            <TabLabel label="New" count={counts.new} />
-          </TabsTrigger>
+        {!hasData && !isLoading ? (
+          <EmptyState
+            title="No quote requests found"
+            description="Try changing filters or search terms."
+          />
+        ) : (
+          <DataTable
+            columns={quoteColumns}
+            data={isLoading ? [] : rows}
+            filterKey="customerEmail"
+            filterPlaceholder="Search by email, id..."
+            toolbarLeft={
+              <TabsList>
+                <TabsTrigger value="new">
+                  <TabLabel label="New" count={counts.new} />
+                </TabsTrigger>
 
-          <TabsTrigger value="in_progress">
-            <TabLabel label="In progress" count={counts.inProgress} />
-          </TabsTrigger>
+                <TabsTrigger value="in_progress">
+                  <TabLabel label="In progress" count={counts.inProgress} />
+                </TabsTrigger>
 
-          <TabsTrigger value="converted">
-            <TabLabel
-              label="Converted"
-              count={counts.converted}
-              showZero={false}
-            />
-          </TabsTrigger>
+                <TabsTrigger value="converted">
+                  <TabLabel
+                    label="Converted"
+                    count={counts.converted}
+                    showZero={false}
+                  />
+                </TabsTrigger>
 
-          <TabsTrigger value="archived">
-            <TabLabel
-              label="Archived"
-              count={counts.archived}
-              showZero={false}
-            />
-          </TabsTrigger>
+                <TabsTrigger value="archived">
+                  <TabLabel
+                    label="Archived"
+                    count={counts.archived}
+                    showZero={false}
+                  />
+                </TabsTrigger>
 
-          <TabsTrigger value="all">
-            <TabLabel label="All" count={counts.all} />
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={tab} className="mt-4">
-          {!hasData ? (
-            <EmptyState
-              title="No quote requests found"
-              description="Try changing filters or search terms."
-            />
-          ) : (
-            <QuotesTable data={rows} />
-          )}
-        </TabsContent>
+                <TabsTrigger value="all">
+                  <TabLabel label="All" count={counts.all} />
+                </TabsTrigger>
+              </TabsList>
+            }
+          />
+        )}
       </Tabs>
     </section>
   );

@@ -1,7 +1,7 @@
 export type OnboardingTaskKey =
-  | "store_setup"
-  | "location_setup"
+  | "products_added"
+  | "online_store_customization"
   | "payment_setup"
-  | "branding_setup"; // 👈 add this
+  | "shipping_setup"; // 👈 add this
 
 export type OnboardingChecklist = Record<OnboardingTaskKey, boolean>;

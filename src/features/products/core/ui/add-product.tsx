@@ -29,8 +29,8 @@ import { CreateProductPayload } from "../types/product.type";
 import { useCreateProduct } from "../hooks/use-product";
 import { SectionHeading } from "@/shared/ui/section-heading";
 import Image from "next/image";
-import { CategoryCheckboxPicker } from "@/features/categories/ui/category-checkbox-picker";
-import { useCategories } from "@/features/categories/hooks/use-categories";
+import { CategoryCheckboxPicker } from "@/features/products/categories/ui/category-checkbox-picker";
+import { useCategories } from "@/features/products/categories/hooks/use-categories";
 import { ProductUpsellCrossSellLinks } from "./product-upsell-cross-sell-link";
 import PageHeader from "@/shared/ui/page-header";
 import { useDropzone } from "react-dropzone";
@@ -38,6 +38,9 @@ import { UploadCloud, UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { TiptapEditor } from "@/shared/ui/tiptap-editor";
+import { useSession } from "next-auth/react";
+import useAxiosAuth from "@/shared/hooks/use-axios-auth";
+import { BackButton } from "@/shared/ui/back-button";
 
 type AddProductPageProps = {
   afterCreatePath?: (productId: string) => string;
@@ -45,9 +48,11 @@ type AddProductPageProps = {
 
 export function AddProduct({ afterCreatePath }: AddProductPageProps) {
   const { activeStoreId } = useStoreScope();
+  const { data: session } = useSession();
+  const axios = useAxiosAuth();
   const router = useRouter();
   const { createProduct } = useCreateProduct();
-  const { createCategory } = useCategories();
+  const { createCategory } = useCategories(session, axios, activeStoreId);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [imageFileName, setImageFileName] = useState<string>("");
@@ -157,7 +162,8 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
   };
 
   return (
-    <div className="space-y-6 mt-6">
+    <div className="space-y-6">
+      <BackButton href="/products?tab=products" label="Back to products" />
       <PageHeader
         title="Add product"
         description="Create the product shell first. You’ll set options/variants in step 2."

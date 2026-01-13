@@ -3,9 +3,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { X, Store, MapPin, BadgeDollarSign, Palette } from "lucide-react";
+import { CreditCard, Palette, Truck, PackagePlus, X } from "lucide-react";
 import Link from "next/link";
-import { Badge } from "@/shared/ui/badge";
 import { Progress } from "@/shared/ui/progress";
 import {
   Drawer,
@@ -30,6 +29,16 @@ const OnboardingChecklistDrawer = () => {
     progressPercentage,
     allCompleted,
   } = useOnboardingChecklist();
+
+  console.log("Onboarding Checklist:", {
+    onboarding,
+    isLoading,
+    isError,
+    totalTasks,
+    completedTasks,
+    progressPercentage,
+    allCompleted,
+  });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userDismissed, setUserDismissed] = useState(false);
@@ -57,10 +66,10 @@ const OnboardingChecklistDrawer = () => {
   if (entries.length === 0 || allCompleted) return null;
 
   const taskIcons: Record<OnboardingTaskKey, React.ComponentType<any>> = {
-    store_setup: Store,
-    location_setup: MapPin,
-    payment_setup: BadgeDollarSign,
-    branding_setup: Palette, // 👈 new branding icon
+    payment_setup: CreditCard,
+    online_store_customization: Palette,
+    shipping_setup: Truck,
+    products_added: PackagePlus,
   };
 
   const handleClose = () => {
@@ -79,9 +88,10 @@ const OnboardingChecklistDrawer = () => {
         }
       }}
     >
-      <DrawerContent className="fixed left-2 top-0 w-[40%] bg-white shadow-lg border-r dark:bg-gray-900 z-50">
-        <DrawerHeader className="relative px-4 py-4 border-b">
-          <DrawerTitle>Let’s get your store ready</DrawerTitle>
+      <DrawerContent className="fixed right-2 top-2 h-[calc(100%-16px)] w-[500px] max-w-[95vw] bg-white dark:bg-gray-900 z-50">
+        <DrawerHeader className="relative px-4 py-2 border-b">
+          <DrawerTitle> Finish setup to start selling</DrawerTitle>
+          <p className="text-xs text-muted-foreground">Just a few steps left</p>
 
           <DrawerClose asChild>
             <button
@@ -93,12 +103,12 @@ const OnboardingChecklistDrawer = () => {
           </DrawerClose>
         </DrawerHeader>
 
-        <div className="h-[calc(100%-56px)] p-4 overflow-y-auto">
+        <div className="h-full p-3 overflow-y-auto">
           <section className="my-5">
-            <P className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <P className="text-xs font-semibold text-gray-700 dark:text-gray-300">
               {completedTasks} of {totalTasks} tasks completed
             </P>
-            <Progress value={progressPercentage} className="h-2 mt-2" />
+            <Progress value={progressPercentage} className="h-1.5 mt-2" />
           </section>
 
           <ul className="space-y-3 border p-3 rounded-lg">
@@ -119,12 +129,12 @@ const OnboardingChecklistDrawer = () => {
                           ? "bg-green-50 border-green-600 text-green-700"
                           : "bg-muted border-border text-foreground/60",
                       ].join(" ")}
-                      aria-label={completed ? "Completed" : "Pending"}
-                      title={completed ? "Completed" : "Pending"}
+                      aria-label={completed ? "Not done" : "Done"}
+                      title={completed ? "Not done" : "Done"}
                     >
                       {Icon && (
                         <Icon
-                          className={`rounded-full p-1 w-7 h-7 ${
+                          className={`rounded-full p-1 w-5 h-5 ${
                             completed
                               ? "bg-green-500 text-white"
                               : "bg-amber-500 text-white"
@@ -135,17 +145,22 @@ const OnboardingChecklistDrawer = () => {
                     </div>
                     <div className="space-y-1">
                       <P className="font-bold">{taskMeta?.label ?? taskKey}</P>
-                      <P className="text-sm text-muted-foreground max-w-[300px] not-first:mt-0">
+                      <P className="text-xs text-muted-foreground max-w-[300px] not-first:mt-0">
                         {taskMeta?.description}
                       </P>
                     </div>
                   </div>
 
                   {completed ? (
-                    <Badge variant="completed">Completed</Badge>
+                    <span className="text-xs text-green-600 font-medium">
+                      ✓ Done
+                    </span>
                   ) : (
-                    <Link href={taskMeta?.url || "#"}>
-                      <Badge variant="pending">Complete now</Badge>
+                    <Link
+                      href={taskMeta?.url || "#"}
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      Set up →
                     </Link>
                   )}
                 </li>

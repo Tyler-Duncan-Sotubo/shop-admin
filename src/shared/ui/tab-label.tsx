@@ -18,7 +18,7 @@ export function TabLabel({
 
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
-      <span>{label}</span>
+      <span className="text-xs">{label}</span>
 
       {shouldShowCount && (
         <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">

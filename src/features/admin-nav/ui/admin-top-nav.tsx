@@ -4,7 +4,7 @@ import { Mail } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
-import { useStores } from "@/features/stores/hooks/use-stores";
+import { useStores } from "@/features/settings/stores/core/hooks/use-stores";
 import { UserMenu } from "./user-menu";
 import { FaCog } from "react-icons/fa";
 import { usePathname } from "next/navigation";

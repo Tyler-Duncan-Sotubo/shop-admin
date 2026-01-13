@@ -1,7 +1,7 @@
-import { ProductTable } from "@/features/products/core/ui/product-table";
+import ProductClient from "@/features/products/product-tabs";
 
 const page = () => {
-  return <ProductTable />;
+  return <ProductClient />;
 };
 
 export default page;

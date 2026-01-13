@@ -27,6 +27,7 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { FaSearch } from "react-icons/fa";
+import { SlSocialDropbox } from "react-icons/sl";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -45,6 +46,7 @@ interface DataTableProps<TData, TValue> {
 
   disableRowSelection?: boolean;
   toolbarRight?: React.ReactNode;
+  toolbarLeft?: React.ReactNode;
 }
 
 export function DataTable<TData, TValue>({
@@ -60,6 +62,7 @@ export function DataTable<TData, TValue>({
   allowCustomPageSize = true,
   disableRowSelection = false,
   toolbarRight,
+  toolbarLeft,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -117,9 +120,7 @@ export function DataTable<TData, TValue>({
       {/* Optional filter bar */}
       {(filterKey && showSearch) || toolbarRight ? (
         <div className="flex w-full items-center justify-between pb-4 gap-3">
-          {/* Left spacer (keeps alignment consistent even without search) */}
-          <div />
-
+          <div className="flex items-center gap-2">{toolbarLeft}</div>
           <div className="flex items-center gap-2">
             {filterKey && showSearch && (
               <Input
@@ -175,9 +176,23 @@ export function DataTable<TData, TValue>({
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-3 font-medium">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
+                      {cell.column.id === "actions" ? (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </div>
+                      ) : (
+                        flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )
                       )}
                     </TableCell>
                   ))}
@@ -187,9 +202,12 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-40 text-center"
                 >
-                  No results found.
+                  <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                    <SlSocialDropbox size={70} />
+                    <span className="text-sm">No record found</span>
+                  </div>
                 </TableCell>
               </TableRow>
             )}

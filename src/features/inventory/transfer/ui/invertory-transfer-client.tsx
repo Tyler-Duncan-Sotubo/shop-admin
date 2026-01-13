@@ -67,10 +67,6 @@ const InventoryTransferClient = () => {
   // ─────────────────────────────────────────────
   return (
     <section className="space-y-6">
-      <PageHeader
-        title="Inventory Transfers"
-        description="Manage inventory transfers between locations."
-      />
       <DataTable
         columns={transfersColumns}
         data={transfers}

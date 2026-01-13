@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
         hostname: "centa-hr.s3.amazonaws.com",
         port: "",
       },
+      { protocol: "https", hostname: "placehold.co" },
     ],
   },
 };

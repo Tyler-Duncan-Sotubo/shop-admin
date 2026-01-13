@@ -7,15 +7,17 @@ import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import PageHeader from "@/shared/ui/page-header";
 import Loading from "@/shared/ui/loading";
 import { EmptyState } from "@/shared/ui/empty-state";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import type { ListOrdersParams } from "../types/order.type";
 import { useGetOrders } from "../hooks/use-orders";
 import { useOrderCountsForTabs } from "../hooks/use-order-counts";
-import { OrdersTable } from "./orders-table";
 import { ORDER_TAB_TO_STATUS, OrderTab } from "../constants/order-tabs";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { CreateManualOrderButton } from "./open-manual-orders-button";
 import { TabLabel } from "@/shared/ui/tab-label";
+
+import { DataTable } from "@/shared/ui/data-table";
+import { orderColumns } from "./order-columns";
 
 export default function OrdersClient() {
   const { data: session, status: authStatus } = useSession();
@@ -37,10 +39,12 @@ export default function OrdersClient() {
   );
 
   const { data, isLoading } = useGetOrders(session, axios, params);
+
+  // ✅ don’t block the whole UI while switching filters; only block while auth loads
+  if (authStatus === "loading") return <Loading />;
+
   const rows = data?.rows ?? [];
   const hasData = rows.length > 0;
-
-  if (authStatus === "loading" || isLoading) return <Loading />;
 
   return (
     <section className="space-y-6">
@@ -53,48 +57,50 @@ export default function OrdersClient() {
       </PageHeader>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as OrderTab)}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <TabsList>
-            <TabsTrigger value="all">
-              <TabLabel label="All" count={counts.all} />
-            </TabsTrigger>
+        {!hasData && !isLoading ? (
+          <EmptyState
+            title="No orders found"
+            description="Try changing filters or search terms."
+          />
+        ) : (
+          <DataTable
+            columns={orderColumns}
+            data={isLoading ? [] : rows}
+            filterKey="orderNumber"
+            filterPlaceholder="Search by order #, id, address..."
+            toolbarLeft={
+              <TabsList>
+                <TabsTrigger value="all">
+                  <TabLabel label="All" count={counts.all} />
+                </TabsTrigger>
 
-            <TabsTrigger value="on_hold">
-              <TabLabel label="On hold" count={counts.onHold} />
-            </TabsTrigger>
+                <TabsTrigger value="on_hold">
+                  <TabLabel label="On hold" count={counts.onHold} />
+                </TabsTrigger>
 
-            <TabsTrigger value="paid">
-              <TabLabel label="Paid" count={counts.paid} showZero={false} />
-            </TabsTrigger>
+                <TabsTrigger value="paid">
+                  <TabLabel label="Paid" count={counts.paid} showZero={false} />
+                </TabsTrigger>
 
-            <TabsTrigger value="fulfilled">
-              <TabLabel
-                label="Fulfilled"
-                count={counts.fulfilled}
-                showZero={false}
-              />
-            </TabsTrigger>
+                <TabsTrigger value="fulfilled">
+                  <TabLabel
+                    label="Fulfilled"
+                    count={counts.fulfilled}
+                    showZero={false}
+                  />
+                </TabsTrigger>
 
-            <TabsTrigger value="cancelled">
-              <TabLabel
-                label="Cancelled"
-                count={counts.cancelled}
-                showZero={false}
-              />
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        <TabsContent value={tab} className="mt-4">
-          {!hasData ? (
-            <EmptyState
-              title="No orders found"
-              description="Try changing filters or search terms."
-            />
-          ) : (
-            <OrdersTable data={rows} />
-          )}
-        </TabsContent>
+                <TabsTrigger value="cancelled">
+                  <TabLabel
+                    label="Cancelled"
+                    count={counts.cancelled}
+                    showZero={false}
+                  />
+                </TabsTrigger>
+              </TabsList>
+            }
+          />
+        )}
       </Tabs>
     </section>
   );

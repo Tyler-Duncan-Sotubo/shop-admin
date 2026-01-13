@@ -23,13 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-
 import { CreateProductSchema } from "../schema/create-product.schema";
 import { STATUS_LABEL, type CreateProductPayload } from "../types/product.type";
 import { SectionHeading } from "@/shared/ui/section-heading";
 import { useSession } from "next-auth/react";
-import { CategoryCheckboxPicker } from "@/features/categories/ui/category-checkbox-picker";
-import { useCategories } from "@/features/categories/hooks/use-categories";
+import { CategoryCheckboxPicker } from "@/features/products/categories/ui/category-checkbox-picker";
 import { ProductUpsellCrossSellLinks } from "./product-upsell-cross-sell-link";
 import Loading from "@/shared/ui/loading";
 import { useGetProduct } from "../hooks/use-product";
@@ -40,6 +38,9 @@ import { UploadCloud, UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { TiptapEditor } from "@/shared/ui/tiptap-editor";
+import { useCategories } from "@/features/products/categories/hooks/use-categories";
+import useAxiosAuth from "@/shared/hooks/use-axios-auth";
+import { BackButton } from "@/shared/ui/back-button";
 
 type Props = {
   productId: string;
@@ -50,8 +51,8 @@ type FormValues = any; // keep any if you don’t want to fight types here
 const emptyLinks = { related: [], upsell: [], cross_sell: [] };
 
 export function EditProduct({ productId }: Props) {
+  const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
-  const { createCategory } = useCategories();
   const { data: session, status } = useSession();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const { data: product, isLoading } = useGetProduct(productId, session);
@@ -60,6 +61,7 @@ export function EditProduct({ productId }: Props) {
   const [imageVersion, setImageVersion] = useState<number>(() => Date.now());
   const [imageFileName, setImageFileName] = useState<string>("");
   const [imageMimeType, setImageMimeType] = useState<string>("image/jpeg");
+  const { createCategory } = useCategories(session, axios, activeStoreId);
 
   const savedImageUrl = (product as any)?.imageUrl ?? null;
 
@@ -212,7 +214,7 @@ export function EditProduct({ productId }: Props) {
   if (status === "loading" && isLoading) return <Loading />;
 
   return (
-    <div className="space-y-6 mt-6">
+    <div className="space-y-6">
       <PageHeader
         title="Edit product"
         description="Update product details, categories and linked products."

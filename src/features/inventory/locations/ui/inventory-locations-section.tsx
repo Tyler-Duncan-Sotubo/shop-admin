@@ -10,12 +10,14 @@ import {
   UpdateInventoryLocationPayload,
 } from "../types/inventory-location.type";
 import { InventoryLocationFormValues } from "../schema/inventory-locations.schema";
-import { InventoryLocationsTable } from "./inventory-locations-table";
 import { InventoryLocationFormModal } from "./inventory-location-form-modal";
 import PageHeader from "@/shared/ui/page-header";
 import { FaWarehouse } from "react-icons/fa6";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
+
+import { DataTable } from "@/shared/ui/data-table";
+import { inventoryLocationColumns } from "./inventory-location-columns";
 
 export default function InventoryLocationsSection() {
   const { activeStoreId } = useStoreScope();
@@ -97,51 +99,40 @@ export default function InventoryLocationsSection() {
   };
 
   // ─────────────────────────────────────────────
-  // Loading guard
+  // Loading / error / empty
   // ─────────────────────────────────────────────
   if (isLoading) return <Loading />;
-  if (!isLoading && !fetchError && locations.length === 0) {
-    return (
-      <section className="space-y-6">
-        <PageHeader
-          title="Inventory Locations"
-          description="Manage warehouses, stores, and fulfillment locations used across your store."
-          tooltip="Manage warehouses, retail stores, and fulfillment centers used across your organization"
-        >
-          <Button onClick={openCreate}>Create location</Button>
-        </PageHeader>
 
+  if (fetchError && locations.length === 0) {
+    return (
+      <p className="text-sm text-destructive">
+        Failed to load locations: {fetchError}
+      </p>
+    );
+  }
+
+  const hasLocations = locations.length > 0;
+
+  return (
+    <section className="space-y-6 mt-6">
+      {!hasLocations ? (
         <EmptyState
           icon={<FaWarehouse />}
           title="No locations yet"
           description="Create a warehouse or store location to start tracking inventory."
           primaryAction={{ label: "Create location", onClick: openCreate }}
         />
-
-        <InventoryLocationFormModal
-          open={modalOpen}
-          mode={modalMode}
-          location={selected}
-          onClose={close}
-          onSubmit={handleSubmit}
-          submitError={submitError}
+      ) : (
+        <DataTable
+          columns={inventoryLocationColumns(openEdit)}
+          data={locations}
+          filterKey="name"
+          filterPlaceholder="Search locations..."
+          toolbarRight={<Button onClick={openCreate}>Create location</Button>}
         />
-      </section>
-    );
-  }
+      )}
 
-  return (
-    <section className="space-y-6">
-      <PageHeader
-        title="Inventory Locations"
-        description="Manage warehouses, stores, and fulfillment locations used across your store."
-        tooltip="Manage warehouses, retail stores, and fulfillment centers used across your organization"
-      >
-        <Button onClick={openCreate}>Create location</Button>
-      </PageHeader>
-
-      <InventoryLocationsTable data={locations} onEdit={openEdit} />
-
+      {/* Modal stays mounted so it can open from empty or table */}
       <InventoryLocationFormModal
         open={modalOpen}
         mode={modalMode}

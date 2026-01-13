@@ -4,29 +4,28 @@ export const onboardingTaskLabels: Record<
   OnboardingTaskKey,
   { label: string; description: string; url: string }
 > = {
-  // 👇 NEW
-  branding_setup: {
-    label: "Branding & general settings",
-    description:
-      "Set your logo, primary colors, default currency, language, and core company details.",
-    url: "/settings/account",
-  },
-  store_setup: {
-    label: "Set up your store",
-    description:
-      "Configure your store name, default currency, locale, and storefront URL.",
-    url: "/settings/stores",
-  },
-  location_setup: {
-    label: "Add a location",
-    description:
-      "Create at least one warehouse or store location to manage stock and fulfill orders.",
-    url: "/inventory/locations",
-  },
   payment_setup: {
-    label: "Enable payments",
-    description:
-      "Connect and enable at least one payment provider so customers can pay at checkout.",
-    url: "/settings/account",
+    label: "Set up payments",
+    description: "Enable payment methods so customers can pay at checkout.",
+    url: "/settings/payments/methods",
+  },
+
+  online_store_customization: {
+    label: "Customize your online store",
+    description: "Add your logo, brand name, and storefront details.",
+    url: "/settings/stores",
+    // or: "/settings/stores?tab=branding"
+  },
+
+  shipping_setup: {
+    label: "Set up shipping",
+    description: "Create shipping zones and rates to deliver orders.",
+    url: "/shipping",
+  },
+
+  products_added: {
+    label: "Add your first products",
+    description: "Create products with prices and images to start selling.",
+    url: "/products?tab=products",
   },
 };

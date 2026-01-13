@@ -16,6 +16,7 @@ export type ProductListRow = {
   imageUrl: string | null;
   categories: { id: string; name: string }[];
   price_html: string;
+  variantCount: number;
 };
 
 export type Product = {

@@ -14,6 +14,7 @@ import { AddZoneLocationModal } from "./add-zone-location-modal";
 import PageHeader from "@/shared/ui/page-header";
 import { Button } from "@/shared/ui/button";
 import { ShippingZoneLocation } from "../types/shipping-zone-location.type";
+import { BackButton } from "@/shared/ui/back-button";
 
 type Mode = "create" | "edit";
 
@@ -63,6 +64,7 @@ export default function ZoneDetailClient({ zoneId }: { zoneId: string }) {
 
   return (
     <div className="space-y-6">
+      <BackButton href="/shipping?tab=zones" label="Back to zones" />
       <PageHeader
         title={`Locations for "${data[0]?.zoneName || "Shipping Zone"}"`}
         description="Manage the locations included in this shipping zone."

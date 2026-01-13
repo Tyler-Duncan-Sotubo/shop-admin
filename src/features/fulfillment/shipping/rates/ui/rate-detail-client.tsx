@@ -14,6 +14,7 @@ import { useGetRateTiers } from "../hooks/use-rate-tiers";
 import { RateTiersTable } from "./rate-tiers-table";
 import { RateTierFormModal } from "./rate-tier-form-modal";
 import type { ShippingRateTier } from "../types/shipping-rate-tier.type";
+import { BackButton } from "@/shared/ui/back-button";
 
 export default function RateDetailClient({ rateId }: { rateId: string }) {
   const { data: session } = useSession();
@@ -45,6 +46,7 @@ export default function RateDetailClient({ rateId }: { rateId: string }) {
 
   return (
     <section className="space-y-6">
+      <BackButton href="/shipping?tab=rates" label="Back to rates" />
       <PageHeader
         title="Rate Tiers"
         description="Configure weight-based shipping prices for this rate."

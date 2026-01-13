@@ -43,7 +43,11 @@ export function useTwoFa(tempToken: string | null) {
         return;
       }
 
-      router.push("/dashboard");
+      if (!data.onboardingCompleted) {
+        router.push("/setup");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error) {
       if (isAxiosError(error) && error.response) {
         setVerifyError(

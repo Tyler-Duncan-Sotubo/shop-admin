@@ -31,4 +31,7 @@ export const STOREFRONT_API_SCOPES = [
   // Mails (Subscriptions & Contact messages)
   "mail.subscribe",
   "mail.contact",
+
+  // integrations
+  "integrations.analytics.read",
 ];

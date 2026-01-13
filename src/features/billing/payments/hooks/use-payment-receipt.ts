@@ -14,18 +14,12 @@ export function useGeneratePaymentReceiptPdf(axios: AxiosInstance) {
         `/api/payments/admin/${paymentId}/receipt/pdf`
       );
 
-      // ✅ handle either:
-      // 1) { pdfUrl, storageKey }
-      // 2) { data: { pdfUrl, storageKey } }
       const payload = res.data as any;
       const data: ReceiptPdfResponse | undefined = payload?.pdfUrl
         ? payload
         : payload?.data;
 
-      console.log("Receipt PDF response payload:", res.data.data);
-
       if (!data?.pdfUrl) {
-        console.error("Unexpected receipt response shape:", payload);
         throw new Error("Receipt PDF URL missing from response");
       }
 

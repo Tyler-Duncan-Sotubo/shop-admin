@@ -4,16 +4,15 @@ import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import Loading from "@/shared/ui/loading";
-import PageHeader from "@/shared/ui/page-header";
 import { EmptyState } from "@/shared/ui/empty-state";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Input } from "@/shared/ui/input";
 import { useDebounceCallback } from "@/shared/hooks/use-debounce";
-import { P } from "@/shared/ui/typography";
+import { DataTable } from "@/shared/ui/data-table";
 
-import { LedgerTable } from "./ledger-table";
 import { useGetLedger } from "../hooks/use-ledger";
 import type { LedgerTab } from "../constants/ledger-tabs";
+import { ledgerColumns } from "./ledger-columns";
 
 export default function LedgerClient() {
   const { data: session, status: authStatus } = useSession();
@@ -31,61 +30,55 @@ export default function LedgerClient() {
       offset: 0,
       tab,
       q: q.trim() || undefined,
-      // optional add later: locationId, orderId filters
     }),
     [tab, q]
   );
 
   const { data, isLoading } = useGetLedger(session, axios, params);
 
-  if (authStatus === "loading" || isLoading) return <Loading />;
+  // ✅ only block when session is loading
+  if (authStatus === "loading") return <Loading />;
 
   const rows = data?.rows ?? [];
   const hasData = rows.length > 0;
 
   return (
     <section className="space-y-6">
-      <PageHeader
-        title="Inventory Ledger"
-        description="Track inventory movements (reserve, release, deduct) over time."
-        tooltip="Ledger rows are append-only and explain why inventory changed."
-      />
-
       <Tabs value={tab} onValueChange={(v) => setTab(v as LedgerTab)}>
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="deductions">Deductions</TabsTrigger>
-          <TabsTrigger value="reservations">Reservations</TabsTrigger>
-          <TabsTrigger value="releases">Releases</TabsTrigger>
-        </TabsList>
-
-        <div className="w-full sm:w-[360px] pl-12 ml-auto">
-          <P className="text-muted-foreground text-xs mb-2">
-            Tip: search “order” or a short ID fragment.
-          </P>
-          <Input
-            value={qInput}
-            onChange={(e) => {
-              const value = e.target.value;
-              setQInput(value);
-              debounced(value);
-            }}
-            placeholder="Search note or meta..."
+        {!hasData && !isLoading ? (
+          <EmptyState
+            title="No ledger movements"
+            description="Once orders reserve or deduct stock, movements will appear here."
           />
-        </div>
-
-        <TabsContent value={tab} className="mt-4">
-          {!hasData ? (
-            <EmptyState
-              title="No ledger movements"
-              description="Once orders reserve or deduct stock, movements will appear here."
-            />
-          ) : (
-            <>
-              <LedgerTable data={rows} />
-            </>
-          )}
-        </TabsContent>
+        ) : (
+          <DataTable
+            columns={ledgerColumns()}
+            data={isLoading ? [] : rows}
+            // turn off built-in search; we provide our own search in toolbarRight
+            showSearch={false}
+            toolbarLeft={
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="deductions">Deductions</TabsTrigger>
+                <TabsTrigger value="reservations">Reservations</TabsTrigger>
+                <TabsTrigger value="releases">Releases</TabsTrigger>
+              </TabsList>
+            }
+            toolbarRight={
+              <div className="w-full sm:w-[360px]">
+                <Input
+                  value={qInput}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setQInput(value);
+                    debounced(value);
+                  }}
+                  placeholder="Search note or meta..."
+                />
+              </div>
+            }
+          />
+        )}
       </Tabs>
     </section>
   );
