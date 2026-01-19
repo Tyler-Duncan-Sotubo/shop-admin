@@ -36,6 +36,7 @@ type CreateCategoryPayload = {
   parentId: string | null;
   description: string | null;
   isActive: boolean;
+  storeId: string;
 };
 
 type Props = {
@@ -116,6 +117,7 @@ export function CategoryCheckboxPicker({
               parentId: createParentId,
               description: null,
               isActive: true,
+              storeId: activeStoreId!,
             };
 
             const created = await onCreateCategory(payload, (msg) =>

@@ -7,14 +7,13 @@ export const onboardingTaskLabels: Record<
   payment_setup: {
     label: "Set up payments",
     description: "Enable payment methods so customers can pay at checkout.",
-    url: "/settings/payments/methods",
+    url: "/settings/payment-methods",
   },
 
   online_store_customization: {
     label: "Customize your online store",
     description: "Add your logo, brand name, and storefront details.",
-    url: "/settings/stores",
-    // or: "/settings/stores?tab=branding"
+    url: "/online-store",
   },
 
   shipping_setup: {

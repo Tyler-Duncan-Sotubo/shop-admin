@@ -1,3 +1,10 @@
+// =====================================
+// 4) EditProduct UPDATED (FULL COMPONENT)
+// - uploads new images to S3 only if user selects new files
+// - sends dto.images with keys/urls when replacing (same behavior as backend expects)
+// - limits uploads by productType (variable => 1, simple => 9)
+// File: EditProduct.tsx
+// =====================================
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -34,21 +41,32 @@ import { useGetProduct } from "../hooks/use-product";
 import PageHeader from "@/shared/ui/page-header";
 import { useUpdateMutation } from "@/shared/hooks/use-update-mutation";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, UserIcon } from "lucide-react";
+import { UploadCloud, UserIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { TiptapEditor } from "@/shared/ui/tiptap-editor";
 import { useCategories } from "@/features/products/categories/hooks/use-categories";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
-import { BackButton } from "@/shared/ui/back-button";
+import {
+  PresignedUpload,
+  sanitizeFileName,
+  uploadToS3Put,
+} from "@/lib/s3-upload";
 
 type Props = {
   productId: string;
 };
 
-type FormValues = any; // keep any if you don’t want to fight types here
-
+type FormValues = any;
 const emptyLinks = { related: [], upsell: [], cross_sell: [] };
+
+type LocalImage = {
+  file: File;
+  previewUrl: string;
+};
+
+const MAX_SIMPLE_IMAGES = 9;
+const MAX_VARIABLE_IMAGES = 1;
 
 export function EditProduct({ productId }: Props) {
   const axios = useAxiosAuth();
@@ -57,26 +75,18 @@ export function EditProduct({ productId }: Props) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const { data: product, isLoading } = useGetProduct(productId, session);
   const [isEditingStatus, setIsEditingStatus] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [imageVersion, setImageVersion] = useState<number>(() => Date.now());
-  const [imageFileName, setImageFileName] = useState<string>("");
-  const [imageMimeType, setImageMimeType] = useState<string>("image/jpeg");
   const { createCategory } = useCategories(session, axios, activeStoreId);
 
-  const savedImageUrl = (product as any)?.imageUrl ?? null;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const imageSrc = useMemo(() => {
-    if (uploadedImage) return uploadedImage; // base64 preview
-    if (!savedImageUrl) return null; // nothing saved yet
-    const sep = savedImageUrl.includes("?") ? "&" : "?";
-    return `${savedImageUrl}${sep}v=${imageVersion}`; // cache-bust after save
-  }, [uploadedImage, savedImageUrl, imageVersion]);
+  // new images only (local)
+  const [localImages, setLocalImages] = useState<LocalImage[]>([]);
 
   const defaultValues = useMemo(
     () => ({
       name: "",
       description: "",
-      status: "draft", // ✅ add this
+      status: "draft",
       productType: "variable",
       categoryIds: [],
       links: emptyLinks,
@@ -85,7 +95,8 @@ export function EditProduct({ productId }: Props) {
       howItFeelsAndLooks: "",
       whyYouWillLoveIt: "",
       details: "",
-      base64Image: "",
+      images: [],
+      defaultImageIndex: 0,
     }),
     []
   );
@@ -96,39 +107,23 @@ export function EditProduct({ productId }: Props) {
     mode: "onSubmit",
   });
 
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      const file = acceptedFiles[0];
-      if (!file) return;
+  const watchedProductType =
+    useWatch({ control: form.control, name: "productType" }) ?? "variable";
 
-      setImageMimeType(file.type || "image/jpeg");
-      setImageFileName(file.name || `upload-${Date.now()}.jpg`);
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setUploadedImage(base64);
-
-        form.setValue("base64Image", base64, {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
-      };
-      reader.readAsDataURL(file);
-    },
-    [form]
+  const maxImages = useMemo(
+    () =>
+      watchedProductType === "variable"
+        ? MAX_VARIABLE_IMAGES
+        : MAX_SIMPLE_IMAGES,
+    [watchedProductType]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: { "image/*": [] },
-    multiple: false,
-  });
-
-  const updateProduct = useUpdateMutation({
-    endpoint: `/api/catalog/products/${productId}`,
-    successMessage: "Product updated successfully",
-    refetchKey: "product products",
-  });
+  // cleanup object URLs
+  useEffect(() => {
+    return () => {
+      localImages.forEach((i) => URL.revokeObjectURL(i.previewUrl));
+    };
+  }, [localImages]);
 
   // hydrate form when product loads
   useEffect(() => {
@@ -137,8 +132,8 @@ export function EditProduct({ productId }: Props) {
     const md = (product as any).metadata ?? {};
 
     form.reset({
-      name: product.name ?? "",
-      description: product.description ?? "",
+      name: (product as any).name ?? "",
+      description: (product as any).description ?? "",
       status: (product as any).status ?? "draft",
       productType: (product as any).productType ?? "variable",
       categoryIds: (product as any).categoryIds ?? [],
@@ -148,15 +143,121 @@ export function EditProduct({ productId }: Props) {
       howItFeelsAndLooks: md.how_it_feels_and_looks ?? "",
       whyYouWillLoveIt: md.why_you_will_love_it ?? "",
       details: md.details ?? "",
-      base64Image: "",
+      images: [],
+      defaultImageIndex: (product as any).defaultImageIndex ?? 0,
     });
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setUploadedImage(null);
+
+    // clear local images when switching product
+    setLocalImages((prev) => {
+      prev.forEach((i) => URL.revokeObjectURL(i.previewUrl));
+      return [];
+    });
   }, [product, form]);
 
-  const isSubmitting = form.formState.isSubmitting;
+  // enforce limit when type changes
+  useEffect(() => {
+    if (localImages.length > maxImages) {
+      const trimmed = localImages.slice(0, maxImages);
+      localImages
+        .slice(maxImages)
+        .forEach((i) => URL.revokeObjectURL(i.previewUrl));
+      setLocalImages(trimmed);
+      form.setValue("defaultImageIndex", 0, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+    if (maxImages === 1) {
+      form.setValue("defaultImageIndex", 0, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [maxImages, localImages, form]);
 
-  const buildPayload = (values: any): CreateProductPayload => {
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (!acceptedFiles?.length) return;
+
+      const remaining = maxImages - localImages.length;
+      if (remaining <= 0) return;
+
+      const nextFiles = acceptedFiles.slice(0, remaining);
+      const newOnes = nextFiles.map((file) => ({
+        file,
+        previewUrl: URL.createObjectURL(file),
+      }));
+
+      setLocalImages((prev) => [...prev, ...newOnes].slice(0, maxImages));
+    },
+    [localImages.length, maxImages]
+  );
+
+  const removeImage = useCallback(
+    (index: number) => {
+      setLocalImages((prev) => {
+        const next = prev.filter((_, i) => i !== index);
+        const removed = prev[index];
+        if (removed) URL.revokeObjectURL(removed.previewUrl);
+        form.setValue("defaultImageIndex", 0, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+        return next;
+      });
+    },
+    [form]
+  );
+
+  const setDefaultImageIndex = useCallback(
+    (index: number) => {
+      form.setValue("defaultImageIndex", maxImages === 1 ? 0 : index, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    },
+    [form, maxImages]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { "image/*": [] },
+    multiple: maxImages > 1,
+    maxFiles: maxImages,
+  });
+
+  const updateProduct = useUpdateMutation({
+    endpoint: `/api/catalog/products/${productId}`,
+    successMessage: "Product updated successfully",
+    refetchKey: "product products",
+  });
+
+  async function presignUploads(files: File[]) {
+    const payload = {
+      count: files.length,
+      files: files.map((f) => ({
+        fileName: sanitizeFileName(f.name || `upload-${Date.now()}`),
+        mimeType: f.type || "image/jpeg",
+      })),
+      storeId: activeStoreId,
+      productId,
+    };
+
+    const res = await fetch("/api/uploads/presign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) throw new Error("Failed to create upload URLs");
+    const data = (await res.json()) as { uploads: PresignedUpload[] };
+    return data.uploads;
+  }
+
+  const buildPayload = (
+    values: any,
+    imagesDto?: any[]
+  ): CreateProductPayload => {
     const md: Record<string, any> = {
       how_it_feels_and_looks: values.howItFeelsAndLooks ?? "",
       why_you_will_love_it: values.whyYouWillLoveIt ?? "",
@@ -168,43 +269,85 @@ export function EditProduct({ productId }: Props) {
     });
 
     return {
+      storeId: activeStoreId,
       name: values.name,
       description: values.description ?? null,
-      status: values.status, // ✅ add this
+      status: values.status,
       productType: values.productType as any,
       seoTitle: values.seoTitle ?? null,
       seoDescription: values.seoDescription ?? null,
       categoryIds: values.categoryIds ?? [],
       links: values.links ?? emptyLinks,
       metadata: md,
-      base64Image: values.base64Image?.trim() || undefined,
-      storeId: activeStoreId,
-      ...(values.base64Image?.trim()
-        ? {
-            imageFileName: imageFileName?.trim() || undefined,
-            imageMimeType: imageMimeType || "image/jpeg",
-          }
-        : {}),
+      // ✅ only send if replacing images (user selected new ones)
+      images: imagesDto,
+      defaultImageIndex:
+        (values.productType ?? "variable") === "variable"
+          ? 0
+          : typeof values.defaultImageIndex === "number"
+          ? values.defaultImageIndex
+          : 0,
     };
   };
 
   const onSubmit: SubmitHandler<any> = async (values) => {
     setSubmitError(null);
-    setImageVersion(() => Date.now());
+
     try {
-      const payload = buildPayload(values);
+      setIsSubmitting(true);
+
+      let imagesDto: any[] | undefined = undefined;
+
+      // only replace images if user picked new ones
+      if (localImages.length) {
+        const files = localImages.map((i) => i.file);
+        const uploads = await presignUploads(files);
+
+        if (uploads.length !== files.length) {
+          throw new Error("Upload URLs mismatch");
+        }
+
+        await Promise.all(
+          uploads.map((u, idx) => uploadToS3Put(u.uploadUrl, files[idx]))
+        );
+
+        const productName = values.name || "Product image";
+
+        imagesDto = uploads.map((u, idx) => ({
+          key: u.key,
+          url: u.url,
+          fileName: sanitizeFileName(files[idx].name || `img-${idx}.jpg`),
+          mimeType: files[idx].type || "image/jpeg",
+          altText: productName,
+          position: idx,
+        }));
+      }
+
+      const payload = buildPayload(values, imagesDto);
+
       await updateProduct(payload, setSubmitError);
+
+      // clear after save
+      setLocalImages((prev) => {
+        prev.forEach((i) => URL.revokeObjectURL(i.previewUrl));
+        return [];
+      });
+      form.setValue("images", [], { shouldDirty: false });
+      if (maxImages === 1)
+        form.setValue("defaultImageIndex", 0, { shouldDirty: false });
     } catch (e: any) {
       setSubmitError(e?.message ?? "Failed to update product");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const currentStatus = product ? (product as any).status : "draft";
-  const watchedStatus = useWatch({
-    control: form.control,
-    name: "status",
-  });
+  const watchedStatus = useWatch({ control: form.control, name: "status" });
   const displayStatus = watchedStatus ?? currentStatus;
+
+  const currentDefault =
+    useWatch({ control: form.control, name: "defaultImageIndex" }) ?? 0;
 
   const openStatusEditor = () => {
     form.setValue("status", currentStatus, { shouldDirty: false });
@@ -213,13 +356,29 @@ export function EditProduct({ productId }: Props) {
 
   if (status === "loading" && isLoading) return <Loading />;
 
+  const savedImages = ((product as any)?.images ?? []) as Array<any>;
+  const savedSorted = [...savedImages].sort(
+    (a: any, b: any) => (a.position ?? 0) - (b.position ?? 0)
+  );
+
+  const displayImages = localImages.length
+    ? localImages.map((u) => ({ src: u.previewUrl, isNew: true }))
+    : savedSorted
+        .slice(0, maxImages)
+        .map((s: any) => ({ src: s.url ?? s.src, isNew: false }));
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Edit product"
         description="Update product details, categories and linked products."
       >
-        <Button type="submit" form="edit-product-form" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          form="edit-product-form"
+          disabled={isSubmitting}
+          isLoading={isSubmitting}
+        >
           {isSubmitting ? "Saving..." : "Save changes"}
         </Button>
       </PageHeader>
@@ -257,10 +416,10 @@ export function EditProduct({ productId }: Props) {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea
+                        <TiptapEditor
                           value={field.value ?? ""}
                           onChange={field.onChange}
-                          className="h-44 resize-none"
+                          placeholder="Write your post…"
                         />
                       </FormControl>
                       <FormMessage />
@@ -282,7 +441,7 @@ export function EditProduct({ productId }: Props) {
                         <Textarea
                           value={field.value ?? ""}
                           onChange={field.onChange}
-                          className="h-24 resize-none"
+                          className="h-48 resize-none"
                         />
                       </FormControl>
                       <FormMessage />
@@ -300,7 +459,7 @@ export function EditProduct({ productId }: Props) {
                         <Textarea
                           value={field.value ?? ""}
                           onChange={field.onChange}
-                          className="h-24 resize-none"
+                          className="h-48 resize-none"
                         />
                       </FormControl>
                       <FormMessage />
@@ -403,7 +562,7 @@ export function EditProduct({ productId }: Props) {
                         <FormItem>
                           <FormControl>
                             <Select
-                              value={field.value ?? undefined} // ✅ don’t coerce to ""
+                              value={field.value ?? undefined}
                               onValueChange={field.onChange}
                             >
                               <SelectTrigger className="w-64">
@@ -429,7 +588,6 @@ export function EditProduct({ productId }: Props) {
                         variant="clean"
                         size="sm"
                         onClick={() => {
-                          // revert to current product status & close editor
                           form.setValue("status", currentStatus, {
                             shouldDirty: false,
                           });
@@ -479,8 +637,9 @@ export function EditProduct({ productId }: Props) {
                 />
               </div>
 
+              {/* Images */}
               <div className="rounded-lg border p-4 space-y-4">
-                <SectionHeading>Default image</SectionHeading>
+                <SectionHeading>{`Images (up to ${maxImages})`}</SectionHeading>
 
                 <div
                   {...getRootProps()}
@@ -490,35 +649,82 @@ export function EditProduct({ productId }: Props) {
                   )}
                 >
                   <input {...getInputProps()} />
-                  {imageSrc ? (
-                    <Image
-                      src={imageSrc}
-                      alt="Product image"
-                      className="rounded-lg object-cover"
-                      width={220}
-                      height={220}
-                    />
+
+                  {displayImages.length ? (
+                    <div className="grid grid-cols-3 gap-2 w-full">
+                      {displayImages.slice(0, maxImages).map((img, idx) => (
+                        <div
+                          key={idx}
+                          className={cn(
+                            "relative rounded-lg overflow-hidden border",
+                            idx === currentDefault ? "ring-2 ring-primary" : ""
+                          )}
+                        >
+                          {localImages.length ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeImage(idx);
+                              }}
+                              className="absolute top-1 right-1 z-10 rounded-full bg-background/80 p-1 hover:bg-background"
+                              aria-label="Remove image"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          ) : null}
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDefaultImageIndex(idx);
+                            }}
+                            className="absolute bottom-1 left-1 z-10 rounded-md bg-background/80 px-2 py-1 text-xs hover:bg-background"
+                          >
+                            {idx === currentDefault ? "Default" : "Set default"}
+                          </button>
+
+                          <Image
+                            src={img.src}
+                            alt="Product image"
+                            className="h-24 w-full object-cover"
+                            width={220}
+                            height={220}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   ) : (
                     <div className="flex h-40 w-full items-center justify-center rounded-lg bg-muted/30">
                       <UserIcon className="h-10 w-10 text-muted-foreground" />
                     </div>
                   )}
+
                   <div className="mt-4 text-center text-sm text-muted-foreground">
                     {isDragActive ? (
-                      <p className="text-primary">Drop the file here…</p>
+                      <p className="text-primary">Drop the files here…</p>
                     ) : (
                       <div className="flex flex-col items-center gap-2">
                         <UploadCloud className="h-5 w-5" />
-                        <p>Drag & drop or click to upload</p>
+                        <p>{`Drag & drop or click to upload (up to ${maxImages})`}</p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* keep base64Image in the form */}
                 <FormField
                   control={form.control}
-                  name="base64Image"
+                  name="images"
+                  render={() => (
+                    <FormItem>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="defaultImageIndex"
                   render={() => (
                     <FormItem>
                       <FormMessage />
@@ -531,9 +737,9 @@ export function EditProduct({ productId }: Props) {
                 <SectionHeading>Categories</SectionHeading>
                 <CategoryCheckboxPicker
                   name="categoryIds"
-                  onCreateCategory={async (payload, setError) => {
-                    return createCategory(payload, setError);
-                  }}
+                  onCreateCategory={async (payload, setError) =>
+                    createCategory(payload, setError)
+                  }
                 />
               </div>
 

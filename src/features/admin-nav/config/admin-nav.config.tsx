@@ -244,7 +244,7 @@ export const main: readonly MenuItem[] = [
 
   {
     title: "Online Store",
-    link: "/settings/stores", // or "/stores" if you prefer
+    link: "/online-store", // or "/stores" if you prefer
     icon: <FaGlobe size={20} />,
     permissions: ["stores.read"],
   },

@@ -24,8 +24,6 @@ export function useGetMediaFiles(
     limit: params.limit ?? 50,
   };
 
-  console.log("Fetching media files with params:", normalizedParams);
-
   return useQuery({
     queryKey: ["media-files", normalizedParams],
     enabled: hasToken && Boolean(normalizedParams.storeId),

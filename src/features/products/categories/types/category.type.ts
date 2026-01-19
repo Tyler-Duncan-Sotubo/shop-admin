@@ -33,6 +33,7 @@ export type CreateCategoryPayload = {
   imageAltText?: string | null;
 
   removeImage?: boolean;
+  storeId?: string;
 };
 
 export type UpdateCategoryPayload = Partial<CreateCategoryPayload>;

@@ -10,14 +10,16 @@ import {
   StoreDomain,
   UpdateStoreDomainsPayload,
 } from "../types/store-domain.type";
+import { useSession } from "next-auth/react";
 
 export function useStoreDomains(storeId?: string | null) {
+  const { data: session } = useSession();
   const axiosInstance = useAxiosAuth();
   const qc = useQueryClient();
 
   const query = useQuery<StoreDomain[]>({
     queryKey: ["store-domains", storeId],
-    enabled: !!storeId,
+    enabled: !!storeId && !!session?.backendTokens?.accessToken,
     queryFn: async () => fetchStoreDomains(axiosInstance, storeId as string),
   });
 

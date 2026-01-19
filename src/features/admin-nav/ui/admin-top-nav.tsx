@@ -8,7 +8,7 @@ import { UserMenu } from "./user-menu";
 import { FaCog } from "react-icons/fa";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { StoreSelect } from "./store-select";
+import { StoreSwitcher } from "./store-select";
 import { useNewContactEmailCount } from "@/features/contact-emails/hooks/use-contact-emails";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 
@@ -31,7 +31,7 @@ export function AdminTopNav() {
     <div className="h-18 w-full bg-white flex items-center p-6 gap-6">
       {/* Store Selector */}
       <div className="flex items-center gap-2 text-gray-700 text-sm">
-        <StoreSelect
+        <StoreSwitcher
           stores={stores}
           value={activeStoreId}
           onChange={setActiveStoreId}

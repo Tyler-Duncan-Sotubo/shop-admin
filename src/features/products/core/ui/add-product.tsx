@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { SubmitHandler, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -23,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-
 import { CreateProductSchema } from "../schema/create-product.schema";
 import { CreateProductPayload } from "../types/product.type";
 import { useCreateProduct } from "../hooks/use-product";
@@ -34,17 +34,30 @@ import { useCategories } from "@/features/products/categories/hooks/use-categori
 import { ProductUpsellCrossSellLinks } from "./product-upsell-cross-sell-link";
 import PageHeader from "@/shared/ui/page-header";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, UserIcon } from "lucide-react";
+import { UploadCloud, UserIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { TiptapEditor } from "@/shared/ui/tiptap-editor";
 import { useSession } from "next-auth/react";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { BackButton } from "@/shared/ui/back-button";
+import {
+  PresignedUpload,
+  sanitizeFileName,
+  uploadToS3Put,
+} from "@/lib/s3-upload";
 
 type AddProductPageProps = {
   afterCreatePath?: (productId: string) => string;
 };
+
+type LocalImage = {
+  file: File;
+  previewUrl: string; // object URL for preview
+};
+
+const MAX_SIMPLE_IMAGES = 9;
+const MAX_VARIABLE_IMAGES = 1;
 
 export function AddProduct({ afterCreatePath }: AddProductPageProps) {
   const { activeStoreId } = useStoreScope();
@@ -53,74 +66,157 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
   const router = useRouter();
   const { createProduct } = useCreateProduct();
   const { createCategory } = useCategories(session, axios, activeStoreId);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [imageFileName, setImageFileName] = useState<string>("");
-  const [imageMimeType, setImageMimeType] = useState<string>("image/jpeg");
+  const [localImages, setLocalImages] = useState<LocalImage[]>([]);
 
   const form = useForm({
     resolver: zodResolver(CreateProductSchema),
     defaultValues: {
       name: "",
       description: "",
-      status: "draft", // ✅ add this
+      status: "draft",
       productType: "variable",
       categoryIds: [],
-      links: { related: [], upsell: [], cross_sell: [] }, // ✅ backend-aligned
+      links: { related: [], upsell: [], cross_sell: [] },
       seoTitle: "",
       seoDescription: "",
       howItFeelsAndLooks: "",
       whyYouWillLoveIt: "",
       details: "",
+      images: [], // will contain keys on submit (not base64)
+      defaultImageIndex: 0,
     },
     mode: "onSubmit",
   });
 
+  const productType =
+    useWatch({ control: form.control, name: "productType" }) ?? "variable";
+
+  const maxImages = useMemo(
+    () =>
+      productType === "variable" ? MAX_VARIABLE_IMAGES : MAX_SIMPLE_IMAGES,
+    [productType]
+  );
+
+  // cleanup object URLs
+  useEffect(() => {
+    return () => {
+      localImages.forEach((i) => URL.revokeObjectURL(i.previewUrl));
+    };
+  }, [localImages]);
+
+  // enforce limit when productType changes
+  useEffect(() => {
+    if (localImages.length > maxImages) {
+      const trimmed = localImages.slice(0, maxImages);
+      localImages
+        .slice(maxImages)
+        .forEach((i) => URL.revokeObjectURL(i.previewUrl));
+      setLocalImages(trimmed);
+      form.setValue("defaultImageIndex", 0, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+    if (maxImages === 1) {
+      form.setValue("defaultImageIndex", 0, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [maxImages, localImages, form]);
+
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      const file = acceptedFiles[0];
-      if (!file) return;
+    async (acceptedFiles: File[]) => {
+      if (!acceptedFiles?.length) return;
 
-      setImageMimeType(file.type || "image/jpeg");
-      setImageFileName(file.name || `upload-${Date.now()}.jpg`);
+      const remaining = maxImages - localImages.length;
+      if (remaining <= 0) return;
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setUploadedImage(base64);
+      const nextFiles = acceptedFiles.slice(0, remaining);
+      const newOnes = nextFiles.map((file) => ({
+        file,
+        previewUrl: URL.createObjectURL(file),
+      }));
 
-        form.setValue("base64Image", base64, {
+      setLocalImages((prev) => [...prev, ...newOnes].slice(0, maxImages));
+    },
+    [localImages.length, maxImages]
+  );
+
+  const removeImage = useCallback(
+    (index: number) => {
+      setLocalImages((prev) => {
+        const next = prev.filter((_, i) => i !== index);
+        const removed = prev[index];
+        if (removed) URL.revokeObjectURL(removed.previewUrl);
+        form.setValue("defaultImageIndex", 0, {
           shouldDirty: true,
           shouldValidate: true,
         });
-      };
-      reader.readAsDataURL(file);
+        return next;
+      });
     },
     [form]
+  );
+
+  const setDefaultImageIndex = useCallback(
+    (index: number) => {
+      form.setValue("defaultImageIndex", maxImages === 1 ? 0 : index, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    },
+    [form, maxImages]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { "image/*": [] },
-    multiple: false,
+    multiple: maxImages > 1,
+    maxFiles: maxImages,
   });
 
-  const isSubmitting = form.formState.isSubmitting;
+  async function presignUploads(files: File[]) {
+    const payload = {
+      count: files.length,
+      files: files.map((f) => ({
+        fileName: sanitizeFileName(f.name || `upload-${Date.now()}`),
+        mimeType: f.type || "image/jpeg",
+      })),
+      storeId: activeStoreId,
+      // optionally pass companyId/productId if your API needs it
+    };
 
-  const buildPayload = (values: any): CreateProductPayload => {
+    const res = await fetch("/api/uploads/presign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) throw new Error("Failed to create upload URLs");
+    const data = (await res.json()) as { uploads: PresignedUpload[] };
+    return data.uploads;
+  }
+
+  const buildPayload = (
+    values: any,
+    imagesDto?: any[]
+  ): CreateProductPayload => {
     const md: Record<string, any> = {
       how_it_feels_and_looks: values.howItFeelsAndLooks ?? "",
       why_you_will_love_it: values.whyYouWillLoveIt ?? "",
       details: values.details ?? "",
     };
 
-    // remove empty strings
     Object.keys(md).forEach((k) => {
       if (typeof md[k] === "string" && md[k].trim() === "") delete md[k];
     });
 
     return {
-      storeId: activeStoreId, // ✅ add storeId to payload
+      storeId: activeStoreId,
       name: values.name,
       description: values.description ?? null,
       status: values.status ?? "draft",
@@ -128,47 +224,99 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
       seoTitle: values.seoTitle ?? null,
       seoDescription: values.seoDescription ?? null,
       categoryIds: values.categoryIds ?? [],
-      links: values.links ?? { related: [], upsell: [], cross_sell: [] }, // ✅
+      links: values.links ?? { related: [], upsell: [], cross_sell: [] },
       metadata: md,
-      base64Image: values.base64Image?.trim() || undefined,
-      imageAltText: values.name || "Product image",
-
-      // ✅ NEW: send meta only when image exists
-      ...(values.base64Image?.trim()
-        ? {
-            imageFileName: imageFileName?.trim() || undefined,
-            imageMimeType: imageMimeType || "image/jpeg",
-          }
-        : {}),
+      images: imagesDto?.length ? imagesDto : undefined,
+      defaultImageIndex:
+        (values.productType ?? "variable") === "variable"
+          ? 0
+          : typeof values.defaultImageIndex === "number"
+          ? values.defaultImageIndex
+          : 0,
     };
   };
 
   const onSubmit: SubmitHandler<any> = async (values) => {
     setSubmitError(null);
 
-    const payload = buildPayload(values);
-    const created = await createProduct(payload, (msg) => setSubmitError(msg));
-    const productId = created?.id ?? created?.data?.id;
+    try {
+      setIsSubmitting(true);
 
-    if (productId) {
-      const next = afterCreatePath
-        ? afterCreatePath(productId)
-        : `/products/${productId}/variants`;
-      router.push(next);
-      return;
+      // 1) upload images (if any) to S3
+      let imagesDto: any[] | undefined = undefined;
+
+      if (localImages.length) {
+        const files = localImages.map((i) => i.file);
+        const uploads = await presignUploads(files);
+
+        if (uploads.length !== files.length) {
+          throw new Error("Upload URLs mismatch");
+        }
+
+        await Promise.all(
+          uploads.map((u, idx) => uploadToS3Put(u.uploadUrl, files[idx]))
+        );
+
+        const productName = values.name || "Product image";
+
+        imagesDto = uploads.map((u, idx) => ({
+          key: u.key,
+          url: u.url,
+          fileName: sanitizeFileName(files[idx].name || `img-${idx}.jpg`),
+          mimeType: files[idx].type || "image/jpeg",
+          altText: productName,
+          position: idx,
+        }));
+      }
+
+      // 2) create product with keys/urls
+      const payload = buildPayload(values, imagesDto);
+
+      const created = await createProduct(
+        payload,
+        (msg) => setSubmitError(msg),
+        form.reset
+      );
+
+      const productId = created?.id ?? created?.data?.id;
+
+      if (productId) {
+        const isSimple = (values.productType ?? "variable") === "simple";
+        const next = afterCreatePath
+          ? afterCreatePath(productId)
+          : isSimple
+          ? `/products`
+          : `/products/${productId}/variants`;
+
+        router.push(next);
+        return;
+      }
+
+      router.push(`/products`);
+    } catch (error: any) {
+      setSubmitError(error?.message ?? "Failed to create product");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    router.push(`/products`);
   };
+
+  const currentDefault =
+    useWatch({ control: form.control, name: "defaultImageIndex" }) ?? 0;
 
   return (
     <div className="space-y-6">
       <BackButton href="/products?tab=products" label="Back to products" />
+
       <PageHeader
         title="Add product"
         description="Create the product shell first. You’ll set options/variants in step 2."
       >
-        <Button type="submit" form="add-product-form" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          form="add-product-form"
+          disabled={isSubmitting}
+          isLoading={isSubmitting}
+        >
           {isSubmitting ? "Creating..." : "Create & continue"}
         </Button>
       </PageHeader>
@@ -176,9 +324,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
       <Form {...form}>
         <form
           id="add-product-form"
-          onSubmit={form.handleSubmit((values) => {
-            onSubmit(values);
-          })}
+          onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-6"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -209,13 +355,10 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea
+                        <TiptapEditor
                           value={field.value ?? ""}
                           onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
-                          className="h-44 resize-none"
+                          placeholder="Write your post…"
                         />
                       </FormControl>
                       <FormMessage />
@@ -242,7 +385,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                           onBlur={field.onBlur}
                           name={field.name}
                           ref={field.ref}
-                          className="h-24 resize-none"
+                          className="h-48 resize-none"
                         />
                       </FormControl>
                       <FormMessage />
@@ -264,7 +407,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                           onBlur={field.onBlur}
                           name={field.name}
                           ref={field.ref}
-                          className="h-24 resize-none"
+                          className="h-48 resize-none"
                         />
                       </FormControl>
                       <FormMessage />
@@ -357,7 +500,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                       <FormItem>
                         <FormControl>
                           <Select
-                            value={field.value ?? undefined} // ✅ don’t coerce to ""
+                            value={field.value ?? undefined}
                             onValueChange={field.onChange}
                           >
                             <SelectTrigger className="w-64">
@@ -376,6 +519,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                   />
                 </div>
               </div>
+
               {/* Product type */}
               <div className="rounded-lg border p-4 space-y-4">
                 <SectionHeading>Product type</SectionHeading>
@@ -405,8 +549,9 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                 />
               </div>
 
+              {/* Images */}
               <div className="rounded-lg border p-4 space-y-4">
-                <SectionHeading>Default image</SectionHeading>
+                <SectionHeading>{`Images (optional, up to ${maxImages})`}</SectionHeading>
 
                 <div
                   {...getRootProps()}
@@ -417,14 +562,49 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                 >
                   <input {...getInputProps()} />
 
-                  {uploadedImage ? (
-                    <Image
-                      src={uploadedImage}
-                      alt="Product image"
-                      className="rounded-lg object-cover"
-                      width={220}
-                      height={220}
-                    />
+                  {localImages.length ? (
+                    <div className="grid grid-cols-3 gap-2 w-full">
+                      {localImages.map((img, idx) => (
+                        <div
+                          key={idx}
+                          className={cn(
+                            "relative rounded-lg overflow-hidden border",
+                            idx === currentDefault ? "ring-2 ring-primary" : ""
+                          )}
+                        >
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeImage(idx);
+                            }}
+                            className="absolute top-1 right-1 z-10 rounded-full bg-background/80 p-1 hover:bg-background"
+                            aria-label="Remove image"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDefaultImageIndex(idx);
+                            }}
+                            className="absolute bottom-1 left-1 z-10 rounded-md bg-background/80 px-2 py-1 text-xs hover:bg-background"
+                          >
+                            {idx === currentDefault ? "Default" : "Set default"}
+                          </button>
+
+                          <Image
+                            src={img.previewUrl}
+                            alt="Product image"
+                            className="h-24 w-full object-cover"
+                            width={220}
+                            height={220}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   ) : (
                     <div className="flex h-40 w-full items-center justify-center rounded-lg bg-muted/30">
                       <UserIcon className="h-10 w-10 text-muted-foreground" />
@@ -433,20 +613,35 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
 
                   <div className="mt-4 text-center text-sm text-muted-foreground">
                     {isDragActive ? (
-                      <p className="text-primary">Drop the file here…</p>
+                      <p className="text-primary">Drop the files here…</p>
                     ) : (
                       <div className="flex flex-col items-center gap-2">
                         <UploadCloud className="h-5 w-5" />
-                        <p>Drag & drop or click to upload</p>
+                        <p>
+                          Drag & drop or click to upload{" "}
+                          {localImages.length
+                            ? `(you can add ${
+                                maxImages - localImages.length
+                              } more)`
+                            : `(up to ${maxImages})`}
+                        </p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* keep base64Image in the form */}
                 <FormField
                   control={form.control}
-                  name="base64Image"
+                  name="images"
+                  render={() => (
+                    <FormItem>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="defaultImageIndex"
                   render={() => (
                     <FormItem>
                       <FormMessage />

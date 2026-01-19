@@ -379,7 +379,7 @@ export function PaymentMethodsClient() {
       } else if (cfg.method === "bank_transfer") {
         await upsertBank.mutateAsync({
           storeId: activeStoreId!,
-          config,
+          config: config.bankDetails,
           enabled: enabledByKey[key],
         });
       } else {

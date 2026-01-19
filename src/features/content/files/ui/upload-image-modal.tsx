@@ -24,21 +24,28 @@ type UploadImageModalProps = {
   title?: string;
   description?: string;
 
-  // Called with base64 + fileName + mimeType
+  // ✅ NEW: client uploads file -> presign PUT -> finalize
   onUpload: (payload: {
-    base64: string;
+    file: File;
     fileName: string;
     mimeType: string;
+    // optional metadata
+    altText?: string | null;
+    folder?: string | null;
+    tag?: string | null;
   }) => Promise<void> | void;
 
   isSubmitting?: boolean;
-
-  /**
-   * Optional:
-   * - if you want to prefill or enforce a folder/tag later
-   */
   defaultFileName?: string;
 };
+
+function sanitizeFileName(name: string) {
+  return (name || "upload")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-zA-Z0-9._-]/g, "")
+    .slice(0, 120);
+}
 
 export function UploadImageModal({
   open,
@@ -49,50 +56,49 @@ export function UploadImageModal({
   isSubmitting = false,
   defaultFileName,
 }: UploadImageModalProps) {
-  const [base64, setBase64] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
   const [fileName, setFileName] = useState<string>(defaultFileName ?? "");
   const [mimeType, setMimeType] = useState<string>("image/jpeg");
 
   const canSubmit = useMemo(() => {
-    return Boolean(base64 && fileName.trim().length >= 3);
-  }, [base64, fileName]);
+    return Boolean(file && fileName.trim().length >= 3);
+  }, [file, fileName]);
 
-  // Reset state when modal is closed
   const resetState = useEffectEvent(() => {
-    setBase64(null);
-    setPreview(null);
+    // cleanup blob url
+    setPreview((prev) => {
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return null;
+    });
+
+    setFile(null);
     setFileName(defaultFileName ?? "");
     setMimeType("image/jpeg");
   });
 
-  // Reset state when modal is closed
   useEffect(() => {
-    if (!open) {
-      resetState();
-    }
+    if (!open) resetState();
   }, [open]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
-      const file = acceptedFiles?.[0];
-      if (!file) return;
+      const f = acceptedFiles?.[0];
+      if (!f) return;
 
-      setMimeType(file.type || "image/jpeg");
+      setFile(f);
+      setMimeType(f.type || "image/jpeg");
 
-      // prefill name if empty
       if (!fileName) {
-        setFileName(file.name || `upload-${Date.now()}.jpg`);
+        setFileName(f.name || `upload-${Date.now()}.jpg`);
       }
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        const b64 = reader.result as string;
-        setBase64(b64);
-        setPreview(b64);
-      };
-      reader.readAsDataURL(file);
+      const blobUrl = URL.createObjectURL(f);
+      setPreview((prev) => {
+        if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+        return blobUrl;
+      });
     },
     [fileName]
   );
@@ -106,17 +112,17 @@ export function UploadImageModal({
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!base64) return;
-    const finalName = fileName.trim();
+    if (!file) return;
+
+    const finalName = sanitizeFileName(fileName.trim());
     if (!finalName) return;
 
     await onUpload({
-      base64,
+      file,
       fileName: finalName,
       mimeType,
     });
 
-    // close after successful upload (caller can also control)
     onClose();
   };
 
@@ -132,7 +138,6 @@ export function UploadImageModal({
       submitLabel="Upload"
     >
       <div className="space-y-4">
-        {/* Dropzone */}
         <div
           {...getRootProps()}
           className={cn(
@@ -170,7 +175,6 @@ export function UploadImageModal({
           </div>
         </div>
 
-        {/* File name */}
         <div className="space-y-2">
           <Label>File name</Label>
           <Input
@@ -183,7 +187,6 @@ export function UploadImageModal({
           </p>
         </div>
 
-        {/* Small validation hint (optional) */}
         {!canSubmit ? (
           <p className="text-xs text-muted-foreground">
             Select an image and set a file name to upload.

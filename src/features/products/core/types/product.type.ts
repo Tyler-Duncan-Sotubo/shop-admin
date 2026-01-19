@@ -35,9 +35,11 @@ export type Product = {
 
 export type CreateProductPayload = {
   storeId: string | null;
+
   name: string;
   description?: string | null;
   slug?: string;
+
   status?: ProductStatus;
   productType?: ProductType;
 
@@ -48,8 +50,18 @@ export type CreateProductPayload = {
   links?: Partial<Record<"related" | "upsell" | "cross_sell", string[]>>;
 
   metadata?: Record<string, any>;
-  base64Image?: string;
-  imageAltText?: string;
+
+  // ---------- Images (max 3) ----------
+  images?: Array<{
+    base64: string;
+    fileName: string;
+    mimeType: string;
+    altText?: string;
+    position?: number;
+  }>;
+
+  // which image is default (index in images array)
+  defaultImageIndex?: number;
 };
 
 export const STATUS_LABEL: Record<any, string> = {

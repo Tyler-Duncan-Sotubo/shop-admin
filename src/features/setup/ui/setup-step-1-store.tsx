@@ -257,7 +257,7 @@ export function SetupStep1Store({ onSuccess }: Props) {
                       </FormDescription>
 
                       <FormControl>
-                        <div className="flex items-stretch rounded-lg border bg-muted/20 overflow-hidden">
+                        <div className="flex w-[60%] items-stretch rounded-lg border bg-muted/20 overflow-hidden">
                           <Input
                             value={shownSubdomain}
                             placeholder="e.g. example"
@@ -282,7 +282,7 @@ export function SetupStep1Store({ onSuccess }: Props) {
                               );
                             }}
                           />
-                          <div className="flex items-center px-3 text-sm text-muted-foreground border-l bg-background">
+                          <div className="flex items-center px-3 text-sm text-white border-l bg-primary font-bold">
                             .{BASE_DOMAIN}
                           </div>
                         </div>
@@ -290,9 +290,9 @@ export function SetupStep1Store({ onSuccess }: Props) {
 
                       {/* preview uses the stored value (full host) */}
                       {field.value ? (
-                        <div className="mt-1 text-sm text-muted-foreground">
-                          Preview:{" "}
-                          <span className="font-medium">
+                        <div className="mt-1 text-lg text-muted-foreground">
+                          Your store will be at:{" "}
+                          <span className="font-bold text-primary">
                             {String(field.value)}
                           </span>
                         </div>

@@ -1,8 +1,8 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -33,14 +33,66 @@ import {
   toStrOrEmpty,
   toStrOrZero,
 } from "@/shared/utils/number-to-string";
-import { useProductVariants } from "../hooks/use-product-variants"; // ✅ adjust path
+import { useProductVariants } from "../hooks/use-product-variants";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
+
+// ✅ S3 presign + upload helpers (adjust path if you placed elsewhere)
+type PresignReq = { files: { fileName: string; mimeType: string }[] };
+type PresignedUpload = { key: string; uploadUrl: string; url: string };
 
 function nairaPrefixProps() {
   return {
     inputMode: "decimal" as const,
     placeholder: "0",
   };
+}
+
+function sanitizeFileName(name: string) {
+  return (name || "upload")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-zA-Z0-9._-]/g, "")
+    .slice(0, 120);
+}
+
+async function presignVariantImage(file: File) {
+  const body: PresignReq = {
+    files: [
+      {
+        fileName: sanitizeFileName(file.name || `upload-${Date.now()}.jpg`),
+        mimeType: file.type || "image/jpeg",
+      },
+    ],
+  };
+
+  const res = await fetch("/api/uploads/presign", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => "");
+    throw new Error(msg || "Failed to presign upload");
+  }
+
+  const data = (await res.json()) as { uploads: PresignedUpload[] };
+  const first = data.uploads?.[0];
+  if (!first) throw new Error("No presigned upload returned");
+  return first;
+}
+
+async function putToS3(uploadUrl: string, file: File) {
+  const res = await fetch(uploadUrl, {
+    method: "PUT",
+    body: file,
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`S3 upload failed (${res.status}) ${text}`);
+  }
 }
 
 export function VariantEditDialog({
@@ -51,19 +103,23 @@ export function VariantEditDialog({
 }: {
   open: boolean;
   variant: ProductVariant | null;
-  productId: string; // ✅ needed to target correct queryKey
+  productId: string;
   onClose: () => void;
 }) {
   const { activeStoreId } = useStoreScope();
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [imageVersion, setImageVersion] = useState<number>(() => Date.now());
 
-  // ✅ NEW: filename + mimetype (from dropped file)
+  // ✅ local preview + metadata for new upload
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [imageVersion, setImageVersion] = useState<number>(() => Date.now());
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+
+  const [imageKey, setImageKey] = useState<string>("");
+  const [imageUrl, setImageUrl] = useState<string>("");
+
   const [imageFileName, setImageFileName] = useState<string>("");
   const [imageMimeType, setImageMimeType] = useState<string>("image/jpeg");
 
-  // ✅ use the hook mutation so invalidation matches the query key
   const { updateVariant } = useProductVariants(productId);
 
   const form = useForm<VariantFormValues>({
@@ -72,6 +128,7 @@ export function VariantEditDialog({
       title: "",
       sku: "",
       barcode: "",
+      // ✅ keep in schema if it exists, but we won't use it for upload
       base64Image: "",
       regularPrice: "0",
       salePrice: "",
@@ -85,27 +142,40 @@ export function VariantEditDialog({
     mode: "onChange",
   });
 
-  // ---- Dropzone (base64 upload) ----
+  const withVersion = (url?: string) => {
+    if (!url) return "";
+    const sep = url.includes("?") ? "&" : "?";
+    return `${url}${sep}v=${imageVersion}`;
+  };
+
+  // ---- Dropzone (NOW uploads to S3 via presign) ----
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
       if (!file) return;
 
-      // ✅ NEW: capture mimeType + fileName like your UploadImageModal
+      setSubmitError(null);
+
+      // capture metadata
       setImageMimeType(file.type || "image/jpeg");
       setImageFileName(file.name || `upload-${Date.now()}.jpg`);
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setUploadedImage(base64);
+      // local preview (fast)
+      const objectUrl = URL.createObjectURL(file);
+      setLocalPreview(objectUrl);
 
-        form.setValue("base64Image", base64, {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
-      };
-      reader.readAsDataURL(file);
+      // store pending file for submit
+      setPendingFile(file);
+
+      // reset keys until submit does the actual upload
+      setImageKey("");
+      setImageUrl("");
+
+      // keep form field clean (we're not using base64 anymore)
+      form.setValue("base64Image", "", {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
     },
     [form]
   );
@@ -115,12 +185,6 @@ export function VariantEditDialog({
     accept: { "image/*": [] },
     multiple: false,
   });
-
-  const withVersion = (url?: string) => {
-    if (!url) return "";
-    const sep = url.includes("?") ? "&" : "?";
-    return `${url}${sep}v=${imageVersion}`;
-  };
 
   useEffect(() => {
     if (!variant) return;
@@ -142,16 +206,29 @@ export function VariantEditDialog({
       lowStockThreshold: numToStr(anyVar?.inventory?.lowStockThreshold),
     });
 
-    setUploadedImage(null);
+    // reset local
+    setSubmitError(null);
+    setPendingFile(null);
 
-    // ✅ NEW: reset metadata when opening/resetting
+    // release old object url
+    setLocalPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+
+    setImageKey("");
+    setImageUrl("");
     setImageFileName("");
     setImageMimeType("image/jpeg");
-  }, [variant, open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [variant, open]);
 
   const savedImageUrl = (variant as any)?.image?.url;
-  const imageSrc =
-    uploadedImage || (savedImageUrl ? withVersion(savedImageUrl) : "");
+
+  const imageSrc = useMemo(() => {
+    if (localPreview) return localPreview;
+    if (savedImageUrl) return withVersion(savedImageUrl);
+    return "";
+  }, [localPreview, savedImageUrl, imageVersion]);
 
   const submit = async (values: VariantFormValues) => {
     if (!variant) return;
@@ -159,45 +236,66 @@ export function VariantEditDialog({
 
     const removeSalePrice = !values.salePrice?.trim();
 
-    const hasNewImage = Boolean(values.base64Image?.trim());
-
-    const payload: any = {
-      storeId: activeStoreId,
-      title: values.title ?? null,
-      sku: values.sku?.trim() ? values.sku.trim() : null,
-      barcode: values.barcode?.trim() ? values.barcode.trim() : null,
-
-      regularPrice: values.regularPrice,
-      salePrice: values.salePrice?.trim() ? values.salePrice.trim() : null,
-
-      weight: values.weight?.trim() ? values.weight.trim() : null,
-      length: values.length?.trim() ? values.length.trim() : null,
-      width: values.width?.trim() ? values.width.trim() : null,
-      height: values.height?.trim() ? values.height.trim() : null,
-
-      stockQuantity: values.stockQuantity?.trim() || null,
-      safetyStock: values.lowStockThreshold?.trim() || null,
-      removeSalePrice: removeSalePrice,
-
-      base64Image: hasNewImage ? values.base64Image?.trim() : undefined,
-      imageAltText: values.title || null,
-
-      // ✅ NEW: include only when uploading a new image
-      ...(hasNewImage
-        ? {
-            imageFileName: imageFileName?.trim() || null,
-            imageMimeType: imageMimeType || "image/jpeg",
-          }
-        : {}),
-    };
+    // ✅ if a new file is selected, upload it now (presign -> PUT)
+    let nextKey = imageKey;
+    let nextUrl = imageUrl;
 
     try {
+      if (pendingFile) {
+        const presigned = await presignVariantImage(pendingFile);
+        await putToS3(presigned.uploadUrl, pendingFile);
+
+        nextKey = presigned.key;
+        nextUrl = presigned.url;
+
+        setImageKey(nextKey);
+        setImageUrl(nextUrl);
+      }
+
+      const payload: any = {
+        storeId: activeStoreId,
+        title: values.title ?? null,
+        sku: values.sku?.trim() ? values.sku.trim() : null,
+        barcode: values.barcode?.trim() ? values.barcode.trim() : null,
+
+        regularPrice: values.regularPrice,
+        salePrice: values.salePrice?.trim() ? values.salePrice.trim() : null,
+
+        weight: values.weight?.trim() ? values.weight.trim() : null,
+        length: values.length?.trim() ? values.length.trim() : null,
+        width: values.width?.trim() ? values.width.trim() : null,
+        height: values.height?.trim() ? values.height.trim() : null,
+
+        stockQuantity: values.stockQuantity?.trim() || null,
+        safetyStock: values.lowStockThreshold?.trim() || null,
+        removeSalePrice: removeSalePrice,
+
+        // ✅ NEW: send key/url only if user uploaded a new image in this session
+        ...(pendingFile
+          ? {
+              imageKey: nextKey,
+              imageUrl: nextUrl,
+              imageAltText: values.title || null,
+              imageFileName: imageFileName?.trim() || null,
+              imageMimeType: imageMimeType || "image/jpeg",
+            }
+          : {}),
+      };
+
       await updateVariant.mutateAsync({
         variantId: variant.id,
         payload,
       });
 
       setImageVersion(() => Date.now());
+
+      // cleanup local preview url
+      setLocalPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+
+      setPendingFile(null);
       onClose();
     } catch (e: any) {
       setSubmitError(e?.message ?? "Failed to update variant");
@@ -251,6 +349,7 @@ export function VariantEditDialog({
                   </div>
                 </div>
 
+                {/* keep field for schema compatibility */}
                 <FormField
                   control={form.control}
                   name="base64Image"
@@ -261,8 +360,7 @@ export function VariantEditDialog({
                   )}
                 />
 
-                {/* Optional: show filename/mimeType for debug/visibility */}
-                {uploadedImage ? (
+                {pendingFile ? (
                   <div className="mt-2 text-xs text-muted-foreground space-y-1">
                     <div>
                       <span className="font-medium">File:</span>{" "}

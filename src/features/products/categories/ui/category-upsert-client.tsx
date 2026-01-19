@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import PageHeader from "@/shared/ui/page-header";
 import { SectionHeading } from "@/shared/ui/section-heading";
 import {
@@ -24,10 +23,11 @@ import { Button } from "@/shared/ui/button";
 import { cn } from "@/lib/utils";
 import { useDropzone } from "react-dropzone";
 import Image from "next/image";
-import { UploadCloud, ImageIcon } from "lucide-react";
+import { UploadCloud, ImageIcon, X } from "lucide-react";
 import { TiptapEditor } from "@/shared/ui/tiptap-editor";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { slugify } from "@/shared/utils/slugify";
+import axios from "axios";
 
 import type {
   Category,
@@ -52,6 +52,17 @@ type Props = {
   afterSubmitPath?: (id: string) => string;
 };
 
+type PresignResp = {
+  uploads: Array<{ key: string; uploadUrl: string; url: string }>;
+};
+
+type PendingUpload = {
+  key: string;
+  url: string;
+  fileName: string;
+  mimeType: string;
+};
+
 export function CategoryUpsertClient({
   mode,
   categoryId,
@@ -60,26 +71,34 @@ export function CategoryUpsertClient({
 }: Props) {
   const router = useRouter();
   const { activeStoreId } = useStoreScope();
-  const axios = useAxiosAuth();
+  const axiosForServer = useAxiosAuth();
   const { data: session } = useSession();
 
   const { categories, createCategory, storeKey } = useCategories(
     session,
-    axios,
+    axiosForServer,
     activeStoreId
   );
 
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // edit payload state
   const [loadedCategory, setLoadedCategory] = useState<Category | null>(
     initial ?? null
   );
 
-  // image state
+  // image display
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [imageFileName, setImageFileName] = useState<string>("");
   const [imageMimeType, setImageMimeType] = useState<string>("image/jpeg");
+
+  // pending presigned upload info to attach on submit
+  const [pendingUpload, setPendingUpload] = useState<PendingUpload | null>(
+    null
+  );
+
+  // ✅ tells backend to clear imageMediaId on update
+  const [removeImage, setRemoveImage] = useState<boolean>(false);
 
   const form = useForm({
     resolver: zodResolver(CategoryUpsertSchema),
@@ -91,12 +110,12 @@ export function CategoryUpsertClient({
       isActive: true,
       metaTitle: "",
       metaDescription: "",
-      base64Image: "",
+      base64Image: "", // legacy field kept for schema compat
     },
     mode: "onSubmit",
   });
 
-  // ✅ useQuery for category + products (enabled by BOTH session + storeId + categoryId)
+  // category + products (edit mode)
   const categoryBundleQ = useQuery<any>({
     queryKey: [
       "categories",
@@ -114,7 +133,7 @@ export function CategoryUpsertClient({
       !!session?.backendTokens?.accessToken &&
       !!activeStoreId,
     queryFn: async () => {
-      const res = await axios.get(
+      const res = await axiosForServer.get(
         `/api/catalog/categories/${categoryId}/products/admin`,
         {
           params: {
@@ -134,12 +153,11 @@ export function CategoryUpsertClient({
     },
   });
 
-  // hydrate form from query result
+  // hydrate form
   useEffect(() => {
     if (mode !== "edit") return;
     const payload = categoryBundleQ.data?.data ?? categoryBundleQ.data;
     const c = payload?.category ?? null;
-
     if (!c) return;
 
     setLoadedCategory(c);
@@ -156,7 +174,13 @@ export function CategoryUpsertClient({
     });
 
     const existingUrl = (c as any).imageUrl as string | undefined;
-    if (existingUrl) setUploadedImage(existingUrl);
+    setUploadedImage(existingUrl ?? null);
+
+    // reset upload state on load
+    setPendingUpload(null);
+    setRemoveImage(false);
+    setImageFileName("");
+    setImageMimeType("image/jpeg");
   }, [categoryBundleQ.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const categoryProducts = useMemo(() => {
@@ -169,42 +193,109 @@ export function CategoryUpsertClient({
     return Number(payload?.total ?? 0);
   }, [categoryBundleQ.data]);
 
-  // parent options (exclude self on edit)
+  // parent options (exclude self)
   const parentOptions = useMemo(() => {
     const selfId = loadedCategory?.id ?? categoryId;
     return (categories ?? []).filter((c) => c.id !== selfId);
   }, [categories, loadedCategory?.id, categoryId]);
 
-  // dropzone
+  // upload on drop (presign -> PUT)
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      const file = acceptedFiles[0];
+    async (acceptedFiles: File[]) => {
+      const file = acceptedFiles?.[0];
       if (!file) return;
 
-      setImageMimeType(file.type || "image/jpeg");
-      setImageFileName(file.name || `upload-${Date.now()}.jpg`);
+      if (!activeStoreId) {
+        setSubmitError("No active store selected");
+        return;
+      }
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setUploadedImage(base64);
-        form.setValue("base64Image", base64, {
-          shouldDirty: true,
-          shouldValidate: true,
+      setSubmitError(null);
+
+      const fileName = file.name || `upload-${Date.now()}.jpg`;
+      const mimeType = file.type || "image/jpeg";
+
+      setImageFileName(fileName);
+      setImageMimeType(mimeType);
+
+      try {
+        // 1) presign (Next route -> backend)
+        const presignRes = await axios.post<PresignResp>(
+          "/api/uploads/media-presign",
+          {
+            storeId: activeStoreId,
+            folder: "categories",
+            files: [{ fileName, mimeType }],
+          }
+        );
+
+        const uploads =
+          (presignRes.data as any)?.uploads ??
+          (presignRes.data as any)?.data?.uploads;
+        const u = uploads?.[0];
+
+        if (!u?.uploadUrl || !u?.key || !u?.url) {
+          throw new Error("Invalid presign response");
+        }
+
+        // 2) PUT to S3
+        const putRes = await fetch(u.uploadUrl, {
+          method: "PUT",
+          body: file,
+          headers: { "Content-Type": mimeType },
         });
-      };
-      reader.readAsDataURL(file);
+
+        if (!putRes.ok) {
+          const txt = await putRes.text().catch(() => "");
+          throw new Error(
+            `S3 upload failed (${putRes.status}): ${txt || "unknown"}`
+          );
+        }
+
+        // 3) preview + save pending upload for submit
+        setUploadedImage(u.url);
+        setPendingUpload({
+          key: u.key,
+          url: u.url,
+          fileName,
+          mimeType,
+        });
+
+        // if they upload a new image in edit mode, don't remove
+        setRemoveImage(false);
+
+        form.setValue("base64Image", "", {
+          shouldDirty: true,
+          shouldValidate: false,
+        });
+      } catch (e: any) {
+        setPendingUpload(null);
+        setSubmitError(e?.message ?? "Upload failed");
+      }
     },
-    [form]
+    [activeStoreId, form]
   );
+
+  const clearPendingImage = useCallback(() => {
+    setUploadedImage(null);
+    setPendingUpload(null);
+    setImageFileName("");
+    setImageMimeType("image/jpeg");
+
+    // ✅ tell backend to clear existing image on update
+    if (mode === "edit") setRemoveImage(true);
+
+    form.setValue("base64Image", "", {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+  }, [form, mode]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { "image/*": [] },
     multiple: false,
   });
-
-  const isSubmitting = form.formState.isSubmitting;
 
   const updateCategory = useUpdateMutation<UpdateCategoryPayload>({
     endpoint: `/api/catalog/categories/${categoryId}`,
@@ -220,8 +311,6 @@ export function CategoryUpsertClient({
 
     if (!activeStoreId) throw new Error("No active store selected");
 
-    const base64 = values.base64Image?.trim();
-
     return {
       storeId: activeStoreId,
       name,
@@ -233,16 +322,20 @@ export function CategoryUpsertClient({
       metaTitle: values.metaTitle?.trim() || null,
       metaDescription: values.metaDescription?.trim() || null,
 
-      base64Image: base64 || undefined,
-      imageAltText: name ? `${name} category image` : "Category image",
-
-      ...(base64
+      // ✅ backend expects flat fields
+      ...(pendingUpload
         ? {
-            imageFileName: imageFileName?.trim() || undefined,
-            imageMimeType: imageMimeType || "image/jpeg",
+            uploadKey: pendingUpload.key,
+            uploadUrl: pendingUpload.url,
+            imageFileName: pendingUpload.fileName,
+            imageMimeType: pendingUpload.mimeType,
+            imageAltText: name ? `${name} category image` : "Category image",
           }
         : {}),
-    };
+
+      // ✅ removal flag for update
+      ...(mode === "edit" && removeImage ? { removeImage: true } : {}),
+    } as any;
   };
 
   const onSubmit: SubmitHandler<any> = async (values) => {
@@ -253,41 +346,51 @@ export function CategoryUpsertClient({
       payload = buildPayload(values);
     } catch (e: any) {
       setSubmitError(e?.message ?? "Invalid form values");
+      setIsSubmitting(false);
       return;
     }
 
     // CREATE
     if (mode === "create") {
       try {
+        setIsSubmitting(true);
         const created = await createCategory(payload as any);
         const id = created?.id ?? created?.data?.id;
         if (!id) throw new Error("Category created but no id returned.");
 
         router.push(
-          afterSubmitPath ? afterSubmitPath(id) : "/products/categories"
+          afterSubmitPath ? afterSubmitPath(id) : "/products?tab=collections"
         );
         return;
       } catch (err: any) {
         setSubmitError(err?.message ?? "Failed to create category");
         return;
+      } finally {
+        setIsSubmitting(false);
       }
     }
 
     // EDIT
     if (!categoryId) {
       setSubmitError("Missing category id");
+      setIsSubmitting(false);
       return;
     }
 
     try {
+      setIsSubmitting(true);
       await updateCategory(payload as any, (msg) => setSubmitError(msg));
       router.push(
-        afterSubmitPath ? afterSubmitPath(categoryId) : "/products/categories"
+        afterSubmitPath
+          ? afterSubmitPath(categoryId)
+          : "/products?tab=collections"
       );
       return;
     } catch (err: any) {
       setSubmitError(err?.message ?? "Failed to update category");
       return;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -297,6 +400,7 @@ export function CategoryUpsertClient({
         href="/products?tab=collections"
         label="Back to collections"
       />
+
       <PageHeader
         title={mode === "create" ? "New category" : "Edit category"}
         description={
@@ -309,6 +413,7 @@ export function CategoryUpsertClient({
           type="submit"
           form="category-upsert-form"
           disabled={isSubmitting}
+          isLoading={isSubmitting}
         >
           <FaPlus />{" "}
           {isSubmitting ? "Saving..." : mode === "create" ? "Create" : "Save"}
@@ -432,7 +537,6 @@ export function CategoryUpsertClient({
                   items={categoryProducts ?? []}
                   productsTotal={productsTotal}
                   categoryId={categoryId!}
-                  // enableReorder={canFetch && !categoryBundleQ.isFetching}
                 />
               ) : null}
             </div>
@@ -508,13 +612,28 @@ export function CategoryUpsertClient({
                   <input {...getInputProps()} />
 
                   {uploadedImage ? (
-                    <Image
-                      src={uploadedImage}
-                      alt="Category image"
-                      className="rounded-lg object-cover"
-                      width={220}
-                      height={220}
-                    />
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          clearPendingImage();
+                        }}
+                        className="absolute -top-2 -right-2 z-10 rounded-full bg-background/90 p-1 border hover:bg-background"
+                        aria-label="Remove image"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+
+                      <Image
+                        src={uploadedImage}
+                        alt="Category image"
+                        className="rounded-lg object-cover"
+                        width={220}
+                        height={220}
+                      />
+                    </div>
                   ) : (
                     <div className="flex h-40 w-full items-center justify-center rounded-lg bg-muted/30">
                       <ImageIcon className="h-10 w-10 text-muted-foreground" />
@@ -533,6 +652,7 @@ export function CategoryUpsertClient({
                   </div>
                 </div>
 
+                {/* keep for schema validation error display if needed */}
                 <FormField
                   control={form.control}
                   name="base64Image"
@@ -542,6 +662,19 @@ export function CategoryUpsertClient({
                     </FormItem>
                   )}
                 />
+
+                {pendingUpload ? (
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <div>
+                      <span className="font-medium">File:</span>{" "}
+                      {imageFileName || "—"}
+                    </div>
+                    <div>
+                      <span className="font-medium">Type:</span>{" "}
+                      {imageMimeType || "—"}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
