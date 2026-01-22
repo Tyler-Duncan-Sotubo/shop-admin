@@ -29,7 +29,7 @@ const SalesAnalyticsClient = ({
       paymentsLimit: 5,
       topProductsBy: "revenue",
     },
-    session
+    session,
   );
 
   if (q.isLoading) {
@@ -64,7 +64,7 @@ const SalesAnalyticsClient = ({
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-        <div className="col-span-2">
+        <div className="md:col-span-2">
           <CommerceSalesChartToday
             range={range}
             data={bundle.salesTimeseries}

@@ -63,7 +63,7 @@ export function CommerceOrdersByChannelPie({
 }) {
   const [preset, setPreset] = usePersistedState<ChartPreset>(
     "analytics:channel-pie-preset",
-    "30d"
+    "30d",
   );
 
   const range = useChartRange(preset);
@@ -71,7 +71,7 @@ export function CommerceOrdersByChannelPie({
   // ✅ no UI filter for orders vs revenue — always revenue
   const q = useCommerceOrdersByChannel(
     { ...range, storeId: activeStoreId, metric: "revenue" },
-    session
+    session,
   );
 
   const data = React.useMemo(() => {
@@ -98,17 +98,17 @@ export function CommerceOrdersByChannelPie({
     preset === "1y"
       ? "Last 12 months"
       : preset === "30d"
-      ? "Last 30 days"
-      : "Last 7 days";
+        ? "Last 30 days"
+        : "Last 7 days";
 
   const totalRevenueMinor = React.useMemo(
     () => data.reduce((acc, r) => acc + (Number(r.value) || 0), 0),
-    [data]
+    [data],
   );
 
   const totalOrders = React.useMemo(
     () => data.reduce((acc, r) => acc + (Number(r.ordersCount) || 0), 0),
-    [data]
+    [data],
   );
 
   const [activeIndex, setActiveIndex] = React.useState(0);
@@ -131,7 +131,7 @@ export function CommerceOrdersByChannelPie({
           onValueChange={(v) => setPreset(v as ChartPreset)}
         >
           <SelectTrigger
-            className="hidden w-40 rounded-lg sm:ml-auto sm:flex"
+            className="w-40 rounded-lg sm:ml-auto"
             aria-label="Select a range"
           >
             <SelectValue placeholder="Select range" />

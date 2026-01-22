@@ -14,6 +14,8 @@ import {
   SortingState,
   VisibilityState,
   PaginationState,
+  Row,
+  Table as TableType,
 } from "@tanstack/react-table";
 
 import {
@@ -29,24 +31,36 @@ import { Input } from "@/shared/ui/input";
 import { FaSearch } from "react-icons/fa";
 import { SlSocialDropbox } from "react-icons/sl";
 
+export type DataTableMobileRowProps<TData> = {
+  row: Row<TData>;
+  table: TableType<TData>;
+  onRowClick?: (row: TData) => void;
+};
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[] | undefined;
 
-  filterKey?: string; // e.g. "name"
-  filterPlaceholder?: string; // e.g. "Filter by name..."
+  filterKey?: string;
+  filterPlaceholder?: string;
   showSearch?: boolean;
 
   onRowClick?: (row: TData) => void;
 
-  /** Pagination controls */
-  defaultPageSize?: number; // default 20
-  pageSizeOptions?: number[]; // default [10,20,50,100]
-  allowCustomPageSize?: boolean; // default true
+  defaultPageSize?: number;
+  pageSizeOptions?: number[];
+  allowCustomPageSize?: boolean;
 
   disableRowSelection?: boolean;
   toolbarRight?: React.ReactNode;
   toolbarLeft?: React.ReactNode;
+
+  /** ✅ Plug-in mobile renderer (like columns) */
+  mobileRow?: React.ComponentType<DataTableMobileRowProps<TData>>;
+  /** optionally hide table on mobile even without mobileRow */
+  hideTableOnMobile?: boolean;
+
+  tableMeta?: Record<string, unknown>;
 }
 
 export function DataTable<TData, TValue>({
@@ -63,10 +77,14 @@ export function DataTable<TData, TValue>({
   disableRowSelection = false,
   toolbarRight,
   toolbarLeft,
+
+  mobileRow: MobileRow,
+  hideTableOnMobile = false,
+  tableMeta,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -77,14 +95,13 @@ export function DataTable<TData, TValue>({
     pageSize: defaultPageSize,
   });
 
-  // Used only when allowCustomPageSize is enabled
   const [customOpen, setCustomOpen] = React.useState(false);
   const [customValue, setCustomValue] = React.useState<string>("");
 
   const table = useReactTable({
     data: data ?? [],
     columns,
-
+    meta: tableMeta,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -115,13 +132,16 @@ export function DataTable<TData, TValue>({
     }
   };
 
+  const rows = table.getRowModel().rows;
+
   return (
     <div className="w-full">
       {/* Optional filter bar */}
-      {(filterKey && showSearch) || toolbarRight ? (
-        <div className="flex w-full items-center justify-between pb-4 gap-3">
+      {(filterKey && showSearch) || toolbarRight || toolbarLeft ? (
+        <div className="flex w-full flex-col gap-3 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">{toolbarLeft}</div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
             {filterKey && showSearch && (
               <Input
                 placeholder={filterPlaceholder ?? "Filter..."}
@@ -131,100 +151,126 @@ export function DataTable<TData, TValue>({
                 onChange={(event) =>
                   table.getColumn(filterKey)?.setFilterValue(event.target.value)
                 }
-                className="w-72 placeholder:text-xs"
+                className="w-full sm:w-72 placeholder:text-xs"
                 leftIcon={<FaSearch size={15} />}
               />
             )}
-
-            {/* ✅ injected controls */}
             {toolbarRight}
           </div>
         </div>
       ) : null}
 
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
+        {/* ✅ Mobile view */}
+        {MobileRow ? (
+          <div className="block sm:hidden">
+            {rows.length ? (
+              <div className="divide-y">
+                {rows.map((row) => (
+                  <MobileRow
+                    key={row.id}
+                    row={row}
+                    table={table}
+                    onRowClick={onRowClick}
+                  />
                 ))}
-              </TableRow>
-            ))}
-          </TableHeader>
+              </div>
+            ) : (
+              <div className="p-6 text-center text-muted-foreground">
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <SlSocialDropbox size={56} />
+                  <span className="text-sm">No record found</span>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : null}
 
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  onClick={() => onRowClick?.(row.original)}
-                  className={
-                    onRowClick
-                      ? "cursor-pointer hover:bg-muted/50 transition-colors"
-                      : ""
-                  }
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-3 font-medium">
-                      {cell.column.id === "actions" ? (
-                        <div
-                          onClick={(e) => e.stopPropagation()}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onKeyDown={(e) => e.stopPropagation()}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
+        {/* ✅ Desktop table (and optionally mobile too) */}
+        <div
+          className={hideTableOnMobile || MobileRow ? "hidden sm:block" : ""}
+        >
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
                           )}
-                        </div>
-                      ) : (
-                        flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )
-                      )}
-                    </TableCell>
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-40 text-center"
-                >
-                  <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                    <SlSocialDropbox size={70} />
-                    <span className="text-sm">No record found</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+
+            <TableBody>
+              {rows.length ? (
+                rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    onClick={() => onRowClick?.(row.original)}
+                    className={
+                      onRowClick
+                        ? "cursor-pointer hover:bg-muted/50 transition-colors"
+                        : ""
+                    }
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="py-3 font-medium">
+                        {cell.column.id === "actions" ? (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </div>
+                        ) : (
+                          flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-40 text-center"
+                  >
+                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <SlSocialDropbox size={70} />
+                      <span className="text-sm">No record found</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Footer */}
       {!disableRowSelection && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-4">
-          <div className="flex items-center gap-3">
-            <div className="text-sm text-muted-foreground">
-              {table.getFilteredRowModel().rows.length} total record(s)
-            </div>
+        <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-muted-foreground">
+            {table.getFilteredRowModel().rows.length} total record(s)
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-4">
-            {/* Page size control */}
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Rows:</span>
 
@@ -235,7 +281,6 @@ export function DataTable<TData, TValue>({
                   const v = e.target.value;
                   if (v === "custom") {
                     setCustomOpen(true);
-                    // keep current pageSize as starting point
                     setCustomValue(String(pageSize));
                   } else {
                     setCustomOpen(false);
@@ -264,6 +309,7 @@ export function DataTable<TData, TValue>({
                 />
               )}
             </div>
+
             <div className="flex items-center justify-end gap-2">
               <Button
                 variant="clean"

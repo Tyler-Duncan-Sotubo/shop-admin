@@ -1,10 +1,3 @@
-// =====================================
-// 4) EditProduct UPDATED (FULL COMPONENT)
-// - uploads new images to S3 only if user selects new files
-// - sends dto.images with keys/urls when replacing (same behavior as backend expects)
-// - limits uploads by productType (variable => 1, simple => 9)
-// File: EditProduct.tsx
-// =====================================
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -66,7 +59,7 @@ type LocalImage = {
 };
 
 const MAX_SIMPLE_IMAGES = 9;
-const MAX_VARIABLE_IMAGES = 1;
+const MAX_VARIABLE_IMAGES = 3;
 
 export function EditProduct({ productId }: Props) {
   const axios = useAxiosAuth();
@@ -98,7 +91,7 @@ export function EditProduct({ productId }: Props) {
       images: [],
       defaultImageIndex: 0,
     }),
-    []
+    [],
   );
 
   const form = useForm<FormValues>({
@@ -115,7 +108,7 @@ export function EditProduct({ productId }: Props) {
       watchedProductType === "variable"
         ? MAX_VARIABLE_IMAGES
         : MAX_SIMPLE_IMAGES,
-    [watchedProductType]
+    [watchedProductType],
   );
 
   // cleanup object URLs
@@ -167,7 +160,7 @@ export function EditProduct({ productId }: Props) {
         shouldValidate: true,
       });
     }
-    if (maxImages === 1) {
+    if (maxImages === 3) {
       form.setValue("defaultImageIndex", 0, {
         shouldDirty: true,
         shouldValidate: true,
@@ -190,7 +183,7 @@ export function EditProduct({ productId }: Props) {
 
       setLocalImages((prev) => [...prev, ...newOnes].slice(0, maxImages));
     },
-    [localImages.length, maxImages]
+    [localImages.length, maxImages],
   );
 
   const removeImage = useCallback(
@@ -206,17 +199,17 @@ export function EditProduct({ productId }: Props) {
         return next;
       });
     },
-    [form]
+    [form],
   );
 
   const setDefaultImageIndex = useCallback(
     (index: number) => {
-      form.setValue("defaultImageIndex", maxImages === 1 ? 0 : index, {
+      form.setValue("defaultImageIndex", maxImages === 3 ? 0 : index, {
         shouldDirty: true,
         shouldValidate: true,
       });
     },
-    [form, maxImages]
+    [form, maxImages],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -256,7 +249,7 @@ export function EditProduct({ productId }: Props) {
 
   const buildPayload = (
     values: any,
-    imagesDto?: any[]
+    imagesDto?: any[],
   ): CreateProductPayload => {
     const md: Record<string, any> = {
       how_it_feels_and_looks: values.howItFeelsAndLooks ?? "",
@@ -285,8 +278,8 @@ export function EditProduct({ productId }: Props) {
         (values.productType ?? "variable") === "variable"
           ? 0
           : typeof values.defaultImageIndex === "number"
-          ? values.defaultImageIndex
-          : 0,
+            ? values.defaultImageIndex
+            : 0,
     };
   };
 
@@ -308,7 +301,7 @@ export function EditProduct({ productId }: Props) {
         }
 
         await Promise.all(
-          uploads.map((u, idx) => uploadToS3Put(u.uploadUrl, files[idx]))
+          uploads.map((u, idx) => uploadToS3Put(u.uploadUrl, files[idx])),
         );
 
         const productName = values.name || "Product image";
@@ -333,7 +326,7 @@ export function EditProduct({ productId }: Props) {
         return [];
       });
       form.setValue("images", [], { shouldDirty: false });
-      if (maxImages === 1)
+      if (maxImages === 3)
         form.setValue("defaultImageIndex", 0, { shouldDirty: false });
     } catch (e: any) {
       setSubmitError(e?.message ?? "Failed to update product");
@@ -358,7 +351,7 @@ export function EditProduct({ productId }: Props) {
 
   const savedImages = ((product as any)?.images ?? []) as Array<any>;
   const savedSorted = [...savedImages].sort(
-    (a: any, b: any) => (a.position ?? 0) - (b.position ?? 0)
+    (a: any, b: any) => (a.position ?? 0) - (b.position ?? 0),
   );
 
   const displayImages = localImages.length
@@ -645,7 +638,7 @@ export function EditProduct({ productId }: Props) {
                   {...getRootProps()}
                   className={cn(
                     "border rounded-lg w-full flex flex-col items-center justify-center p-6",
-                    "border-dashed cursor-pointer hover:border-primary"
+                    "border-dashed cursor-pointer hover:border-primary",
                   )}
                 >
                   <input {...getInputProps()} />
@@ -657,7 +650,7 @@ export function EditProduct({ productId }: Props) {
                           key={idx}
                           className={cn(
                             "relative rounded-lg overflow-hidden border",
-                            idx === currentDefault ? "ring-2 ring-primary" : ""
+                            idx === currentDefault ? "ring-2 ring-primary" : "",
                           )}
                         >
                           {localImages.length ? (

@@ -30,7 +30,7 @@ export function ThemeGallery({ session, axios, storeId }: Props) {
   const publishedQ = usePublishedStorefrontOverride(
     session,
     axios,
-    storeId ?? ""
+    storeId ?? "",
   );
 
   const themeStatusQ = useStoreThemeStatus(session, axios, storeId ?? "");
@@ -95,7 +95,7 @@ export function ThemeGallery({ session, axios, storeId }: Props) {
         <div className="space-y-3">
           <div className="text-sm font-semibold">Available themes</div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {available.map((t) => (
               <ThemeCard
                 key={t.id}
@@ -115,7 +115,7 @@ export function ThemeGallery({ session, axios, storeId }: Props) {
 
         <div className="space-y-3">
           <div className="text-sm font-semibold">Coming soon</div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
             {comingSoon.map((t) => (
               <ThemeCard
                 key={t.id}

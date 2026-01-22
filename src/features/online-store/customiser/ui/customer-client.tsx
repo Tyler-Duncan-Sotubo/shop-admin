@@ -6,7 +6,11 @@ import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { useStorefrontResolvedConfig } from "../../core/hooks/use-storefront-config";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { useSession } from "next-auth/react";
-import { CustomiserSidebar, StorefrontSectionId } from "./customiser-sidebar";
+import {
+  CustomiserSidebar,
+  CustomiserSidebarMobile,
+  StorefrontSectionId,
+} from "./customiser-sidebar";
 import { useEffect, useState } from "react";
 import { SectionPreview } from "./section-preview";
 import { ResolvedStorefrontConfig } from "../types/storefront-config.types";
@@ -26,19 +30,17 @@ export function CustomiserClient() {
   const { data, isLoading, error } = useStorefrontResolvedConfig(
     session,
     axios,
-    storeId
+    storeId,
   );
 
   const resolved = data as ResolvedStorefrontConfig | undefined;
   const [draft, setDraft] = useState<DraftState | null>(null);
 
-  // init/reset draft when resolved loads/changes
   useEffect(() => {
     if (!resolved) return;
     setDraft(buildDraft(resolved));
-  }, [resolved]); // resolved dependency includes version and store.id changes
+  }, [resolved]);
 
-  // If user hides About/Contact in header, ensure active tab isn't pointing there
   useEffect(() => {
     if (!resolved || !draft) return;
 
@@ -62,14 +64,26 @@ export function CustomiserClient() {
   return (
     <AutosaveProvider session={session} axios={axios} storeId={storeId}>
       <div className="flex h-screen w-full overflow-hidden bg-muted">
+        {/* Mobile sheet + top bar */}
+        <div className="md:hidden fixed top-0 left-0 right-0 z-50">
+          <CustomiserSidebarMobile
+            active={active}
+            onSelect={setActive}
+            resolved={resolved}
+            headerMenu={draft.headerMenu}
+          />
+        </div>
+
+        {/* Desktop sidebar */}
         <CustomiserSidebar
           active={active}
           onSelect={setActive}
           resolved={resolved}
-          headerMenu={draft.headerMenu} // ✅ sidebar reacts instantly to header toggles
+          headerMenu={draft.headerMenu}
         />
 
-        <main className="flex-1 overflow-hidden">
+        {/* Preview */}
+        <main className="flex-1 overflow-hidden pt-12 md:pt-0">
           <SectionPreview
             section={active}
             resolved={resolved}

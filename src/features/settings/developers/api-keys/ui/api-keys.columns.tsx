@@ -1,3 +1,4 @@
+// features/api-keys/ui/api-keys-columns.tsx
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
@@ -26,18 +27,6 @@ export const apiKeysColumns = (): ColumnDef<ApiKeyRow>[] => [
       ) : (
         <Badge variant="secondary">Revoked</Badge>
       ),
-  },
-  {
-    accessorKey: "scopes",
-    header: "Scopes",
-    cell: ({ row }) => {
-      const scopes = row.original.scopes ?? [];
-      return scopes.length ? (
-        <span className="text-xs">{scopes.join(", ")}</span>
-      ) : (
-        <span className="text-xs text-muted-foreground">—</span>
-      );
-    },
   },
   {
     accessorKey: "allowedOrigins",

@@ -31,7 +31,7 @@ export function ThemeCard({
         "group relative w-full overflow-hidden rounded-2xl text-left transition",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         selected ? "ring-2 ring-primary" : "hover:ring-1 hover:ring-border",
-        disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"
+        disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer",
       )}
     >
       {/* Image */}
@@ -52,7 +52,7 @@ export function ThemeCard({
         <div
           className={cn(
             "absolute inset-0 bg-black/0 transition",
-            disabled ? "bg-black/10" : "group-hover:bg-black/35"
+            disabled ? "bg-black/10" : "group-hover:bg-black/35",
           )}
         />
 

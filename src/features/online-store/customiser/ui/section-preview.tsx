@@ -12,6 +12,15 @@ import type { DraftState } from "../types/customiser.type";
 import { AboutPreview } from "../previews/about-preview";
 import { PreviewShell } from "../previews/preview-shell";
 import { GoogleSerpPreview } from "../previews/google-serp-preview";
+import { Button } from "@/shared/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/shared/ui/sheet";
+import { SlidersHorizontal } from "lucide-react";
+import { useState } from "react";
 
 export function SectionPreview({
   section,
@@ -24,7 +33,7 @@ export function SectionPreview({
   draft: DraftState;
   setDraft: React.Dispatch<React.SetStateAction<DraftState | null>>;
 }) {
-  // Read from resolved
+  const [open, setOpen] = useState(false);
   const storeName = resolved?.store?.name ?? "Store";
   const logoUrl = resolved?.theme?.assets?.logoUrl ?? "";
   const topBar = resolved?.header?.topBar;
@@ -42,9 +51,10 @@ export function SectionPreview({
   const primaryHsl = hexToHslParts(primaryHex);
   const primaryFg = pickForegroundForHex(primaryHex);
 
-  const previewSeoTitle = section === "seo" ? draft.seoTitle : seo?.title ?? "";
+  const previewSeoTitle =
+    section === "seo" ? draft.seoTitle : (seo?.title ?? "");
   const previewSeoDescription =
-    section === "seo" ? draft.seoDescription : seo?.description ?? "";
+    section === "seo" ? draft.seoDescription : (seo?.description ?? "");
 
   const previewFavicon = draft.seoFaviconPng ?? resolved?.seo?.favicon.png;
 
@@ -60,54 +70,107 @@ export function SectionPreview({
       <AboutPreview resolved={resolved} draft={draft} />
     ) : (
       <GeneralPreview section={section} draft={draft} hero={hero} />
-      // OR keep existing GeneralPreview body extracted
     );
 
+  const seoCard = (
+    <GoogleSerpPreview
+      active={section === "seo"}
+      siteName={storeName}
+      canonicalBaseUrl="store.centa.africa"
+      title={previewSeoTitle}
+      description={
+        previewSeoDescription ||
+        "Discover our range of products designed to make your life better. Shop now for great deals and fast shipping."
+      }
+      previewFavicon={previewFavicon}
+    />
+  );
+
+  const editor = (
+    <EditorPanel
+      section={section}
+      resolved={resolved}
+      draft={draft}
+      setDraft={(updater) => {
+        setDraft((prev) => {
+          if (!prev) return prev;
+          return typeof updater === "function"
+            ? (updater as any)(prev)
+            : updater;
+        });
+      }}
+    />
+  );
+
   return (
-    <div className="h-full w-full grid grid-cols-12">
-      <div className="col-span-4 border-r bg-white overflow-auto">
-        <EditorPanel
+    <div className="h-full w-full">
+      {/* DESKTOP: split */}
+      <div className="hidden md:grid h-full w-full grid-cols-12">
+        <div className="col-span-4 border-r bg-white overflow-auto">
+          {editor}
+        </div>
+
+        <PreviewShell
           section={section}
-          resolved={resolved}
           draft={draft}
-          setDraft={(updater) => {
-            setDraft((prev) => {
-              if (!prev) return prev;
-              return typeof updater === "function"
-                ? (updater as any)(prev)
-                : updater;
-            });
-          }}
-        />
+          storeName={storeName}
+          logoUrl={logoUrl}
+          topBar={topBar}
+          headerItems={headerItems}
+          footer={footer}
+          previewThemeVars={previewThemeVars}
+          wishlistEnabled={!!draft.wishlistEnabled}
+          navEnabled={navEnabled}
+          seoCard={seoCard}
+        >
+          {body}
+        </PreviewShell>
       </div>
 
-      <PreviewShell
-        section={section}
-        draft={draft}
-        storeName={storeName}
-        logoUrl={logoUrl}
-        topBar={topBar}
-        headerItems={headerItems}
-        footer={footer}
-        previewThemeVars={previewThemeVars}
-        wishlistEnabled={!!draft.wishlistEnabled}
-        navEnabled={navEnabled}
-        seoCard={
-          <GoogleSerpPreview
-            active={section === "seo"}
-            siteName={storeName}
-            canonicalBaseUrl="store.centa.africa"
-            title={previewSeoTitle}
-            description={
-              previewSeoDescription ||
-              "Discover our range of products designed to make your life better. Shop now for great deals and fast shipping."
-            }
-            previewFavicon={previewFavicon}
-          />
-        }
-      >
-        {body}
-      </PreviewShell>
+      {/* MOBILE: preview first + bottom sheet editor */}
+      <div className="md:hidden h-full w-full flex flex-col">
+        {/* Top bar */}
+        <div className="sticky top-0 z-40 border-b bg-white/95 backdrop-blur">
+          <div className="flex items-center justify-end px-3 py-2">
+            <Sheet open={open} onOpenChange={setOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="clean"
+                  className="h-9 w-9"
+                  aria-label={open ? "Close editor" : "Open editor"}
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+
+              <SheetTitle className="sr-only">Edit section</SheetTitle>
+
+              <SheetContent side="bottom" className="p-0 h-[85vh]">
+                <div className="h-full overflow-auto bg-white">{editor}</div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+
+        {/* Preview */}
+        <div className="flex-1 overflow-auto">
+          <PreviewShell
+            section={section}
+            draft={draft}
+            storeName={storeName}
+            logoUrl={logoUrl}
+            topBar={topBar}
+            headerItems={headerItems}
+            footer={footer}
+            previewThemeVars={previewThemeVars}
+            wishlistEnabled={!!draft.wishlistEnabled}
+            navEnabled={navEnabled}
+            seoCard={seoCard}
+          >
+            {body}
+          </PreviewShell>
+        </div>
+      </div>
     </div>
   );
 }

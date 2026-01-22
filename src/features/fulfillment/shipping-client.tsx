@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import PageHeader from "@/shared/ui/page-header";
 import { FaMapMarkedAlt } from "react-icons/fa";
 import { FaReceipt, FaTruckFast } from "react-icons/fa6";
+
 import ShippingZonesClient from "./shipping/zones/ui/shipping-zone-client";
 import ShippingRatesClient from "./shipping/rates/ui/shipping-rates-client";
 import ShippingCarriersClient from "./shipping/carriers/ui/shipping-carriers-client";
 import PickupLocationsClient from "./pickup/ui/pickup-locations-client";
+
+import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
 
 type ShippingTabKey = "zones" | "rates" | "carriers" | "pickup";
 
@@ -35,6 +38,17 @@ export default function ShippingClient() {
     router.replace(`?tab=${next}`, { scroll: false });
   };
 
+  // Mobile chips (labels kept short; full labels on desktop tabs)
+  const chips = useMemo<FilterChip<ShippingTabKey>[]>(
+    () => [
+      { value: "zones", label: "Zones" },
+      { value: "rates", label: "Rates" },
+      { value: "carriers", label: "Carriers" },
+      { value: "pickup", label: "Pickup" },
+    ],
+    [],
+  );
+
   return (
     <>
       <PageHeader
@@ -43,26 +57,40 @@ export default function ShippingClient() {
       />
 
       <Tabs value={tab} onValueChange={(v) => onTabChange(v as ShippingTabKey)}>
-        <TabsList>
-          <TabsTrigger value="zones" className="text-base">
-            <FaMapMarkedAlt className="mr-2" />
-            Zones
-          </TabsTrigger>
-          <TabsTrigger value="rates" className="text-base">
-            <FaReceipt className="mr-2" />
-            Rates
-          </TabsTrigger>
-          <TabsTrigger value="carriers" className="text-base">
-            <FaTruckFast className="mr-2" />
-            Carriers
-          </TabsTrigger>
-          <TabsTrigger value="pickup" className="text-base">
-            <FaMapMarkedAlt className="mr-2" />
-            Pickup Locations
-          </TabsTrigger>
-        </TabsList>
+        {/* ✅ Mobile: Filter chips */}
+        <div className="sm:hidden -mx-3 px-3 min-w-0">
+          <FilterChips<ShippingTabKey>
+            value={tab}
+            onChange={onTabChange}
+            chips={chips}
+            wrap={false}
+            scrollable
+          />
+        </div>
 
-        <TabsContent value="zones" className="mt-4 ">
+        {/* ✅ Desktop: TabsList */}
+        <div className="hidden sm:block">
+          <TabsList>
+            <TabsTrigger value="zones" className="text-base">
+              <FaMapMarkedAlt className="mr-2" />
+              Zones
+            </TabsTrigger>
+            <TabsTrigger value="rates" className="text-base">
+              <FaReceipt className="mr-2" />
+              Rates
+            </TabsTrigger>
+            <TabsTrigger value="carriers" className="text-base">
+              <FaTruckFast className="mr-2" />
+              Carriers
+            </TabsTrigger>
+            <TabsTrigger value="pickup" className="text-base">
+              <FaMapMarkedAlt className="mr-2" />
+              Pickup Locations
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="zones" className="mt-4">
           <ShippingZonesClient />
         </TabsContent>
 

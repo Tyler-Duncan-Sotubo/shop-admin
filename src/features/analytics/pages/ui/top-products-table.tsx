@@ -1,12 +1,13 @@
+// src/features/analytics/commerce/ui/top-products-data-table.tsx
 "use client";
 
 import { DataTable } from "@/shared/ui/data-table";
 import { topProductsColumns } from "./top-products-columns";
-import { CommerceTopProductRow } from "../../overview/types/commerce-analytics.type";
+import { TopProductsMobileRow } from "./top-products-mobile-row";
+import type { CommerceTopProductRow } from "../../overview/types/commerce-analytics.type";
 
 export function TopProductsDataTable({
   data,
-  toolbarRight,
 }: {
   data: CommerceTopProductRow[];
   toolbarRight?: React.ReactNode;
@@ -17,8 +18,7 @@ export function TopProductsDataTable({
       data={data}
       filterKey="product"
       filterPlaceholder="Search products..."
-      disableRowSelection={true}
-      toolbarRight={toolbarRight}
+      mobileRow={TopProductsMobileRow}
     />
   );
 }

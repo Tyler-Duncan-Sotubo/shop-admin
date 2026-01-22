@@ -10,6 +10,7 @@ export type Category = {
   createdAt?: string;
   updatedAt?: string;
   imageUrl?: string | null;
+  productCount?: number;
 };
 
 export type CreateCategoryPayload = {

@@ -1,8 +1,10 @@
+// src/features/analytics/overview/ui/analytics-top-pages-table.tsx
 "use client";
 
 import { DataTable } from "@/shared/ui/data-table";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { topPagesColumns } from "./top-pages-columns";
+import { TopPagesMobileRow } from "./top-pages-mobile-row";
 import { useSession } from "next-auth/react";
 import { useDashboardTopPages } from "../../core/hooks/use-dashboard-overview";
 import { usePersistedState } from "../../core/hooks/use-persisted-state";
@@ -21,7 +23,7 @@ import { useStoreScope } from "@/lib/providers/store-scope-provider";
 export function AnalyticsTopPagesTable() {
   const [preset, setPreset] = usePersistedState<Preset>(
     "analytics:chart-preset",
-    "30d"
+    "30d",
   );
 
   const range = useChartRange(preset);
@@ -30,7 +32,7 @@ export function AnalyticsTopPagesTable() {
 
   const { data, isLoading } = useDashboardTopPages(
     { ...range, limit: 50, storeId: activeStoreId },
-    session
+    session,
   );
 
   return (
@@ -56,7 +58,6 @@ export function AnalyticsTopPagesTable() {
         </Select>
       </PageHeader>
 
-      {/* Table */}
       {isLoading ? (
         <Skeleton className="h-72 w-full rounded-md" />
       ) : (
@@ -67,6 +68,7 @@ export function AnalyticsTopPagesTable() {
           filterPlaceholder="Search by page title or path…"
           showSearch={false}
           disableRowSelection
+          mobileRow={TopPagesMobileRow}
         />
       )}
     </div>

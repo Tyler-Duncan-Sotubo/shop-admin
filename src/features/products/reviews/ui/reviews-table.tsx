@@ -17,6 +17,9 @@ import { FaCheckCircle } from "react-icons/fa";
 import { TabLabel } from "@/shared/ui/tab-label";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 
+import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
+import { ReviewsMobileRow } from "./reviews-mobile-row";
+
 type StatusTab = "all" | "approved" | "pending";
 
 export function ReviewsTable() {
@@ -33,14 +36,14 @@ export function ReviewsTable() {
     (value: string) => {
       setSearch(value);
     },
-    400
+    400,
   );
 
   // ✅ counts are NOT dependent on statusTab (static)
   const counts = useReviewCounts(
     search.trim() || undefined,
     activeStoreId || undefined,
-    session
+    session,
   );
 
   const query = useMemo(() => {
@@ -48,8 +51,8 @@ export function ReviewsTable() {
       statusTab === "approved"
         ? true
         : statusTab === "pending"
-        ? false
-        : undefined;
+          ? false
+          : undefined;
 
     return {
       limit: 50,
@@ -71,10 +74,16 @@ export function ReviewsTable() {
           setOpen(true);
         },
       }),
-    []
+    [],
   );
 
   if (authStatus === "loading" || isLoading) return <Loading />;
+
+  const chips: FilterChip<StatusTab>[] = [
+    { value: "pending", label: "Pending", count: counts.pending },
+    { value: "approved", label: "Approved", count: counts.approved },
+    { value: "all", label: "All", count: counts.all },
+  ];
 
   return (
     <section className="space-y-4">
@@ -83,31 +92,45 @@ export function ReviewsTable() {
         onValueChange={(v) => setStatusTab(v as StatusTab)}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <TabsList>
-            <TabsTrigger
-              value="pending"
-              className="flex items-center gap-2 px-4 py-2"
-            >
-              <LuClock className="h-4 w-4 text-yellow-500" />
-              <TabLabel label="Pending" count={counts.pending} />
-            </TabsTrigger>
+          <div className="w-full">
+            {/* ✅ Mobile chips */}
+            <FilterChips<StatusTab>
+              value={statusTab}
+              onChange={setStatusTab}
+              chips={chips}
+              wrap
+              // or: scrollable
+            />
 
-            <TabsTrigger
-              value="approved"
-              className="flex items-center gap-2 px-4 py-2"
-            >
-              <FaCheckCircle className="h-4 w-4 text-green-600" />
-              <TabLabel label="Approved" count={counts.approved} />
-            </TabsTrigger>
+            {/* ✅ Desktop tabs */}
+            <div className="hidden sm:block">
+              <TabsList>
+                <TabsTrigger
+                  value="pending"
+                  className="flex items-center gap-2 px-4 py-2"
+                >
+                  <LuClock className="h-4 w-4 text-yellow-500" />
+                  <TabLabel label="Pending" count={counts.pending} />
+                </TabsTrigger>
 
-            <TabsTrigger
-              value="all"
-              className="flex items-center gap-2 px-4 py-2"
-            >
-              <LuList className="h-4 w-4 text-blue-600" />
-              <TabLabel label="All" count={counts.all} />
-            </TabsTrigger>
-          </TabsList>
+                <TabsTrigger
+                  value="approved"
+                  className="flex items-center gap-2 px-4 py-2"
+                >
+                  <FaCheckCircle className="h-4 w-4 text-green-600" />
+                  <TabLabel label="Approved" count={counts.approved} />
+                </TabsTrigger>
+
+                <TabsTrigger
+                  value="all"
+                  className="flex items-center gap-2 px-4 py-2"
+                >
+                  <LuList className="h-4 w-4 text-blue-600" />
+                  <TabLabel label="All" count={counts.all} />
+                </TabsTrigger>
+              </TabsList>
+            </div>
+          </div>
 
           <div className="w-full sm:w-[360px]">
             <Input
@@ -129,6 +152,13 @@ export function ReviewsTable() {
             filterKey="authorName"
             filterPlaceholder="Filter by reviewer name..."
             showSearch={false}
+            mobileRow={ReviewsMobileRow}
+            tableMeta={{
+              onModerate: (r: Review) => {
+                setSelected(r);
+                setOpen(true);
+              },
+            }}
           />
         </TabsContent>
       </Tabs>

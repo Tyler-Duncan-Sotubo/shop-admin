@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import type { Session } from "next-auth";
 import type { AxiosInstance } from "axios";
@@ -19,6 +19,8 @@ import { paymentColumns } from "./payment-columns";
 import { useGetPayments } from "../hooks/use-payments";
 import { formatMoneyNGN } from "@/shared/utils/format-to-naira";
 import { minorToMajor } from "../../invoices/schema/invoice.schema";
+import { PaymentsMobileRow } from "./payments-mobile-row";
+import { useGeneratePaymentReceiptPdf } from "../hooks/use-payment-receipt";
 
 type Props = {
   invoiceId: string;
@@ -35,16 +37,36 @@ export function InvoicePaymentsAccordion({
   summaryOnlyConfirmed = true,
   title = "Payments received",
 }: Props) {
+  const [receiptLoadingId, setReceiptLoadingId] = useState<string | null>(null);
   const { data: session } = useSession();
   const axios = useAxiosAuth();
 
   const { data: payments = [], isLoading } = useGetPayments(
     { invoiceId, limit: 50, offset: 0 },
     session as Session | null,
-    axios as AxiosInstance
+    axios as AxiosInstance,
   );
 
-  const cols = useMemo(() => paymentColumns(), []);
+  const receiptPdf = useGeneratePaymentReceiptPdf(axios);
+
+  const onReceipt = async (paymentId: string) => {
+    try {
+      setReceiptLoadingId(paymentId);
+      await receiptPdf.mutateAsync(paymentId);
+    } finally {
+      setReceiptLoadingId(null);
+    }
+  };
+
+  const cols = useMemo(
+    () =>
+      paymentColumns({
+        receiptLoadingId,
+        onReceipt,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [receiptLoadingId], // onReceipt stable enough; or include receiptPdf if lint complains
+  );
 
   const currency = payments[0]?.currency ?? "NGN";
 
@@ -66,7 +88,8 @@ export function InvoicePaymentsAccordion({
             <div className="font-extrabold">{title}</div>
             <div className="text-sm flex gap-2 text-muted-foreground">
               <span>
-                {payments.length} payment{payments.length === 1 ? "" : "s"} •{" "}
+                {payments.length} payment{payments.length === 1 ? "" : "s"}{" "}
+                •{" "}
               </span>
               <span> {formatMoneyNGN(totalMajor, currency)}</span>
             </div>
@@ -80,7 +103,16 @@ export function InvoicePaymentsAccordion({
             </div>
           ) : (
             <div className="mt-2">
-              <DataTable columns={cols} data={payments} />
+              <DataTable
+                columns={cols}
+                data={payments}
+                mobileRow={PaymentsMobileRow}
+                // ✅ pass receipt handler + loading to mobile row via table meta
+                tableMeta={{
+                  onReceipt,
+                  receiptLoadingId,
+                }}
+              />
             </div>
           )}
         </AccordionContent>

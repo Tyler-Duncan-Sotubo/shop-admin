@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { Button } from "@/shared/ui/button";
-import { DataTable } from "@/shared/ui/data-table"; // assuming you have this like other modules
+import { DataTable } from "@/shared/ui/data-table";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import type { Tax } from "../types/tax.type";
 import { taxColumns } from "./tax-columns";
@@ -21,12 +20,63 @@ import {
 import Loading from "@/shared/ui/loading";
 import PageHeader from "@/shared/ui/page-header";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
+import { TaxMobileRow } from "./tax-mobile-row";
+import { Badge } from "@/shared/ui/badge";
+import { cn } from "@/lib/utils";
+
+type Tab = "active" | "inactive" | "all";
+
+const TAB_CHIPS: { value: Tab; label: string }[] = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+  { value: "all", label: "All" },
+];
+
+function MobileTabChips({
+  value,
+  onChange,
+}: {
+  value: Tab;
+  onChange: (v: Tab) => void;
+}) {
+  return (
+    <div className="sm:hidden">
+      <div className="flex flex-wrap gap-2">
+        {TAB_CHIPS.map((t) => {
+          const active = value === t.value;
+          return (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => onChange(t.value)}
+              className="active:scale-[0.98]"
+            >
+              <Badge
+                variant="secondary"
+                className={cn(
+                  "rounded-full px-3 py-1 text-xs cursor-pointer select-none",
+                  "bg-transparent border",
+                  active
+                    ? "font-semibold text-primary border-primary/40"
+                    : "text-muted-foreground",
+                )}
+              >
+                {t.label}
+              </Badge>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export function TaxClient() {
   const { data: session } = useSession();
   const axios = useAxiosAuth();
-  const { activeStoreId } = useStoreScope(); // ✅ your store scope
-  const [tab, setTab] = useState<"active" | "inactive" | "all">("active");
+  const { activeStoreId } = useStoreScope();
+
+  const [tab, setTab] = useState<Tab>("active");
 
   const activeParam =
     tab === "all" ? undefined : tab === "active" ? true : false;
@@ -34,7 +84,7 @@ export function TaxClient() {
   const { data: taxes = [], isLoading } = useGetTaxes(
     { active: activeParam, storeId: activeStoreId },
     session,
-    axios
+    axios,
   );
 
   const createTax = useCreateTax(session, axios);
@@ -57,7 +107,7 @@ export function TaxClient() {
           await setDefault.mutateAsync(row.id);
         },
       }),
-    [setDefault]
+    [setDefault],
   );
 
   const onSubmit = async (values: TaxValues) => {
@@ -104,8 +154,12 @@ export function TaxClient() {
         </Button>
       </PageHeader>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-        <TabsList>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+        {/* Mobile chips */}
+        <MobileTabChips value={tab} onChange={setTab} />
+
+        {/* Desktop tabs */}
+        <TabsList className="hidden sm:inline-flex">
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="inactive">Inactive</TabsTrigger>
           <TabsTrigger value="all">All</TabsTrigger>
@@ -113,7 +167,22 @@ export function TaxClient() {
       </Tabs>
 
       <div className="mt-4">
-        <DataTable columns={cols} data={taxes} />
+        <DataTable
+          columns={cols}
+          data={taxes}
+          mobileRow={TaxMobileRow}
+          tableMeta={{
+            onEdit: (row: Tax) => {
+              setSelected(row);
+              setMode("edit");
+              setOpen(true);
+            },
+            onSetDefault: async (row: Tax) => {
+              await setDefault.mutateAsync(row.id);
+            },
+            refetchKey: ["billing", "taxes", "list", "all"],
+          }}
+        />
       </div>
 
       <TaxFormModal

@@ -18,11 +18,12 @@ import {
 } from "@/shared/ui/select";
 import PageHeader from "@/shared/ui/page-header";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
+import { LandingPagesMobileRow } from "./landing-pages-mobile-row";
 
 export function AnalyticsLandingPagesTable() {
   const [preset, setPreset] = usePersistedState<Preset>(
     "analytics:chart-preset",
-    "30d"
+    "30d",
   );
 
   const range = useChartRange(preset);
@@ -30,7 +31,7 @@ export function AnalyticsLandingPagesTable() {
   const { activeStoreId } = useStoreScope();
   const { data, isLoading } = useDashboardLandingPages(
     { ...range, limit: 50, storeId: activeStoreId },
-    session
+    session,
   );
 
   return (
@@ -65,7 +66,7 @@ export function AnalyticsLandingPagesTable() {
           filterKey="title"
           filterPlaceholder="Search by page title or path…"
           showSearch={false}
-          disableRowSelection
+          mobileRow={LandingPagesMobileRow}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
+// features/media/ui/files-client.tsx
 "use client";
 
-// src/features/media/ui/files-client.tsx
 import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import Loading from "@/shared/ui/loading";
@@ -10,6 +10,7 @@ import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { mediaColumns } from "./media-columns";
 import { useGetMediaFiles } from "../hooks/use-media";
 import { FilesHeaderActions } from "./files-header-actions";
+import { MediaMobileRow } from "./media-mobile-row";
 
 export function FilesClient() {
   const { data: session, status } = useSession();
@@ -22,7 +23,7 @@ export function FilesClient() {
       search: search.trim() || undefined,
       limit: 100,
     }),
-    [activeStoreId, search]
+    [activeStoreId, search],
   );
 
   const { data: rows = [], isLoading } = useGetMediaFiles(query, session);
@@ -47,6 +48,7 @@ export function FilesClient() {
         defaultPageSize={20}
         pageSizeOptions={[10, 20, 50, 100]}
         allowCustomPageSize
+        mobileRow={MediaMobileRow}
       />
     </section>
   );

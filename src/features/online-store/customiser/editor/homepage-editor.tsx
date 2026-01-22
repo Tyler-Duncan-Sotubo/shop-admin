@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -35,8 +36,100 @@ export function HomepageEditor({
   const baseHeading = hero?.content?.heading ?? "";
   const baseSubtext = hero?.content?.description ?? "";
   const baseImageSrc = hero?.image?.src ?? "";
+  const baseImageAlt = hero?.image?.alt ?? "";
   const baseCtaLabel = hero?.content?.cta?.label ?? "";
   const baseCtaHref = hero?.content?.cta?.href ?? "";
+
+  /**
+   * Build the FULL hero payload every time so partial updates don't wipe other fields
+   * (important if backend "replaces" hero instead of deep-merging).
+   */
+  const buildHeroPayload = React.useCallback(
+    (
+      overrides?: Partial<{
+        enabled: boolean;
+        content: {
+          heading: string;
+          description: string;
+          cta: { label: string; href: string };
+        };
+        image: { src: string; alt: string };
+        bottomStrip: { enabled: boolean; text: string };
+      }>,
+    ) => {
+      const basePayload = {
+        enabled: draft.heroEnabled,
+        content: {
+          heading: draft.heroHeading,
+          description: draft.heroSubtext,
+          cta: {
+            label: draft.heroCtaLabel,
+            href: draft.heroCtaHref,
+          },
+        },
+        image: {
+          src: draft.heroImageSrc,
+          alt: draft.heroImageAlt,
+        },
+        bottomStrip: {
+          enabled: draft.heroBottomStripEnabled,
+          text: draft.heroBottomStripText,
+        },
+      };
+
+      // shallow merge top-level + deep merge for known nested nodes
+      return {
+        ...basePayload,
+        ...overrides,
+        content: {
+          ...basePayload.content,
+          ...(overrides?.content ?? {}),
+          cta: {
+            ...basePayload.content.cta,
+            ...(overrides?.content?.cta ?? {}),
+          },
+        },
+        image: {
+          ...basePayload.image,
+          ...(overrides?.image ?? {}),
+        },
+        bottomStrip: {
+          ...basePayload.bottomStrip,
+          ...(overrides?.bottomStrip ?? {}),
+        },
+      };
+    },
+    [
+      draft.heroEnabled,
+      draft.heroHeading,
+      draft.heroSubtext,
+      draft.heroCtaLabel,
+      draft.heroCtaHref,
+      draft.heroImageSrc,
+      draft.heroImageAlt,
+      draft.heroBottomStripEnabled,
+      draft.heroBottomStripText,
+    ],
+  );
+
+  const autosaveHero = React.useCallback(
+    (
+      opts?: { debounceMs?: number },
+      overrides?: Parameters<typeof buildHeroPayload>[0],
+    ) => {
+      autosave(
+        {
+          pages: {
+            home: {
+              hero: buildHeroPayload(overrides),
+            },
+          },
+        },
+        { debounceMs: opts?.debounceMs ?? 500 },
+      );
+    },
+    [autosave, buildHeroPayload],
+  );
 
   return (
     <div className="space-y-10">
@@ -50,24 +143,34 @@ export function HomepageEditor({
           checked={draft.heroEnabled}
           onCheckedChange={(v) => {
             setDraft((d) => ({ ...d, heroEnabled: v }));
-            autosave(
-              { pages: { home: { hero: { enabled: v } } } },
-              { debounceMs: 500 }
-            );
+            // ensure full hero is saved (override enabled with new value)
+            autosaveHero({ debounceMs: 500 }, { enabled: v });
           }}
         />
 
         <LabeledInput
           label="Headline"
           value={draft.heroHeading}
-          onChange={(v) => setDraft((d) => ({ ...d, heroHeading: v }))}
+          onChange={(v) => {
+            setDraft((d) => ({ ...d, heroHeading: v }));
+            autosaveHero(
+              { debounceMs: 800 },
+              { content: { heading: v } as any },
+            );
+          }}
           disabled={!draft.heroEnabled}
         />
 
         <LabeledInput
           label="Subtext"
           value={draft.heroSubtext}
-          onChange={(v) => setDraft((d) => ({ ...d, heroSubtext: v }))}
+          onChange={(v) => {
+            setDraft((d) => ({ ...d, heroSubtext: v }));
+            autosaveHero(
+              { debounceMs: 800 },
+              { content: { description: v } as any },
+            );
+          }}
           disabled={!draft.heroEnabled}
         />
 
@@ -81,21 +184,7 @@ export function HomepageEditor({
             }))
           }
           onSave={() => {
-            autosave(
-              {
-                pages: {
-                  home: {
-                    hero: {
-                      content: {
-                        heading: draft.heroHeading,
-                        description: draft.heroSubtext,
-                      },
-                    },
-                  },
-                },
-              },
-              { debounceMs: 0 }
-            );
+            autosaveHero({ debounceMs: 0 });
             flush({ toastOnSuccess: true });
           }}
           saveLabel="Save hero text"
@@ -138,10 +227,15 @@ export function HomepageEditor({
             variant="ghost"
             disabled={!draft.heroEnabled}
             onClick={() => {
-              setDraft((d) => ({ ...d, heroImageSrc: baseImageSrc }));
-              autosave(
-                { pages: { home: { hero: { image: { src: baseImageSrc } } } } },
-                { debounceMs: 0 }
+              setDraft((d) => ({
+                ...d,
+                heroImageSrc: baseImageSrc,
+                heroImageAlt: baseImageAlt,
+              }));
+
+              autosaveHero(
+                { debounceMs: 0 },
+                { image: { src: baseImageSrc, alt: baseImageAlt } },
               );
               flush({ toastOnSuccess: true });
             }}
@@ -201,7 +295,7 @@ export function HomepageEditor({
                 folder: "homepage",
                 tag: "hero-image",
                 altText: "Homepage hero image",
-              }
+              },
             );
 
             const url = (finalized?.url ?? first.url) as string;
@@ -213,22 +307,8 @@ export function HomepageEditor({
               heroImageAlt: alt,
             }));
 
-            autosave(
-              {
-                pages: {
-                  home: {
-                    hero: {
-                      image: {
-                        src: url,
-                        alt,
-                      },
-                    },
-                  },
-                },
-              },
-              { debounceMs: 0 }
-            );
-
+            // save FULL hero, overriding image with new values
+            autosaveHero({ debounceMs: 0 }, { image: { src: url, alt } });
             flush({ toastOnSuccess: true });
           } finally {
             setIsUploading(false);
@@ -243,14 +323,26 @@ export function HomepageEditor({
         <LabeledInput
           label="CTA label"
           value={draft.heroCtaLabel}
-          onChange={(v) => setDraft((d) => ({ ...d, heroCtaLabel: v }))}
+          onChange={(v) => {
+            setDraft((d) => ({ ...d, heroCtaLabel: v }));
+            autosaveHero(
+              { debounceMs: 800 },
+              { content: { cta: { label: v } } as any },
+            );
+          }}
           disabled={!draft.heroEnabled}
         />
 
         <LabeledInput
           label="CTA link"
           value={draft.heroCtaHref}
-          onChange={(v) => setDraft((d) => ({ ...d, heroCtaHref: v }))}
+          onChange={(v) => {
+            setDraft((d) => ({ ...d, heroCtaHref: v }));
+            autosaveHero(
+              { debounceMs: 800 },
+              { content: { cta: { href: v } } as any },
+            );
+          }}
           disabled={!draft.heroEnabled}
         />
 
@@ -263,23 +355,7 @@ export function HomepageEditor({
             }))
           }
           onSave={() => {
-            autosave(
-              {
-                pages: {
-                  home: {
-                    hero: {
-                      content: {
-                        cta: {
-                          label: draft.heroCtaLabel,
-                          href: draft.heroCtaHref,
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-              { debounceMs: 0 }
-            );
+            autosaveHero({ debounceMs: 0 });
             flush({ toastOnSuccess: true });
           }}
           saveLabel="Save CTA"
@@ -291,17 +367,9 @@ export function HomepageEditor({
         checked={draft.heroBottomStripEnabled}
         onCheckedChange={(v) => {
           setDraft((d) => ({ ...d, heroBottomStripEnabled: v }));
-          autosave(
-            {
-              pages: {
-                home: {
-                  hero: {
-                    bottomStrip: { enabled: v },
-                  },
-                },
-              },
-            },
-            { debounceMs: 500 }
+          autosaveHero(
+            { debounceMs: 500 },
+            { bottomStrip: { enabled: v } as any },
           );
         }}
       />
@@ -312,17 +380,9 @@ export function HomepageEditor({
           value={draft.heroBottomStripText}
           onChange={(v) => {
             setDraft((d) => ({ ...d, heroBottomStripText: v }));
-            autosave(
-              {
-                pages: {
-                  home: {
-                    hero: {
-                      bottomStrip: { text: v },
-                    },
-                  },
-                },
-              },
-              { debounceMs: 800 }
+            autosaveHero(
+              { debounceMs: 800 },
+              { bottomStrip: { text: v } as any },
             );
           }}
         />

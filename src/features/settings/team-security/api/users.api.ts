@@ -15,7 +15,7 @@ export async function fetchUserRoles(axios: AxiosInstance) {
 // Invite user (create)
 export async function inviteUser(
   axios: AxiosInstance,
-  payload: UserInviteValues
+  payload: UserInviteValues,
 ) {
   const res = await axios.post("/api/auth/invite", payload);
   return res.data;
@@ -25,7 +25,7 @@ export async function inviteUser(
 export async function updateUserRole(
   axios: AxiosInstance,
   userId: string,
-  payload: Pick<UserInviteValues, "companyRoleId">
+  payload: Pick<UserInviteValues, "companyRoleId">,
 ) {
   const res = await axios.patch(`/api/auth/edit-user-role/${userId}`, payload);
   return res.data;

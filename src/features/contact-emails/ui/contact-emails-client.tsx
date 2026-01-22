@@ -1,3 +1,4 @@
+// ContactEmailsClient.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -17,13 +18,14 @@ import {
   ContactEmailTab,
 } from "../constants/contact-email-tabs";
 import { ContactEmailsTable } from "./contact-emails-table";
+import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
 
 export default function ContactEmailsClient() {
   const { data: session, status: authStatus } = useSession();
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
 
-  const [tab, setTab] = useState<ContactEmailTab>("new");
+  const [tab, setTab] = useState<ContactEmailTab>("all");
 
   const counts = useContactEmailCountsForTabs(session, axios, activeStoreId);
 
@@ -34,7 +36,7 @@ export default function ContactEmailsClient() {
       status: CONTACT_EMAIL_TAB_TO_STATUS[tab],
       storeId: activeStoreId,
     }),
-    [tab, activeStoreId]
+    [tab, activeStoreId],
   );
 
   const { data, isLoading } = useGetContactEmails(session, axios, params);
@@ -42,6 +44,19 @@ export default function ContactEmailsClient() {
   const hasData = rows.length > 0;
 
   if (authStatus === "loading" || isLoading) return <Loading />;
+
+  const chips: FilterChip<ContactEmailTab>[] = [
+    { value: "all", label: "All", count: counts.all },
+    { value: "new", label: "New", count: counts.new },
+    { value: "read", label: "Read", count: counts.read, showZero: false },
+    {
+      value: "archived",
+      label: "Archived",
+      count: counts.archived,
+      showZero: false,
+    },
+    { value: "spam", label: "Spam", count: counts.spam, showZero: false },
+  ];
 
   return (
     <section className="space-y-6">
@@ -53,31 +68,43 @@ export default function ContactEmailsClient() {
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as ContactEmailTab)}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <TabsList>
-            <TabsTrigger value="all">
-              <TabLabel label="All" count={counts.all} />
-            </TabsTrigger>
+          {/* ✅ Mobile chips */}
+          <FilterChips<ContactEmailTab>
+            value={tab}
+            onChange={setTab}
+            chips={chips}
+            wrap={false}
+            scrollable
+          />
 
-            <TabsTrigger value="new">
-              <TabLabel label="New" count={counts.new} />
-            </TabsTrigger>
+          {/* ✅ Desktop tabs */}
+          <div className="hidden sm:block">
+            <TabsList>
+              <TabsTrigger value="all">
+                <TabLabel label="All" count={counts.all} />
+              </TabsTrigger>
 
-            <TabsTrigger value="read">
-              <TabLabel label="Read" count={counts.read} showZero={false} />
-            </TabsTrigger>
+              <TabsTrigger value="new">
+                <TabLabel label="New" count={counts.new} />
+              </TabsTrigger>
 
-            <TabsTrigger value="archived">
-              <TabLabel
-                label="Archived"
-                count={counts.archived}
-                showZero={false}
-              />
-            </TabsTrigger>
+              <TabsTrigger value="read">
+                <TabLabel label="Read" count={counts.read} showZero={false} />
+              </TabsTrigger>
 
-            <TabsTrigger value="spam">
-              <TabLabel label="Spam" count={counts.spam} showZero={false} />
-            </TabsTrigger>
-          </TabsList>
+              <TabsTrigger value="archived">
+                <TabLabel
+                  label="Archived"
+                  count={counts.archived}
+                  showZero={false}
+                />
+              </TabsTrigger>
+
+              <TabsTrigger value="spam">
+                <TabLabel label="Spam" count={counts.spam} showZero={false} />
+              </TabsTrigger>
+            </TabsList>
+          </div>
         </div>
 
         <TabsContent value={tab} className="mt-4">

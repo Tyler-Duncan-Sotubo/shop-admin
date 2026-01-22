@@ -57,7 +57,7 @@ export function PickupLocationFormModal({
   const { data: locations = [] } = useGetStoreLocations(
     activeStoreId,
     session,
-    axios
+    axios,
   );
 
   // reuse your sorting preference: warehouse → primary → name
@@ -106,7 +106,7 @@ export function PickupLocationFormModal({
           address2: initialValues.address2 ?? null,
           state: initialValues.state ?? "",
         },
-        { keepErrors: false }
+        { keepErrors: false },
       );
     } else {
       // set a sensible default inventory origin (warehouse/primary) if available
@@ -122,7 +122,7 @@ export function PickupLocationFormModal({
           address2: null,
           state: "",
         },
-        { keepErrors: false }
+        { keepErrors: false },
       );
     }
   }, [open, mode, initialValues, form, locationOptions]);
@@ -152,54 +152,51 @@ export function PickupLocationFormModal({
       <Form {...form}>
         <div className="space-y-4">
           {/* Top row: Name + Inventory origin */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+
+          {/* Top row: Name + Inventory origin */}
+          <div className="grid grid-cols-2 gap-3">
             <FormField
               name="name"
               control={form.control}
               render={({ field }) => (
-                <FormItem className="md:col-span-3">
+                <FormItem className="col-span-1">
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input
-                      className="h-14"
-                      placeholder="Lekki Pickup Point"
-                      {...field}
-                    />
+                    <Input placeholder="Lekki" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="inventoryLocationId"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel>Origin</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value || ""}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locationOptions.map((l: any) => (
+                          <SelectItem key={l.locationId} value={l.locationId}>
+                            {l.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
-
-          <FormField
-            name="inventoryLocationId"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Inventory origin</FormLabel>
-                <FormControl>
-                  <Select
-                    value={field.value || ""}
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger className="h-14">
-                      <SelectValue placeholder="Select inventory location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locationOptions.map((l: any) => (
-                        <SelectItem key={l.locationId} value={l.locationId}>
-                          {l.name} {l.type === "warehouse" ? "(Warehouse)" : ""}{" "}
-                          {l.isPrimary ? "• Primary" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
           {/* Address card */}
           <div className="rounded-lg border p-4">
@@ -216,7 +213,6 @@ export function PickupLocationFormModal({
                     <FormLabel>Address line 1</FormLabel>
                     <FormControl>
                       <Input
-                        className="h-14"
                         placeholder="Full pickup address (store, street, landmark, etc.)"
                         {...field}
                       />
@@ -234,7 +230,6 @@ export function PickupLocationFormModal({
                     <FormLabel>Address line 2 (optional)</FormLabel>
                     <FormControl>
                       <Input
-                        className="h-14"
                         placeholder="Suite, floor, additional directions"
                         value={field.value ?? ""}
                         onChange={(e) =>
@@ -258,7 +253,7 @@ export function PickupLocationFormModal({
                       onValueChange={field.onChange}
                     >
                       <FormControl>
-                        <SelectTrigger className="h-14">
+                        <SelectTrigger>
                           <SelectValue placeholder="All states" />
                         </SelectTrigger>
                       </FormControl>

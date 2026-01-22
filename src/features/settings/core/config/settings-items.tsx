@@ -1,6 +1,5 @@
 import {
   FaUsersCog,
-  FaLock,
   FaClipboardCheck,
   FaBuilding,
   FaPercentage,
@@ -50,14 +49,6 @@ export const settingsItems = [
       "Manage users, roles, access levels, and security requirements.",
     link: "/settings/access-control",
     icon: <FaUsersCog size={20} />,
-  },
-
-  {
-    category: "Organization",
-    title: "Permissions",
-    description: "Control what different roles can see and do.",
-    link: "/settings/permissions",
-    icon: <FaLock size={20} />,
   },
 
   {

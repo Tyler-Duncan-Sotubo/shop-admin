@@ -21,11 +21,12 @@ export function CommerceAnalyticsClient() {
       <CommerceSalesCards session={session} activeStoreId={activeStoreId} />
 
       {/* 2) Chart (has its own range buttons: 7D/30D/1Y) */}
-      <div className="grid grid-cols-3 gap-4 items-stretch">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 items-stretch">
+        <div className="md:col-span-2">
           <CommerceSalesChart session={session} activeStoreId={activeStoreId} />
         </div>
-        <div className="col-span-1">
+
+        <div className="md:col-span-1">
           <CommerceOrdersByChannelPie
             session={session}
             activeStoreId={activeStoreId}

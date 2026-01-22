@@ -16,6 +16,9 @@ import { Button } from "@/shared/ui/button";
 import { FaPlus } from "react-icons/fa6";
 import Link from "next/link";
 
+import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
+import { ProductsMobileRow } from "./products-mobile-row";
+
 type StatusTab = "active" | "draft" | "archived";
 
 export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
@@ -32,12 +35,12 @@ export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
       offset: 0,
       status: statusTab === "active" ? undefined : statusTab,
     }),
-    [statusTab, activeStoreId]
+    [statusTab, activeStoreId],
   );
 
   const { data: list, isLoading: isListLoading } = useGetProducts(
     query,
-    session
+    session,
   );
 
   const { counts, isLoading: isCountsLoading } = useProductCountsForTabs(
@@ -50,23 +53,29 @@ export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
         { key: "draft", status: "draft" },
         { key: "archived", status: "archived" },
       ],
-    }
+    },
   );
 
   if (authStatus === "loading" || isListLoading || isCountsLoading) {
     return <Loading />;
   }
 
-  const rows = data.length ? data : list?.rows ?? [];
+  const rows = data.length ? data : (list?.rows ?? []);
 
   // only show the “Add Product” button when this is the main page table
   const toolbarRight = !data.length ? (
     <Link href="/products/new?tab=products">
-      <Button>
+      <Button className="w-full">
         <FaPlus /> Add Product
       </Button>
     </Link>
   ) : null;
+
+  const chips: FilterChip<StatusTab>[] = [
+    { value: "active", label: "Published", count: counts.active ?? 0 },
+    { value: "draft", label: "Draft", count: counts.draft ?? 0 },
+    { value: "archived", label: "Archived", count: counts.archived ?? 0 },
+  ];
 
   return (
     <Tabs value={statusTab} onValueChange={(v) => setStatusTab(v as StatusTab)}>
@@ -75,19 +84,33 @@ export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
         data={rows}
         filterKey="name"
         filterPlaceholder="Search by product name..."
+        mobileRow={ProductsMobileRow}
         toolbarLeft={
           !data.length ? (
-            <TabsList>
-              <TabsTrigger value="active">
-                <TabLabel label="Published" count={counts.active ?? 0} />
-              </TabsTrigger>
-              <TabsTrigger value="draft">
-                <TabLabel label="Draft" count={counts.draft ?? 0} />
-              </TabsTrigger>
-              <TabsTrigger value="archived">
-                <TabLabel label="Archived" count={counts.archived ?? 0} />
-              </TabsTrigger>
-            </TabsList>
+            <>
+              {/* ✅ Mobile chips */}
+              <FilterChips<StatusTab>
+                value={statusTab}
+                onChange={setStatusTab}
+                chips={chips}
+                wrap
+              />
+
+              {/* ✅ Desktop tabs */}
+              <div className="hidden sm:block">
+                <TabsList>
+                  <TabsTrigger value="active">
+                    <TabLabel label="Published" count={counts.active ?? 0} />
+                  </TabsTrigger>
+                  <TabsTrigger value="draft">
+                    <TabLabel label="Draft" count={counts.draft ?? 0} />
+                  </TabsTrigger>
+                  <TabsTrigger value="archived">
+                    <TabLabel label="Archived" count={counts.archived ?? 0} />
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+            </>
           ) : null
         }
         toolbarRight={toolbarRight}

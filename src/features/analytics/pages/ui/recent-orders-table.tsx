@@ -17,14 +17,17 @@ import {
   SelectItem,
 } from "@/shared/ui/select";
 import Loading from "@/shared/ui/loading";
+import { RecentOrdersMobileRow } from "./recent-orders-mobile-row";
+import { useRouter } from "next/navigation";
 
 export function RecentOrdersTable() {
   const { data: session } = useSession();
   const { activeStoreId } = useStoreScope();
+  const router = useRouter();
 
   const [preset, setPreset] = usePersistedState<Preset>(
     "commerce:recent-orders:preset",
-    "7d"
+    "7d",
   );
 
   const range = usePresetRange(preset);
@@ -37,7 +40,7 @@ export function RecentOrdersTable() {
       includeUnpaid: true,
       storeId: activeStoreId,
     },
-    session
+    session,
   );
 
   if (isLoading) return <Loading />;
@@ -66,10 +69,12 @@ export function RecentOrdersTable() {
 
       <DataTable
         columns={recentOrdersColumns}
-        data={data}
+        data={data ?? []}
         filterKey="orderNumber"
         filterPlaceholder="Search by order #…"
         disableRowSelection
+        mobileRow={RecentOrdersMobileRow}
+        onRowClick={(o) => router.push(`/sales/orders/${o.id}`)}
       />
     </div>
   );

@@ -1,3 +1,4 @@
+// features/inventory/transfer/ui/inventory-transfer-client.tsx
 "use client";
 
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
@@ -7,9 +8,9 @@ import { useSession } from "next-auth/react";
 import { DataTable } from "@/shared/ui/data-table";
 import { transfersColumns } from "./invertory-transfer-column";
 import Loading from "@/shared/ui/loading";
-import PageHeader from "@/shared/ui/page-header";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { FaExchangeAlt, FaStore } from "react-icons/fa";
+import { InventoryTransferMobileRow } from "./inventory-transfer-mobile-row";
 
 const InventoryTransferClient = () => {
   const axios = useAxiosAuth();
@@ -19,19 +20,15 @@ const InventoryTransferClient = () => {
   const { data: transfers = [], isLoading } = useListTransfers(
     activeStoreId,
     session,
-    axios
+    axios,
   );
 
-  // ─────────────────────────────────────────────
   // Loading
-  // ─────────────────────────────────────────────
   if (authStatus === "loading" || isLoading) {
     return <Loading />;
   }
 
-  // ─────────────────────────────────────────────
   // No store selected
-  // ─────────────────────────────────────────────
   if (!activeStoreId) {
     return (
       <EmptyState
@@ -43,9 +40,7 @@ const InventoryTransferClient = () => {
     );
   }
 
-  // ─────────────────────────────────────────────
   // No transfers yet
-  // ─────────────────────────────────────────────
   if (transfers.length === 0) {
     return (
       <section className="space-y-6">
@@ -62,9 +57,7 @@ const InventoryTransferClient = () => {
     );
   }
 
-  // ─────────────────────────────────────────────
   // Normal render
-  // ─────────────────────────────────────────────
   return (
     <section className="space-y-6">
       <DataTable
@@ -72,6 +65,7 @@ const InventoryTransferClient = () => {
         data={transfers}
         filterKey="search"
         filterPlaceholder="Search transfers by ID, location..."
+        mobileRow={InventoryTransferMobileRow}
       />
     </section>
   );

@@ -45,7 +45,7 @@ const currencyMeta = {
 } as const;
 
 type SupportedCurrency = keyof typeof currencyMeta;
-const BASE_DOMAIN = "centa.africa"; // ✅ change this to your real base domain
+const BASE_DOMAIN = "mycenta.com"; // ✅ change this to your real base domain
 
 export function SetupStep1Store({ onSuccess }: Props) {
   const createStore = useCreateStoreWithDomains();
@@ -257,7 +257,7 @@ export function SetupStep1Store({ onSuccess }: Props) {
                       </FormDescription>
 
                       <FormControl>
-                        <div className="flex w-[60%] items-stretch rounded-lg border bg-muted/20 overflow-hidden">
+                        <div className="flex md:w-[60%] w-full items-stretch rounded-lg border bg-muted/20 overflow-hidden">
                           <Input
                             value={shownSubdomain}
                             placeholder="e.g. example"
@@ -269,8 +269,8 @@ export function SetupStep1Store({ onSuccess }: Props) {
                               const normalized = normalizeHost(
                                 String(
                                   form.getValues("domains.0.domain" as any) ??
-                                    ""
-                                )
+                                    "",
+                                ),
                               );
                               form.setValue(
                                 "domains.0.domain" as any,
@@ -278,7 +278,7 @@ export function SetupStep1Store({ onSuccess }: Props) {
                                 {
                                   shouldDirty: true,
                                   shouldValidate: true,
-                                }
+                                },
                               );
                             }}
                           />
@@ -315,14 +315,14 @@ export function SetupStep1Store({ onSuccess }: Props) {
                   const options: SupportedCurrency[] = ["GBP", "USD", "CAD"];
 
                   const current: SupportedCurrency[] = Array.isArray(
-                    field.value
+                    field.value,
                   )
                     ? field.value
                     : [];
 
                   const toggle = (
                     code: SupportedCurrency,
-                    checked: boolean
+                    checked: boolean,
                   ) => {
                     const next = checked
                       ? Array.from(new Set([...current, code]))
@@ -353,14 +353,14 @@ export function SetupStep1Store({ onSuccess }: Props) {
                                 "transition-colors hover:bg-muted/40",
                                 checked
                                   ? "border-primary ring-1 ring-primary/30"
-                                  : ""
+                                  : "",
                               )}
                             >
                               <div className="flex items-center gap-3">
                                 <div
                                   className={cn(
                                     "flex h-9 w-9 items-center justify-center text-lg",
-                                    checked ? "border-primary/40" : ""
+                                    checked ? "border-primary/40" : "",
                                   )}
                                   aria-hidden="true"
                                 >
@@ -429,7 +429,7 @@ export function SetupStep1Store({ onSuccess }: Props) {
                             key={opt.value}
                             className={cn(
                               "flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer select-none",
-                              checked ? "border-primary" : ""
+                              checked ? "border-primary" : "",
                             )}
                           >
                             <Checkbox

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
@@ -24,6 +25,9 @@ import { CreateTransferModal } from "../../transfer/ui/create-transfer-modal";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { FaStore, FaWarehouse } from "react-icons/fa";
 
+import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
+import { InventoryMobileRow } from "./inventory-mobile-row";
+
 export function InventoryOverview() {
   const { data: session, status: authStatus } = useSession();
   const axios = useAxiosAuth();
@@ -33,37 +37,28 @@ export function InventoryOverview() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [locationId, setLocationId] = useState<string | null>(null);
 
-  // ─────────────────────────────────────────────
   // 1) Fetch locations for active store
-  // ─────────────────────────────────────────────
   const { data: locations = [], isLoading: locationsLoading } =
     useGetStoreLocations(activeStoreId, session, axios);
-  // ─────────────────────────────────────────────
+
   // 2) Sort locations: warehouse → primary → name
-  // ─────────────────────────────────────────────
   const locationTabs = useMemo(() => {
     const active = locations.filter((l) => l.isActive);
 
     return [...active].sort((a, b) => {
-      // warehouse first
       const aWarehouse = a.type === "warehouse" ? 0 : 1;
       const bWarehouse = b.type === "warehouse" ? 0 : 1;
       if (aWarehouse !== bWarehouse) return aWarehouse - bWarehouse;
 
-      // primary next
       const aPrimary = a.isPrimary ? 0 : 1;
       const bPrimary = b.isPrimary ? 0 : 1;
       if (aPrimary !== bPrimary) return aPrimary - bPrimary;
 
-      // name fallback
       return (a.name ?? "").localeCompare(b.name ?? "");
     });
   }, [locations]);
 
-  // ─────────────────────────────────────────────
   // 3) Pick default location (warehouse > primary)
-  //    ✅ Still sets locationId, but UI can render tabs even before this runs
-  // ─────────────────────────────────────────────
   useEffect(() => {
     if (!locationTabs.length) return;
 
@@ -75,7 +70,7 @@ export function InventoryOverview() {
     }
   }, [locationTabs, locationId]);
 
-  // ✅ Always provide Tabs a valid value once we have tabs
+  // Always provide Tabs a valid value once we have tabs
   const tabsValue = useMemo(() => {
     return locationId || locationTabs[0]?.locationId || "";
   }, [locationId, locationTabs]);
@@ -83,9 +78,7 @@ export function InventoryOverview() {
   const currentLocationName =
     locationTabs.find((l) => l.locationId === tabsValue)?.name ?? "Location";
 
-  // ─────────────────────────────────────────────
   // 4) Inventory overview query
-  // ─────────────────────────────────────────────
   const query = useMemo<InventoryOverviewQuery | null>(() => {
     if (!activeStoreId) return null;
 
@@ -99,9 +92,7 @@ export function InventoryOverview() {
 
   const { data: rows = [] } = useGetInventoryOverview(query, session, axios);
 
-  // ─────────────────────────────────────────────
-  // 5) Group Variants by Product
-  // ─────────────────────────────────────────────
+  // 5) Group variants by product
   const groupedRows = useMemo<InventoryGroupRow[]>(() => {
     const map = new Map<string, InventoryGroupRow>();
 
@@ -128,12 +119,12 @@ export function InventoryOverview() {
 
     for (const g of map.values()) {
       g.children.sort((a, b) =>
-        (a.variantTitle ?? "").localeCompare(b.variantTitle ?? "")
+        (a.variantTitle ?? "").localeCompare(b.variantTitle ?? ""),
       );
     }
 
     return Array.from(map.values()).sort((a, b) =>
-      a.productName.localeCompare(b.productName)
+      a.productName.localeCompare(b.productName),
     );
   }, [rows]);
 
@@ -142,7 +133,7 @@ export function InventoryOverview() {
   };
 
   const tableRows = useMemo(() => {
-    const out = [];
+    const out: Array<any> = [];
     for (const g of groupedRows) {
       out.push(g);
       if (expanded[g.productName]) out.push(...g.children);
@@ -150,9 +141,17 @@ export function InventoryOverview() {
     return out;
   }, [groupedRows, expanded]);
 
-  // ─────────────────────────────────────────────
+  // Mobile location chips
+  const locationChips = useMemo<FilterChip<string>[]>(
+    () =>
+      locationTabs.map((l) => ({
+        value: l.locationId,
+        label: l.name,
+      })),
+    [locationTabs],
+  );
+
   // Loading / top-level empty states
-  // ─────────────────────────────────────────────
   if (authStatus === "loading" || locationsLoading) return <Loading />;
 
   // No store selected
@@ -197,9 +196,7 @@ export function InventoryOverview() {
     );
   }
 
-  // ─────────────────────────────────────────────
-  // Render (Tabs ALWAYS show once we have locationTabs)
-  // ─────────────────────────────────────────────
+  // Render
   return (
     <section className="space-y-4">
       <Tabs value={tabsValue} onValueChange={setLocationId}>
@@ -208,14 +205,34 @@ export function InventoryOverview() {
           data={tableRows}
           filterKey="productName"
           filterPlaceholder="Search by product name or SKU..."
+          mobileRow={InventoryMobileRow}
+          tableMeta={{
+            locationId: tabsValue,
+            expanded,
+            toggleExpanded,
+          }}
           toolbarLeft={
-            <TabsList>
-              {locationTabs.map((l) => (
-                <TabsTrigger key={l.locationId} value={l.locationId}>
-                  {l.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <>
+              {/* ✅ Mobile: location chips */}
+              <FilterChips<string>
+                value={tabsValue}
+                onChange={(v) => setLocationId(v)}
+                chips={locationChips}
+                wrap={false}
+                scrollable
+              />
+
+              {/* ✅ Desktop: tabs */}
+              <div className="hidden sm:block">
+                <TabsList>
+                  {locationTabs.map((l) => (
+                    <TabsTrigger key={l.locationId} value={l.locationId}>
+                      {l.name}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+            </>
           }
           toolbarRight={
             <Button onClick={() => setOpenTransfer(true)} disabled={!tabsValue}>

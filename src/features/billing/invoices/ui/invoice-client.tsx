@@ -13,6 +13,9 @@ import { invoiceColumns } from "./invoice-columns";
 import { useGetInvoices } from "../hooks/use-invoices";
 import { useRouter } from "next/navigation";
 
+import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
+import { InvoicesMobileRow } from "./invoices-mobile-row";
+
 type Tab = "draft" | "issued" | "paid" | "all";
 
 export function InvoiceClient() {
@@ -33,10 +36,17 @@ export function InvoiceClient() {
       offset: 0,
     },
     session,
-    axios
+    axios,
   );
 
   const cols = useMemo(() => invoiceColumns(), []);
+
+  const chips: FilterChip<Tab>[] = [
+    { value: "all", label: "All" },
+    { value: "draft", label: "Draft" },
+    { value: "issued", label: "Issued" },
+    { value: "paid", label: "Paid" },
+  ];
 
   if (isLoading) return <Loading />;
 
@@ -49,21 +59,37 @@ export function InvoiceClient() {
       />
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="draft">Draft</TabsTrigger>
-          <TabsTrigger value="issued">Issued</TabsTrigger>
-          <TabsTrigger value="paid">Paid</TabsTrigger>
-        </TabsList>
-      </Tabs>
+        <div className="mt-4">
+          <DataTable
+            columns={cols}
+            data={invoices}
+            mobileRow={InvoicesMobileRow}
+            onRowClick={(inv) => router.push(`/sales/invoices/${inv.id}`)}
+            toolbarLeft={
+              <>
+                {/* ✅ Mobile chips */}
+                <FilterChips<Tab>
+                  value={tab}
+                  onChange={setTab}
+                  chips={chips}
+                  wrap
+                  // or: scrollable
+                />
 
-      <div className="mt-4">
-        <DataTable
-          columns={cols}
-          data={invoices}
-          onRowClick={(inv) => router.push(`/sales/invoices/${inv.id}`)}
-        />
-      </div>
+                {/* ✅ Desktop tabs */}
+                <div className="hidden sm:block">
+                  <TabsList>
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="draft">Draft</TabsTrigger>
+                    <TabsTrigger value="issued">Issued</TabsTrigger>
+                    <TabsTrigger value="paid">Paid</TabsTrigger>
+                  </TabsList>
+                </div>
+              </>
+            }
+          />
+        </div>
+      </Tabs>
     </div>
   );
 }

@@ -22,15 +22,15 @@ export function AnalyticsOverviewFeature({
   // Fetch data for overview, top pages, and landing pages
   const overview = useDashboardOverview(
     { ...range, storeId: activeStoreId },
-    session
+    session,
   );
   const topPages = useDashboardTopPages(
     { ...range, limit: 5, storeId: activeStoreId },
-    session
+    session,
   );
   const landings = useDashboardLandingPages(
     { ...range, limit: 5, storeId: activeStoreId },
-    session
+    session,
   );
 
   return (
@@ -39,7 +39,7 @@ export function AnalyticsOverviewFeature({
         data={overview.data ?? null}
         isLoading={overview.isLoading}
       />
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
           <TopPagesCard
             rows={topPages.data ?? null}

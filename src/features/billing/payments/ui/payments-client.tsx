@@ -10,6 +10,7 @@ import { useGetPayments } from "../hooks/use-payments";
 import { useGeneratePaymentReceiptPdf } from "../hooks/use-payment-receipt";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { DataTable } from "@/shared/ui/data-table";
+import { PaymentsMobileRow } from "./payments-mobile-row";
 
 export function PaymentsClient() {
   const { data: session } = useSession();
@@ -18,32 +19,35 @@ export function PaymentsClient() {
 
   const params = useMemo(
     () => ({ limit: 50, offset: 0, storeId: activeStoreId }),
-    [activeStoreId]
+    [activeStoreId],
   );
 
   const { data: payments = [], isLoading } = useGetPayments(
     params,
     session,
-    axios
+    axios,
   );
 
   const receiptPdf = useGeneratePaymentReceiptPdf(axios);
   const [receiptLoadingId, setReceiptLoadingId] = useState<string | null>(null);
 
+  const onReceipt = async (paymentId: string) => {
+    try {
+      setReceiptLoadingId(paymentId);
+      await receiptPdf.mutateAsync(paymentId);
+    } finally {
+      setReceiptLoadingId(null);
+    }
+  };
+
   const cols = useMemo(
     () =>
       paymentColumns({
         receiptLoadingId,
-        onReceipt: async (paymentId) => {
-          try {
-            setReceiptLoadingId(paymentId);
-            await receiptPdf.mutateAsync(paymentId); // ✅ open handled in onSuccess
-          } finally {
-            setReceiptLoadingId(null);
-          }
-        },
+        onReceipt,
       }),
-    [receiptLoadingId, receiptPdf]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [receiptLoadingId], // onReceipt stable enough; or include receiptPdf if lint complains
   );
 
   if (isLoading) return <Loading />;
@@ -56,7 +60,16 @@ export function PaymentsClient() {
       />
 
       <div className="mt-10">
-        <DataTable columns={cols} data={payments} />
+        <DataTable
+          columns={cols}
+          data={payments}
+          mobileRow={PaymentsMobileRow}
+          // ✅ pass receipt handler + loading to mobile row via table meta
+          tableMeta={{
+            onReceipt,
+            receiptLoadingId,
+          }}
+        />
       </div>
     </div>
   );

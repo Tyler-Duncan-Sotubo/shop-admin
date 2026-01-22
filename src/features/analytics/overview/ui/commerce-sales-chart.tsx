@@ -68,18 +68,18 @@ export function CommerceSalesChart({
 }) {
   const [preset, setPreset] = usePersistedState<ChartPreset>(
     "analytics:chart-preset",
-    "30d"
+    "30d",
   );
 
   const range = useChartRange(preset);
   const bucket = React.useMemo(
     () => (preset === "1y" ? "month" : "day"),
-    [preset]
+    [preset],
   );
 
   const ts = useCommerceSalesTimeseries(
     { ...range, bucket, storeId: activeStoreId },
-    session
+    session,
   );
   const data = (ts.data ?? []) as SalesTimeseriesPoint[];
 
@@ -87,8 +87,8 @@ export function CommerceSalesChart({
     preset === "1y"
       ? "Last 12 months"
       : preset === "30d"
-      ? "Last 30 days"
-      : "Last 7 days";
+        ? "Last 30 days"
+        : "Last 7 days";
 
   return (
     <Card className="h-full px-3">
@@ -103,7 +103,7 @@ export function CommerceSalesChart({
           onValueChange={(v) => setPreset(v as ChartPreset)}
         >
           <SelectTrigger
-            className="hidden w-40 rounded-lg sm:ml-auto sm:flex"
+            className="w-40 rounded-lg sm:ml-auto"
             aria-label="Select a range"
           >
             <SelectValue placeholder="Select range" />

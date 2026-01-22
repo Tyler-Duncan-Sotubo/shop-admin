@@ -25,7 +25,7 @@ export function buildDraft(resolved: ResolvedStorefrontConfig): DraftState {
   const contact: any = resolved?.pages?.contact ?? {};
 
   const aboutSections = Array.isArray(resolved?.pages?.about?.sections)
-    ? (resolved.pages.about.sections as any[]) ?? []
+    ? ((resolved.pages.about.sections as any[]) ?? [])
     : [];
 
   const s0 = aboutSections?.[0] ?? {};

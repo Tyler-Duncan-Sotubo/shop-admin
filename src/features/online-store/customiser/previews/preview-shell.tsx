@@ -49,7 +49,7 @@ export function PreviewShell({
       className="col-span-8 bg-muted/30 overflow-auto"
       style={previewThemeVars}
     >
-      <div className="p-6">
+      <div className="p-2">
         <div className="mx-auto max-w-[1100px] space-y-4">
           <div className="rounded-xl border bg-white overflow-hidden">
             {/* Topbar */}
@@ -58,7 +58,7 @@ export function PreviewShell({
                 className={cn(
                   "px-4 py-3 text-xs border-b text-center font-bold",
                   section === "header" &&
-                    "ring-inset ring-2 ring-muted-foreground/30 "
+                    "ring-inset ring-2 ring-muted-foreground/30 ",
                 )}
                 style={{
                   backgroundColor: "hsl(var(--preview-primary))",
@@ -75,7 +75,7 @@ export function PreviewShell({
                 className={cn(
                   "flex items-center px-4 py-3 gap-4",
                   section === "header" &&
-                    "ring-inset ring-2 ring-muted-foreground/30"
+                    "ring-inset ring-2 ring-muted-foreground/30",
                 )}
               >
                 {/* Left: Logo */}
@@ -137,7 +137,7 @@ export function PreviewShell({
               className={cn(
                 "border-t px-4 py-4 space-y-3",
                 section === "footer" &&
-                  "ring-inset ring-2 ring-muted-foreground/30"
+                  "ring-inset ring-2 ring-muted-foreground/30",
               )}
             >
               <div className="text-sm font-semibold">
@@ -174,7 +174,7 @@ export function PreviewShell({
                 <span>
                   {footer?.bottomBar?.leftText?.replace(
                     "{year}",
-                    String(new Date().getFullYear())
+                    String(new Date().getFullYear()),
                   )}
                 </span>
                 <span>

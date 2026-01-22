@@ -18,8 +18,8 @@ export function InvoicePreviewPane({
   downloading?: boolean;
 }) {
   return (
-    <Card className="p-4">
-      <div className="mb-3 flex items-center justify-between">
+    <Card className="">
+      <div className="mb-3 px-4 flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold">Preview</p>
           <p className="text-xs text-muted-foreground">
@@ -46,7 +46,7 @@ export function InvoicePreviewPane({
       ) : (
         <iframe
           title="Invoice preview"
-          className="min-h-[800px] w-full rounded-md border bg-white"
+          className="min-h-[700px] w-full rounded-md bg-white"
           srcDoc={html}
           sandbox="allow-same-origin"
         />

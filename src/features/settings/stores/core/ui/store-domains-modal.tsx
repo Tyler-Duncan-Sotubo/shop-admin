@@ -22,7 +22,7 @@ import { useStoreDomains } from "../hooks/use-store-domains";
 import { Store } from "../types/store.type";
 
 // ✅ set your base domain here
-const BASE_DOMAIN = "centa.africa";
+const BASE_DOMAIN = "mycenta.com";
 
 // same strict host regex you used earlier (supports multi-label TLDs)
 const HOST_REGEX =
@@ -43,7 +43,7 @@ const DomainSchema = z.object({
     .max(63, "Subdomain is too long")
     .regex(
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/i,
-      "Use letters, numbers, and hyphens only"
+      "Use letters, numbers, and hyphens only",
     ),
   extraDomains: z.string().optional(),
 });
@@ -131,7 +131,7 @@ export function StoreDomainsModal({
     const extras = domains
       .filter((d) => !d.deletedAt)
       .filter(
-        (d) => normalizeDomain(d.domain) !== normalizeDomain(currentPrimary)
+        (d) => normalizeDomain(d.domain) !== normalizeDomain(currentPrimary),
       )
       .map((d) => d.domain);
     return extras;
@@ -184,13 +184,13 @@ export function StoreDomainsModal({
 
     // ensure primary not duplicated in extras
     const filteredExtras = extras.filter(
-      (d) => normalizeDomain(d) !== normalizeDomain(primary)
+      (d) => normalizeDomain(d) !== normalizeDomain(primary),
     );
 
     // final safety: primary must be a valid host per HOST_REGEX
     if (!primary || !HOST_REGEX.test(primary)) {
       setSubmitError(
-        `Primary domain must be a valid host like "example.${BASE_DOMAIN}".`
+        `Primary domain must be a valid host like "example.${BASE_DOMAIN}".`,
       );
       return;
     }
@@ -211,7 +211,7 @@ export function StoreDomainsModal({
     } catch (e: any) {
       console.log(e);
       setSubmitError(
-        e?.response?.data?.error?.message ?? "Failed to update domains"
+        e?.response?.data?.error?.message ?? "Failed to update domains",
       );
     }
   };
@@ -287,7 +287,7 @@ export function StoreDomainsModal({
                   <textarea
                     className={cn(
                       "min-h-[110px] w-full rounded-md border bg-background px-3 py-2 text-sm",
-                      "focus:outline-none focus:ring-2 focus:ring-ring"
+                      "focus:outline-none focus:ring-2 focus:ring-ring",
                     )}
                     placeholder={"mystore.com\nshop.mystore.com"}
                     {...field}

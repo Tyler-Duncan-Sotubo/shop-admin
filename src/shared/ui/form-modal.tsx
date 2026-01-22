@@ -57,7 +57,7 @@ export function FormModal({
         if (!nextOpen) onClose();
       }}
     >
-      <DialogContent className={"bg-white max-w-lg"}>
+      <DialogContent className={"bg-white max-w-lg w-[90vw]"}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}

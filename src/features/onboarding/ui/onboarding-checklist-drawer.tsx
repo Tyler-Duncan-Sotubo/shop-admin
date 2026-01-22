@@ -30,16 +30,6 @@ const OnboardingChecklistDrawer = () => {
     allCompleted,
   } = useOnboardingChecklist();
 
-  console.log("Onboarding Checklist:", {
-    onboarding,
-    isLoading,
-    isError,
-    totalTasks,
-    completedTasks,
-    progressPercentage,
-    allCompleted,
-  });
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userDismissed, setUserDismissed] = useState(false);
 

@@ -6,11 +6,13 @@ import { usePathname } from "next/navigation";
 const LABELS: Record<string, string> = {
   settings: "Settings",
   stores: "Stores",
-  inventory: "Inventory",
-  locations: "Locations",
+  "audit-logs": "Audit Logs",
+  "payment-methods": "Payment Methods",
+  profile: "Profile",
+  "access-control": "Access Control",
   account: "Account",
-  company: "Company",
-  "invoice-template": "Invoice Templates",
+  "invoice-template": "Invoice Template",
+  "tax-settings": "Tax Settings",
 };
 
 function isProbablyId(segment: string) {
@@ -35,8 +37,8 @@ export default function SettingsLayout({
           const label = LABELS[seg]
             ? LABELS[seg]
             : isProbablyId(seg)
-            ? "Details"
-            : seg.charAt(0).toUpperCase() + seg.slice(1);
+              ? "Details"
+              : seg.charAt(0).toUpperCase() + seg.slice(1);
 
           return { href, label, isLast: idx === segments.length - 1 };
         })

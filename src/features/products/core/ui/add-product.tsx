@@ -57,7 +57,7 @@ type LocalImage = {
 };
 
 const MAX_SIMPLE_IMAGES = 9;
-const MAX_VARIABLE_IMAGES = 1;
+const MAX_VARIABLE_IMAGES = 3;
 
 export function AddProduct({ afterCreatePath }: AddProductPageProps) {
   const { activeStoreId } = useStoreScope();
@@ -78,6 +78,16 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
       description: "",
       status: "draft",
       productType: "variable",
+      sku: "",
+      barcode: "",
+      regularPrice: "0",
+      salePrice: "",
+      stockQuantity: "",
+      lowStockThreshold: "",
+      weight: "",
+      length: "",
+      width: "",
+      height: "",
       categoryIds: [],
       links: { related: [], upsell: [], cross_sell: [] },
       seoTitle: "",
@@ -97,7 +107,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
   const maxImages = useMemo(
     () =>
       productType === "variable" ? MAX_VARIABLE_IMAGES : MAX_SIMPLE_IMAGES,
-    [productType]
+    [productType],
   );
 
   // cleanup object URLs
@@ -120,7 +130,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
         shouldValidate: true,
       });
     }
-    if (maxImages === 1) {
+    if (maxImages === 3) {
       form.setValue("defaultImageIndex", 0, {
         shouldDirty: true,
         shouldValidate: true,
@@ -143,7 +153,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
 
       setLocalImages((prev) => [...prev, ...newOnes].slice(0, maxImages));
     },
-    [localImages.length, maxImages]
+    [localImages.length, maxImages],
   );
 
   const removeImage = useCallback(
@@ -159,17 +169,17 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
         return next;
       });
     },
-    [form]
+    [form],
   );
 
   const setDefaultImageIndex = useCallback(
     (index: number) => {
-      form.setValue("defaultImageIndex", maxImages === 1 ? 0 : index, {
+      form.setValue("defaultImageIndex", maxImages === 3 ? 0 : index, {
         shouldDirty: true,
         shouldValidate: true,
       });
     },
-    [form, maxImages]
+    [form, maxImages],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -203,7 +213,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
 
   const buildPayload = (
     values: any,
-    imagesDto?: any[]
+    imagesDto?: any[],
   ): CreateProductPayload => {
     const md: Record<string, any> = {
       how_it_feels_and_looks: values.howItFeelsAndLooks ?? "",
@@ -214,7 +224,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
     Object.keys(md).forEach((k) => {
       if (typeof md[k] === "string" && md[k].trim() === "") delete md[k];
     });
-
+    const isSimple = (values.productType ?? "variable") === "simple";
     return {
       storeId: activeStoreId,
       name: values.name,
@@ -231,8 +241,28 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
         (values.productType ?? "variable") === "variable"
           ? 0
           : typeof values.defaultImageIndex === "number"
-          ? values.defaultImageIndex
-          : 0,
+            ? values.defaultImageIndex
+            : 0,
+
+      ...(isSimple
+        ? {
+            sku: values.sku?.trim() ? values.sku.trim() : null,
+            barcode: values.barcode?.trim() ? values.barcode.trim() : null,
+
+            regularPrice: values.regularPrice ?? "0",
+            salePrice: values.salePrice?.trim()
+              ? values.salePrice.trim()
+              : null,
+
+            stockQuantity: values.stockQuantity?.trim() || null,
+            lowStockThreshold: values.lowStockThreshold?.trim() || null,
+
+            weight: values.weight?.trim() || null,
+            length: values.length?.trim() || null,
+            width: values.width?.trim() || null,
+            height: values.height?.trim() || null,
+          }
+        : {}),
     };
   };
 
@@ -254,7 +284,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
         }
 
         await Promise.all(
-          uploads.map((u, idx) => uploadToS3Put(u.uploadUrl, files[idx]))
+          uploads.map((u, idx) => uploadToS3Put(u.uploadUrl, files[idx])),
         );
 
         const productName = values.name || "Product image";
@@ -275,7 +305,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
       const created = await createProduct(
         payload,
         (msg) => setSubmitError(msg),
-        form.reset
+        form.reset,
       );
 
       const productId = created?.id ?? created?.data?.id;
@@ -285,8 +315,8 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
         const next = afterCreatePath
           ? afterCreatePath(productId)
           : isSimple
-          ? `/products`
-          : `/products/${productId}/variants`;
+            ? `/products`
+            : `/products/${productId}/variants`;
 
         router.push(next);
         return;
@@ -366,6 +396,383 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                   )}
                 />
               </div>
+
+              <div className="lg:hidden space-y-6">
+                <div className="rounded-lg border p-4 w-full flex flex-row gap-3 text-sm">
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <p>Product status</p>
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem className="w-full">
+                          <FormControl>
+                            <Select
+                              value={field.value ?? undefined}
+                              onValueChange={field.onChange}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="draft">Draft</SelectItem>
+                                <SelectItem value="active">Publish</SelectItem>
+                                <SelectItem value="archived">
+                                  Archive
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <p>Product type</p>
+                    <FormField
+                      control={form.control}
+                      name="productType"
+                      render={({ field }) => (
+                        <FormItem className="w-full">
+                          <FormControl>
+                            <Select
+                              value={field.value}
+                              onValueChange={field.onChange}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="variable">
+                                  Variable
+                                </SelectItem>
+                                <SelectItem value="simple">Simple</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Images */}
+                <div className="rounded-lg border p-4 space-y-4">
+                  <SectionHeading>{`Images (optional, up to ${maxImages})`}</SectionHeading>
+
+                  <div
+                    {...getRootProps()}
+                    className={cn(
+                      "border rounded-lg w-full flex flex-col items-center justify-center p-6",
+                      "border-dashed cursor-pointer hover:border-primary",
+                    )}
+                  >
+                    <input {...getInputProps()} />
+
+                    {localImages.length ? (
+                      <div className="grid grid-cols-3 gap-2 w-full">
+                        {localImages.map((img, idx) => (
+                          <div
+                            key={idx}
+                            className={cn(
+                              "relative rounded-lg overflow-hidden border",
+                              idx === currentDefault
+                                ? "ring-2 ring-primary"
+                                : "",
+                            )}
+                          >
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeImage(idx);
+                              }}
+                              className="absolute top-1 right-1 z-10 rounded-full bg-background/80 p-1 hover:bg-background"
+                              aria-label="Remove image"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDefaultImageIndex(idx);
+                              }}
+                              className="absolute bottom-1 left-1 z-10 rounded-md bg-background/80 px-2 py-1 text-xs hover:bg-background"
+                            >
+                              {idx === currentDefault
+                                ? "Default"
+                                : "Set default"}
+                            </button>
+
+                            <Image
+                              src={img.previewUrl}
+                              alt="Product image"
+                              className="h-24 w-full object-cover"
+                              width={220}
+                              height={220}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex h-40 w-full items-center justify-center rounded-lg bg-muted/30">
+                        <UserIcon className="h-10 w-10 text-muted-foreground" />
+                      </div>
+                    )}
+
+                    <div className="mt-4 text-center text-sm text-muted-foreground">
+                      {isDragActive ? (
+                        <p className="text-primary">Drop the files here…</p>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <UploadCloud className="h-5 w-5" />
+                          <p>
+                            Drag & drop or click to upload{" "}
+                            {localImages.length
+                              ? `(you can add ${maxImages - localImages.length} more)`
+                              : `(up to ${maxImages})`}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="images"
+                    render={() => (
+                      <FormItem>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="defaultImageIndex"
+                    render={() => (
+                      <FormItem>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Categories */}
+                <div className="rounded-lg border p-4 space-y-2">
+                  <SectionHeading>Categories</SectionHeading>
+                  <CategoryCheckboxPicker
+                    name="categoryIds"
+                    onCreateCategory={async (payload, setError) => {
+                      return createCategory(payload, setError);
+                    }}
+                  />
+                </div>
+              </div>
+
+              {productType === "simple" ? (
+                <div className="rounded-lg border p-4 space-y-4">
+                  <SectionHeading>Simple product details</SectionHeading>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="sku"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>SKU</FormLabel>
+                          <FormControl>
+                            <Input
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="barcode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Barcode</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Optional"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Pricing */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="regularPrice"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Regular price</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="decimal"
+                              placeholder="0"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="salePrice"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sale price</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="decimal"
+                              placeholder="Optional"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Inventory */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="stockQuantity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Stock quantity</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="numeric"
+                              placeholder="0"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="lowStockThreshold"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Low stock threshold</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="numeric"
+                              placeholder="e.g. 5"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Dimensions */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="weight"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Weight</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="decimal"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="length"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Length</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="decimal"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="width"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Width</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="decimal"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="height"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Height</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="decimal"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              ) : null}
 
               {/* Product details */}
               <div className="rounded-lg border p-4 space-y-4">
@@ -491,25 +898,57 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
 
             {/* RIGHT COLUMN */}
             <div className="lg:col-span-4 space-y-6">
-              <div className="rounded-lg border p-4 space-y-4">
-                <div className="space-y-2">
+              <div className="hidden lg:block space-y-6">
+                <div className="rounded-lg border p-4 space-y-4">
+                  <div className="space-y-2">
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Select
+                              value={field.value ?? undefined}
+                              onValueChange={field.onChange}
+                            >
+                              <SelectTrigger className="w-64">
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="draft">Draft</SelectItem>
+                                <SelectItem value="active">Publish</SelectItem>
+                                <SelectItem value="archived">
+                                  Archive
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+                {/* Product type */}
+                <div className="rounded-lg border p-4 space-y-4">
+                  <SectionHeading>Product type</SectionHeading>
+
                   <FormField
                     control={form.control}
-                    name="status"
+                    name="productType"
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
                           <Select
-                            value={field.value ?? undefined}
+                            value={field.value}
                             onValueChange={field.onChange}
                           >
                             <SelectTrigger className="w-64">
-                              <SelectValue placeholder="Select status" />
+                              <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="draft">Draft</SelectItem>
-                              <SelectItem value="active">Publish</SelectItem>
-                              <SelectItem value="archived">Archive</SelectItem>
+                              <SelectItem value="variable">Variable</SelectItem>
+                              <SelectItem value="simple">Simple</SelectItem>
                             </SelectContent>
                           </Select>
                         </FormControl>
@@ -518,147 +957,120 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                     )}
                   />
                 </div>
-              </div>
 
-              {/* Product type */}
-              <div className="rounded-lg border p-4 space-y-4">
-                <SectionHeading>Product type</SectionHeading>
+                {/* Images */}
+                <div className="rounded-lg border p-4 space-y-4">
+                  <SectionHeading>{`Images (optional, up to ${maxImages})`}</SectionHeading>
 
-                <FormField
-                  control={form.control}
-                  name="productType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger className="w-64">
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="variable">Variable</SelectItem>
-                            <SelectItem value="simple">Simple</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                  <div
+                    {...getRootProps()}
+                    className={cn(
+                      "border rounded-lg w-full flex flex-col items-center justify-center p-6",
+                      "border-dashed cursor-pointer hover:border-primary",
+                    )}
+                  >
+                    <input {...getInputProps()} />
 
-              {/* Images */}
-              <div className="rounded-lg border p-4 space-y-4">
-                <SectionHeading>{`Images (optional, up to ${maxImages})`}</SectionHeading>
-
-                <div
-                  {...getRootProps()}
-                  className={cn(
-                    "border rounded-lg w-full flex flex-col items-center justify-center p-6",
-                    "border-dashed cursor-pointer hover:border-primary"
-                  )}
-                >
-                  <input {...getInputProps()} />
-
-                  {localImages.length ? (
-                    <div className="grid grid-cols-3 gap-2 w-full">
-                      {localImages.map((img, idx) => (
-                        <div
-                          key={idx}
-                          className={cn(
-                            "relative rounded-lg overflow-hidden border",
-                            idx === currentDefault ? "ring-2 ring-primary" : ""
-                          )}
-                        >
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeImage(idx);
-                            }}
-                            className="absolute top-1 right-1 z-10 rounded-full bg-background/80 p-1 hover:bg-background"
-                            aria-label="Remove image"
+                    {localImages.length ? (
+                      <div className="grid grid-cols-3 gap-2 w-full">
+                        {localImages.map((img, idx) => (
+                          <div
+                            key={idx}
+                            className={cn(
+                              "relative rounded-lg overflow-hidden border",
+                              idx === currentDefault
+                                ? "ring-2 ring-primary"
+                                : "",
+                            )}
                           >
-                            <X className="h-4 w-4" />
-                          </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeImage(idx);
+                              }}
+                              className="absolute top-1 right-1 z-10 rounded-full bg-background/80 p-1 hover:bg-background"
+                              aria-label="Remove image"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
 
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDefaultImageIndex(idx);
-                            }}
-                            className="absolute bottom-1 left-1 z-10 rounded-md bg-background/80 px-2 py-1 text-xs hover:bg-background"
-                          >
-                            {idx === currentDefault ? "Default" : "Set default"}
-                          </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDefaultImageIndex(idx);
+                              }}
+                              className="absolute bottom-1 left-1 z-10 rounded-md bg-background/80 px-2 py-1 text-xs hover:bg-background"
+                            >
+                              {idx === currentDefault
+                                ? "Default"
+                                : "Set default"}
+                            </button>
 
-                          <Image
-                            src={img.previewUrl}
-                            alt="Product image"
-                            className="h-24 w-full object-cover"
-                            width={220}
-                            height={220}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex h-40 w-full items-center justify-center rounded-lg bg-muted/30">
-                      <UserIcon className="h-10 w-10 text-muted-foreground" />
-                    </div>
-                  )}
-
-                  <div className="mt-4 text-center text-sm text-muted-foreground">
-                    {isDragActive ? (
-                      <p className="text-primary">Drop the files here…</p>
+                            <Image
+                              src={img.previewUrl}
+                              alt="Product image"
+                              className="h-24 w-full object-cover"
+                              width={220}
+                              height={220}
+                            />
+                          </div>
+                        ))}
+                      </div>
                     ) : (
-                      <div className="flex flex-col items-center gap-2">
-                        <UploadCloud className="h-5 w-5" />
-                        <p>
-                          Drag & drop or click to upload{" "}
-                          {localImages.length
-                            ? `(you can add ${
-                                maxImages - localImages.length
-                              } more)`
-                            : `(up to ${maxImages})`}
-                        </p>
+                      <div className="flex h-40 w-full items-center justify-center rounded-lg bg-muted/30">
+                        <UserIcon className="h-10 w-10 text-muted-foreground" />
                       </div>
                     )}
+
+                    <div className="mt-4 text-center text-sm text-muted-foreground">
+                      {isDragActive ? (
+                        <p className="text-primary">Drop the files here…</p>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <UploadCloud className="h-5 w-5" />
+                          <p>
+                            Drag & drop or click to upload{" "}
+                            {localImages.length
+                              ? `(you can add ${maxImages - localImages.length} more)`
+                              : `(up to ${maxImages})`}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  <FormField
+                    control={form.control}
+                    name="images"
+                    render={() => (
+                      <FormItem>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="defaultImageIndex"
+                    render={() => (
+                      <FormItem>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="images"
-                  render={() => (
-                    <FormItem>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="defaultImageIndex"
-                  render={() => (
-                    <FormItem>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Categories */}
-              <div className="rounded-lg border p-4 space-y-2">
-                <SectionHeading>Categories</SectionHeading>
-                <CategoryCheckboxPicker
-                  name="categoryIds"
-                  onCreateCategory={async (payload, setError) => {
-                    return createCategory(payload, setError);
-                  }}
-                />
+                {/* Categories */}
+                <div className="rounded-lg border p-4 space-y-2">
+                  <SectionHeading>Categories</SectionHeading>
+                  <CategoryCheckboxPicker
+                    name="categoryIds"
+                    onCreateCategory={async (payload, setError) => {
+                      return createCategory(payload, setError);
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Linked Products */}

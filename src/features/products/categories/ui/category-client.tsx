@@ -1,3 +1,4 @@
+// features/products/categories/components/categories-client.tsx
 "use client";
 
 import { useMemo } from "react";
@@ -10,6 +11,7 @@ import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { useCategories } from "../hooks/use-categories";
 import { useSession } from "next-auth/react";
+import { CategoriesMobileRow } from "./categories-mobile-row";
 
 export function CategoriesClient() {
   const router = useRouter();
@@ -20,14 +22,22 @@ export function CategoriesClient() {
   const { categories, isLoading } = useCategories(
     session,
     axios,
-    activeStoreId
+    activeStoreId,
   );
 
   const parentName = useMemo(() => {
-    const map = new Map(categories?.map((c) => [c.id, c.name] as const));
+    const map = new Map((categories ?? []).map((c) => [c.id, c.name] as const));
     return (parentId: string | null) =>
-      parentId ? map.get(parentId) ?? "—" : "—";
+      parentId ? (map.get(parentId) ?? "—") : "—";
   }, [categories]);
+
+  // add parentName for mobile row (so it doesn't need to know getParentName)
+  const rows = useMemo(() => {
+    return (categories ?? []).map((c) => ({
+      ...c,
+      parentName: c.parentId ? parentName(c.parentId) : null,
+    }));
+  }, [categories, parentName]);
 
   const cols = useMemo(
     () =>
@@ -35,7 +45,7 @@ export function CategoriesClient() {
         onEdit: (row) => router.push(`/products/categories/${row.id}`),
         getParentName: parentName,
       }),
-    [parentName, router]
+    [parentName, router],
   );
 
   if (isLoading) return <Loading />;
@@ -45,10 +55,11 @@ export function CategoriesClient() {
       <div className="mt-10">
         <DataTable
           columns={cols}
-          data={categories}
+          data={rows}
           filterKey="name"
           filterPlaceholder="Search collections..."
           onRowClick={(row) => router.push(`/products/categories/${row.id}`)}
+          mobileRow={CategoriesMobileRow}
           toolbarRight={
             <Button
               onClick={() =>

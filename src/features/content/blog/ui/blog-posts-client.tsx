@@ -1,3 +1,4 @@
+// features/blog/components/blog-post-client.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -8,13 +9,15 @@ import { useSession } from "next-auth/react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { useGetBlogPosts } from "../hooks/use-blog-post";
 import { blogPostColumns } from "./blog-posts-column";
-import { BlogPostListRow } from "../types/blog-post.type";
+import type { BlogPostListRow } from "../types/blog-post.type";
 import { Button } from "@/shared/ui/button";
 import Link from "next/link";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { useBlogPostCountsForTabs } from "../hooks/use-blog-post-count";
 import { TabLabel } from "@/shared/ui/tab-label";
+
+import { BlogPostsMobileRow } from "./blog-posts-mobile-row";
 
 type StatusTab = "all" | "published" | "draft";
 
@@ -32,25 +35,21 @@ export function BlogPostClient({ data = [] }: { data?: BlogPostListRow[] }) {
       status: statusTab === "all" ? undefined : statusTab,
       storeId: activeStoreId || undefined,
     }),
-    [statusTab, activeStoreId]
+    [statusTab, activeStoreId],
   );
 
-  // ✅ list for current tab (rows + count)
   const { data: list, isLoading: isListLoading } = useGetBlogPosts(
     query,
-    session
+    session,
   );
 
-  // ✅ counts for tabs (all/draft/published)
   const tabCounts = useBlogPostCountsForTabs(session, axios, {
     storeId: activeStoreId || undefined,
-    // if you later add server search, pass it here too
   });
 
   if (authStatus === "loading" || isListLoading) return <Loading />;
 
-  // If SSR data passed in, use it; otherwise use query data
-  const rows = data.length ? data : list?.rows ?? [];
+  const rows = data.length ? data : (list?.rows ?? []);
 
   return (
     <section className="space-y-4">
@@ -71,7 +70,8 @@ export function BlogPostClient({ data = [] }: { data?: BlogPostListRow[] }) {
           value={statusTab}
           onValueChange={(v) => setStatusTab(v as StatusTab)}
         >
-          <TabsList>
+          {/* Desktop tabs */}
+          <TabsList className="hidden sm:inline-flex">
             <TabsTrigger value="published">
               <TabLabel label="Published" count={tabCounts.published} />
             </TabsTrigger>
@@ -83,6 +83,25 @@ export function BlogPostClient({ data = [] }: { data?: BlogPostListRow[] }) {
             </TabsTrigger>
           </TabsList>
 
+          {/* Mobile chips (optional, if you already added FilterChips) */}
+          {/* If you don't have FilterChips in your project, remove this block. */}
+          <div className="sm:hidden">
+            {/* example: keep tabs list but allow horizontal scroll */}
+            <div className="overflow-x-auto no-scrollbar">
+              <TabsList className="w-max">
+                <TabsTrigger value="published">
+                  <TabLabel label="Published" count={tabCounts.published} />
+                </TabsTrigger>
+                <TabsTrigger value="draft">
+                  <TabLabel label="Draft" count={tabCounts.draft} />
+                </TabsTrigger>
+                <TabsTrigger value="all">
+                  <TabLabel label="All" count={tabCounts.all} />
+                </TabsTrigger>
+              </TabsList>
+            </div>
+          </div>
+
           <TabsContent value={statusTab} className="mt-4">
             <DataTable
               columns={blogPostColumns}
@@ -92,6 +111,7 @@ export function BlogPostClient({ data = [] }: { data?: BlogPostListRow[] }) {
               defaultPageSize={20}
               pageSizeOptions={[10, 20, 50, 100]}
               allowCustomPageSize
+              mobileRow={BlogPostsMobileRow}
             />
           </TabsContent>
         </Tabs>
@@ -104,6 +124,7 @@ export function BlogPostClient({ data = [] }: { data?: BlogPostListRow[] }) {
           defaultPageSize={20}
           pageSizeOptions={[10, 20, 50, 100]}
           allowCustomPageSize
+          mobileRow={BlogPostsMobileRow}
         />
       )}
     </section>

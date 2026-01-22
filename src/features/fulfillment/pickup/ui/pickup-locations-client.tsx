@@ -1,3 +1,4 @@
+// features/pickup/components/pickup-locations-client.tsx
 "use client";
 
 import { useState } from "react";
@@ -20,6 +21,7 @@ import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { DataTable } from "@/shared/ui/data-table";
 import { pickupLocationColumns } from "./pickup-location-columns";
 import { FaPlus } from "react-icons/fa";
+import { PickupLocationMobileRow } from "./pickup-location-mobile-row";
 
 type Mode = "create" | "edit";
 
@@ -35,7 +37,7 @@ export default function PickupLocationsClient() {
   const { data: locations = [], isLoading } = useGetPickupLocations(
     session,
     axios,
-    activeStoreId
+    activeStoreId,
   );
 
   const createMut = useCreatePickupLocation(session, axios);
@@ -103,6 +105,10 @@ export default function PickupLocationsClient() {
           data={locations}
           filterKey="name"
           filterPlaceholder="Filter pickup locations..."
+          mobileRow={PickupLocationMobileRow}
+          tableMeta={{
+            onEdit: openEdit,
+          }}
           toolbarRight={
             <Button onClick={openCreate}>
               <FaPlus />

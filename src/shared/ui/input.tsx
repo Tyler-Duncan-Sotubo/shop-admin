@@ -30,14 +30,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
           type={inputType}
           className={cn(
-            "flex h-12 w-full rounded-md border-input bg-muted px-3 py-2 text-base",
+            "flex h-10 md:h-12 w-full rounded-md border-input bg-muted px-3 py-2 text-base",
             "placeholder:text-muted-foreground placeholder:text-xs",
             "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
             "disabled:cursor-not-allowed disabled:opacity-50",
             // Padding adjustments for icons
             (leftIcon || isPassword) && "pl-10",
             rightIcon && !isPassword && "pr-10",
-            className
+            className,
           )}
           ref={ref}
           {...props}
@@ -65,7 +65,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
       </span>
     );
-  }
+  },
 );
 
 Input.displayName = "Input";
