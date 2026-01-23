@@ -21,10 +21,10 @@ export function OrderItemsCard({
   const count = items?.length ?? 0;
 
   return (
-    <section className="rounded-lg border">
+    <section className="rounded-lg border bg-white">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
-        <h3 className="text-base font-semibold">
+        <h3 className="text-sm sm:text-base font-semibold">
           Items <span className="text-muted-foreground">({count})</span>
         </h3>
       </div>
@@ -37,9 +37,9 @@ export function OrderItemsCard({
           </div>
         ) : (
           items.map((it) => (
-            <div key={it.id} className="flex items-start gap-3 px-4 py-3">
+            <div key={it.id} className="flex gap-3 px-4 py-4 sm:py-3">
               {/* Image */}
-              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md border bg-muted">
+              <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-md border bg-muted">
                 {it.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -53,17 +53,28 @@ export function OrderItemsCard({
                 )}
               </div>
 
-              {/* Details */}
-              <div className="min-w-0 flex-1 font-medium ">
-                <div className="text-sm font-medium truncate">{it.name}</div>
+              {/* Details + Price */}
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                {/* Name */}
+                <div className="text-sm font-medium leading-tight wrap-break-word">
+                  {it.name}
+                </div>
 
-                <div className="mt-1 text-xs font-medium  text-muted-foreground">
-                  SKU: {it.sku ?? "—"} · Qty: {it.quantity}
+                {/* Meta */}
+                <div className="text-xs text-muted-foreground">
+                  <span className="block sm:inline">SKU: {it.sku ?? "—"}</span>
+                  <span className="hidden sm:inline"> · </span>
+                  <span className="block sm:inline">Qty: {it.quantity}</span>
+                </div>
+
+                {/* Price (mobile) */}
+                <div className="mt-1 text-sm font-semibold sm:hidden">
+                  {formatMoneyNGN(it.lineTotal, currency)}
                 </div>
               </div>
 
-              {/* Price */}
-              <div className="text-sm font-bold whitespace-nowrap">
+              {/* Price (desktop) */}
+              <div className="hidden sm:flex text-sm font-bold whitespace-nowrap items-start">
                 {formatMoneyNGN(it.lineTotal, currency)}
               </div>
             </div>

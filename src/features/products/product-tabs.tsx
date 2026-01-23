@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { BsFillBoxSeamFill } from "react-icons/bs";
 import { FaTag, FaReceipt } from "react-icons/fa";
+
+import PageHeader from "@/shared/ui/page-header";
 import { ProductTable } from "./core/ui/product-table";
 import { CategoriesClient } from "./categories/ui/category-client";
 import { ReviewsTable } from "./reviews/ui/reviews-table";
-import PageHeader from "@/shared/ui/page-header";
+
+import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips"; // <-- adjust path if different
 
 type ProductTabKey = "products" | "collections" | "reviews";
 
@@ -34,6 +37,15 @@ export default function ProductClient() {
     router.replace(`?tab=${next}`, { scroll: false });
   };
 
+  const chips = useMemo<FilterChip<ProductTabKey>[]>(
+    () => [
+      { value: "products", label: "Products" },
+      { value: "collections", label: "Collections" },
+      { value: "reviews", label: "Reviews" },
+    ],
+    [],
+  );
+
   return (
     <>
       <PageHeader
@@ -42,8 +54,18 @@ export default function ProductClient() {
         tooltip="Products are the items you sell. Click into one to manage variants, images, and links."
       />
 
+      {/* Mobile: chips (FilterChips already has sm:hidden) */}
+      <FilterChips
+        value={tab}
+        onChange={onTabChange}
+        chips={chips}
+        scrollable
+        wrap={false}
+      />
+
       <Tabs value={tab} onValueChange={(v) => onTabChange(v as ProductTabKey)}>
-        <TabsList>
+        {/* Desktop: tabs */}
+        <TabsList className="hidden sm:flex">
           <TabsTrigger value="products" className="text-base">
             <BsFillBoxSeamFill className="mr-2" />
             Products

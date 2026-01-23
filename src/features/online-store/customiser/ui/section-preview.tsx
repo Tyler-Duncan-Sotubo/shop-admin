@@ -145,8 +145,37 @@ export function SectionPreview({
 
               <SheetTitle className="sr-only">Edit section</SheetTitle>
 
-              <SheetContent side="bottom" className="p-0 h-[85vh]">
-                <div className="h-full overflow-auto bg-white">{editor}</div>
+              {/* 
+                Fixed/controlled height:
+                - clamp() gives a consistent feel across phones
+                - dvh works better with mobile browser UI (address bar)
+                Also: add padding-top so the built-in close button isn't covered.
+              */}
+              <SheetContent
+                side="bottom"
+                className={[
+                  "p-0",
+                  // controlled height across devices
+                  "h-[clamp(22rem,85dvh,44rem)]",
+                  // safe areas (iOS notch/home indicator)
+                  "pb-[calc(env(safe-area-inset-bottom)+0px)]",
+                  // ensure overlay content doesn't visually fight
+                  "bg-white",
+                ].join(" ")}
+              >
+                {/* drag handle area (optional but nice) */}
+                <div className="px-4 pt-3">
+                  <div className="mx-auto h-1.5 w-10 rounded-full bg-muted" />
+                </div>
+
+                {/* 
+                  Reserve space for the Sheet close (X) button:
+                  Shadcn sheet places the close button near the top-right inside SheetContent.
+                  So we add top padding and make the inner area scroll.
+                */}
+                <div className="h-full pt-8">
+                  <div className="h-full overflow-auto px-0">{editor}</div>
+                </div>
               </SheetContent>
             </Sheet>
           </div>

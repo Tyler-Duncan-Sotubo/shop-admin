@@ -33,12 +33,14 @@ export function StoreSwitcher({
 
   const active = React.useMemo(
     () => (value ? stores.find((s) => s.id === value) : undefined),
-    [stores, value]
+    [stores, value],
   );
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <div className="text-xs text-muted-foreground">Active store</div>
+      <div className="text-xs text-muted-foreground hidden md:block">
+        Active store
+      </div>
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -89,7 +91,7 @@ export function StoreSwitcher({
                   }}
                   className={cn(
                     "w-full flex items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-muted/60",
-                    selected && "bg-muted/60"
+                    selected && "bg-muted/60",
                   )}
                 >
                   {store.imageUrl ? (
