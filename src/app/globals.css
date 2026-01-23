@@ -158,6 +158,13 @@
     @apply bg-background text-foreground font-sans;
   }
 
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px;
+  }
+
   /* globals.css or your main stylesheet */
   .no-scrollbar {
     /* Hide scrollbar on WebKit (Chrome, Safari, Edge) */
