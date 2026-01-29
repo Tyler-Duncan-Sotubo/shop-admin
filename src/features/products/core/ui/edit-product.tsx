@@ -262,7 +262,7 @@ export function EditProduct({ productId }: Props) {
     Object.keys(md).forEach((k) => {
       if (typeof md[k] === "string" && md[k].trim() === "") delete md[k];
     });
-
+    const isSimple = (values.productType ?? "variable") === "simple";
     return {
       storeId: activeStoreId,
       name: values.name,
@@ -283,6 +283,26 @@ export function EditProduct({ productId }: Props) {
           : typeof values.defaultImageIndex === "number"
             ? values.defaultImageIndex
             : 0,
+
+      ...(isSimple
+        ? {
+            sku: values.sku?.trim() ? values.sku.trim() : null,
+            barcode: values.barcode?.trim() ? values.barcode.trim() : null,
+
+            regularPrice: values.regularPrice ?? "0",
+            salePrice: values.salePrice?.trim()
+              ? values.salePrice.trim()
+              : null,
+
+            stockQuantity: values.stockQuantity?.trim() || null,
+            lowStockThreshold: values.lowStockThreshold?.trim() || null,
+
+            weight: values.weight?.trim() || null,
+            length: values.length?.trim() || null,
+            width: values.width?.trim() || null,
+            height: values.height?.trim() || null,
+          }
+        : {}),
     };
   };
 
