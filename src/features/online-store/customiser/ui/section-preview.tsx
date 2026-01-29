@@ -20,20 +20,22 @@ import {
   SheetTrigger,
 } from "@/shared/ui/sheet";
 import { SlidersHorizontal } from "lucide-react";
-import { useState } from "react";
 
 export function SectionPreview({
   section,
   resolved,
   draft,
   setDraft,
+  editorOpen,
+  setEditorOpen,
 }: {
   section: StorefrontSectionId;
   resolved: ResolvedStorefrontConfig;
   draft: DraftState;
   setDraft: React.Dispatch<React.SetStateAction<DraftState | null>>;
+  editorOpen: boolean;
+  setEditorOpen: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const storeName = resolved?.store?.name ?? "Store";
   const logoUrl = resolved?.theme?.assets?.logoUrl ?? "";
   const topBar = resolved?.header?.topBar;
@@ -132,12 +134,12 @@ export function SectionPreview({
         {/* Top bar */}
         <div className="sticky top-0 z-40 border-b bg-white/95 backdrop-blur">
           <div className="flex items-center justify-end px-3 py-2">
-            <Sheet open={open} onOpenChange={setOpen}>
+            <Sheet open={editorOpen} onOpenChange={setEditorOpen}>
               <SheetTrigger asChild>
                 <Button
                   variant="clean"
                   className="h-9 w-9"
-                  aria-label={open ? "Close editor" : "Open editor"}
+                  aria-label={editorOpen ? "Close editor" : "Open editor"}
                 >
                   <SlidersHorizontal className="h-4 w-4" />
                 </Button>
@@ -145,34 +147,19 @@ export function SectionPreview({
 
               <SheetTitle className="sr-only">Edit section</SheetTitle>
 
-              {/* 
-                Fixed/controlled height:
-                - clamp() gives a consistent feel across phones
-                - dvh works better with mobile browser UI (address bar)
-                Also: add padding-top so the built-in close button isn't covered.
-              */}
               <SheetContent
                 side="bottom"
                 className={[
                   "p-0",
-                  // controlled height across devices
                   "h-[clamp(22rem,85dvh,44rem)]",
-                  // safe areas (iOS notch/home indicator)
                   "pb-[calc(env(safe-area-inset-bottom)+0px)]",
-                  // ensure overlay content doesn't visually fight
                   "bg-white",
                 ].join(" ")}
               >
-                {/* drag handle area (optional but nice) */}
                 <div className="px-4 pt-3">
                   <div className="mx-auto h-1.5 w-10 rounded-full bg-muted" />
                 </div>
 
-                {/* 
-                  Reserve space for the Sheet close (X) button:
-                  Shadcn sheet places the close button near the top-right inside SheetContent.
-                  So we add top padding and make the inner area scroll.
-                */}
                 <div className="h-full pt-8">
                   <div className="h-full overflow-auto px-0">{editor}</div>
                 </div>

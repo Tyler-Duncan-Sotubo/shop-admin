@@ -97,6 +97,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
       details: "",
       images: [], // will contain keys on submit (not base64)
       defaultImageIndex: 0,
+      moq: "1",
     },
     mode: "onSubmit",
   });
@@ -459,6 +460,27 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                   </div>
                 </div>
 
+                <div>
+                  <FormField
+                    control={form.control}
+                    name="moq"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>MOQ</FormLabel>
+                        <FormControl>
+                          <Input
+                            inputMode="numeric"
+                            placeholder="1"
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 {/* Images */}
                 <div className="rounded-lg border p-4 space-y-4">
                   <SectionHeading>{`Images (optional, up to ${maxImages})`}</SectionHeading>
@@ -578,7 +600,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                 <div className="rounded-lg border p-4 space-y-4">
                   <SectionHeading>Simple product details</SectionHeading>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <FormField
                       control={form.control}
                       name="sku"
@@ -616,7 +638,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                   </div>
 
                   {/* Pricing */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <FormField
                       control={form.control}
                       name="regularPrice"
@@ -657,7 +679,7 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                   </div>
 
                   {/* Inventory */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <FormField
                       control={form.control}
                       name="stockQuantity"
@@ -682,7 +704,14 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                       name="lowStockThreshold"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Low stock threshold</FormLabel>
+                          <FormLabel>
+                            <div>
+                              <p className="md:hidden">Low stock</p>
+                              <p className="hidden md:block">
+                                Low stock threshold
+                              </p>
+                            </div>
+                          </FormLabel>
                           <FormControl>
                             <Input
                               inputMode="numeric"
@@ -695,10 +724,29 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                         </FormItem>
                       )}
                     />
+
+                    <FormField
+                      control={form.control}
+                      name="moq"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>MOQ</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="numeric"
+                              placeholder="1"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
                   {/* Dimensions */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <FormField
                       control={form.control}
                       name="weight"
@@ -951,6 +999,27 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
                               <SelectItem value="simple">Simple</SelectItem>
                             </SelectContent>
                           </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <FormField
+                    control={form.control}
+                    name="moq"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>MOQ</FormLabel>
+                        <FormControl>
+                          <Input
+                            inputMode="numeric"
+                            placeholder="1"
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

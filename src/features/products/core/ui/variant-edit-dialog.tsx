@@ -36,7 +36,6 @@ import {
 import { useProductVariants } from "../hooks/use-product-variants";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 
-// ✅ S3 presign + upload helpers (adjust path if you placed elsewhere)
 type PresignReq = { files: { fileName: string; mimeType: string }[] };
 type PresignedUpload = { key: string; uploadUrl: string; url: string };
 
@@ -109,7 +108,6 @@ export function VariantEditDialog({
   const { activeStoreId } = useStoreScope();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // ✅ local preview + metadata for new upload
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [imageVersion, setImageVersion] = useState<number>(() => Date.now());
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -128,7 +126,6 @@ export function VariantEditDialog({
       title: "",
       sku: "",
       barcode: "",
-      // ✅ keep in schema if it exists, but we won't use it for upload
       base64Image: "",
       regularPrice: "0",
       salePrice: "",
@@ -148,7 +145,6 @@ export function VariantEditDialog({
     return `${url}${sep}v=${imageVersion}`;
   };
 
-  // ---- Dropzone (NOW uploads to S3 via presign) ----
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
@@ -156,28 +152,23 @@ export function VariantEditDialog({
 
       setSubmitError(null);
 
-      // capture metadata
       setImageMimeType(file.type || "image/jpeg");
       setImageFileName(file.name || `upload-${Date.now()}.jpg`);
 
-      // local preview (fast)
       const objectUrl = URL.createObjectURL(file);
       setLocalPreview(objectUrl);
 
-      // store pending file for submit
       setPendingFile(file);
 
-      // reset keys until submit does the actual upload
       setImageKey("");
       setImageUrl("");
 
-      // keep form field clean (we're not using base64 anymore)
       form.setValue("base64Image", "", {
         shouldDirty: true,
         shouldValidate: true,
       });
     },
-    [form]
+    [form],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -206,11 +197,9 @@ export function VariantEditDialog({
       lowStockThreshold: numToStr(anyVar?.inventory?.lowStockThreshold),
     });
 
-    // reset local
     setSubmitError(null);
     setPendingFile(null);
 
-    // release old object url
     setLocalPreview((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return null;
@@ -236,7 +225,6 @@ export function VariantEditDialog({
 
     const removeSalePrice = !values.salePrice?.trim();
 
-    // ✅ if a new file is selected, upload it now (presign -> PUT)
     let nextKey = imageKey;
     let nextUrl = imageUrl;
 
@@ -270,7 +258,6 @@ export function VariantEditDialog({
         safetyStock: values.lowStockThreshold?.trim() || null,
         removeSalePrice: removeSalePrice,
 
-        // ✅ NEW: send key/url only if user uploaded a new image in this session
         ...(pendingFile
           ? {
               imageKey: nextKey,
@@ -289,7 +276,6 @@ export function VariantEditDialog({
 
       setImageVersion(() => Date.now());
 
-      // cleanup local preview url
       setLocalPreview((prev) => {
         if (prev) URL.revokeObjectURL(prev);
         return null;
@@ -312,13 +298,15 @@ export function VariantEditDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(submit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* LEFT: Image uploader */}
+              {/* LEFT: Image uploader (compact on mobile) */}
               <div className="md:col-span-1">
                 <div
                   {...getRootProps()}
                   className={cn(
-                    "border rounded-lg w-full flex flex-col items-center justify-center p-6",
-                    "border-dashed cursor-pointer hover:border-primary"
+                    "border rounded-lg w-full flex flex-col items-center justify-center",
+                    "border-dashed cursor-pointer hover:border-primary",
+                    // compact spacing
+                    "p-3 md:p-4",
                   )}
                 >
                   <input {...getInputProps()} />
@@ -327,23 +315,23 @@ export function VariantEditDialog({
                     <Image
                       src={imageSrc}
                       alt="Variant image"
-                      className="rounded-lg object-cover"
-                      width={220}
-                      height={220}
+                      className="rounded-md object-cover"
+                      width={120} // 👈 reduced
+                      height={120} // 👈 reduced
                     />
                   ) : (
-                    <div className="flex h-40 w-full items-center justify-center rounded-lg bg-muted/30">
-                      <UserIcon className="h-10 w-10 text-muted-foreground" />
+                    <div className="flex h-28 w-full items-center justify-center rounded-md bg-muted/30 md:h-40">
+                      <UserIcon className="h-8 w-8 text-muted-foreground md:h-10 md:w-10" />
                     </div>
                   )}
 
-                  <div className="mt-4 text-center text-sm text-muted-foreground">
+                  <div className="mt-2 text-center text-xs text-muted-foreground md:mt-4 md:text-sm">
                     {isDragActive ? (
                       <p className="text-primary">Drop the file here…</p>
                     ) : (
-                      <div className="flex flex-col items-center gap-2">
-                        <UploadCloud className="h-5 w-5" />
-                        <p>Drag & drop or click to upload</p>
+                      <div className="flex flex-col items-center gap-1 md:gap-2">
+                        <UploadCloud className="h-4 w-4 md:h-5 md:w-5" />
+                        <p>Tap or drag to upload</p>
                       </div>
                     )}
                   </div>
@@ -354,14 +342,14 @@ export function VariantEditDialog({
                   control={form.control}
                   name="base64Image"
                   render={() => (
-                    <FormItem className="mt-2">
+                    <FormItem className="mt-1">
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
                 {pendingFile ? (
-                  <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                  <div className="mt-1 text-[11px] text-muted-foreground space-y-0.5">
                     <div>
                       <span className="font-medium">File:</span>{" "}
                       {imageFileName || "—"}
@@ -376,12 +364,13 @@ export function VariantEditDialog({
 
               {/* RIGHT: form */}
               <div className="md:col-span-2 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Title + SKU + Barcode (2-col on mobile) */}
+                <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
                   <FormField
                     control={form.control}
                     name="title"
                     render={({ field }) => (
-                      <FormItem className="md:col-span-2">
+                      <FormItem className="col-span-2 md:col-span-2">
                         <FormLabel>Title</FormLabel>
                         <FormControl>
                           <Input
@@ -400,7 +389,7 @@ export function VariantEditDialog({
                     control={form.control}
                     name="sku"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="col-span-1">
                         <FormLabel>SKU</FormLabel>
                         <FormControl>
                           <Input
@@ -417,7 +406,7 @@ export function VariantEditDialog({
                     control={form.control}
                     name="barcode"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="col-span-1">
                         <FormLabel>Barcode</FormLabel>
                         <FormControl>
                           <Input
@@ -432,8 +421,8 @@ export function VariantEditDialog({
                   />
                 </div>
 
-                {/* PRICING */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* PRICING (2-col on mobile) */}
+                <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
                   <FormField
                     control={form.control}
                     name="regularPrice"
@@ -471,8 +460,8 @@ export function VariantEditDialog({
                   />
                 </div>
 
-                {/* INVENTORY */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* INVENTORY (2-col on mobile) */}
+                <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
                   <FormField
                     control={form.control}
                     name="stockQuantity"
@@ -511,13 +500,13 @@ export function VariantEditDialog({
                   />
                 </div>
 
-                {/* DIMENSIONS */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* DIMENSIONS: 3-col on mobile, 2-col on desktop */}
+                <div className="grid grid-cols-4 md:grid-cols-2 gap-3">
                   <FormField
                     control={form.control}
                     name="weight"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="col-span-1">
                         <FormLabel>Weight</FormLabel>
                         <FormControl>
                           <Input
@@ -530,11 +519,12 @@ export function VariantEditDialog({
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="length"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="col-span-1">
                         <FormLabel>Length</FormLabel>
                         <FormControl>
                           <Input
@@ -547,11 +537,12 @@ export function VariantEditDialog({
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="width"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="col-span-1">
                         <FormLabel>Width</FormLabel>
                         <FormControl>
                           <Input
@@ -564,11 +555,13 @@ export function VariantEditDialog({
                       </FormItem>
                     )}
                   />
+
+                  {/* Height: on mobile, take full row (optional). Remove col-span-3 if you want it 3-wide too */}
                   <FormField
                     control={form.control}
                     name="height"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="md:col-span-1">
                         <FormLabel>Height</FormLabel>
                         <FormControl>
                           <Input
@@ -591,7 +584,7 @@ export function VariantEditDialog({
               </div>
             ) : null}
 
-            <DialogFooter>
+            <DialogFooter className="grid grid-cols-2">
               <Button type="button" variant="clean" onClick={onClose}>
                 Cancel
               </Button>

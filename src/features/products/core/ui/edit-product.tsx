@@ -90,6 +90,7 @@ export function EditProduct({ productId }: Props) {
       details: "",
       images: [],
       defaultImageIndex: 0,
+      moq: 0,
     }),
     [],
   );
@@ -138,6 +139,7 @@ export function EditProduct({ productId }: Props) {
       details: md.details ?? "",
       images: [],
       defaultImageIndex: (product as any).defaultImageIndex ?? 0,
+      moq: (product as any).moq ?? "",
     });
 
     // clear local images when switching product
@@ -272,6 +274,7 @@ export function EditProduct({ productId }: Props) {
       categoryIds: values.categoryIds ?? [],
       links: values.links ?? emptyLinks,
       metadata: md,
+      moq: values.moq ?? "",
       // ✅ only send if replacing images (user selected new ones)
       images: imagesDto,
       defaultImageIndex:
@@ -338,6 +341,8 @@ export function EditProduct({ productId }: Props) {
   const currentStatus = product ? (product as any).status : "draft";
   const watchedStatus = useWatch({ control: form.control, name: "status" });
   const displayStatus = watchedStatus ?? currentStatus;
+  const productType =
+    useWatch({ control: form.control, name: "productType" }) ?? "variable";
 
   const currentDefault =
     useWatch({ control: form.control, name: "defaultImageIndex" }) ?? 0;
@@ -420,6 +425,213 @@ export function EditProduct({ productId }: Props) {
                   )}
                 />
               </div>
+
+              {productType === "simple" ? (
+                <div className="rounded-lg border p-4 space-y-4">
+                  <SectionHeading>Simple product details</SectionHeading>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="sku"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>SKU</FormLabel>
+                          <FormControl>
+                            <Input
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="barcode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Barcode</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Optional"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Pricing */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="regularPrice"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Regular price</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="decimal"
+                              placeholder="0"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="salePrice"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sale price</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="decimal"
+                              placeholder="Optional"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Inventory */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="stockQuantity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Stock quantity</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="numeric"
+                              placeholder="0"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="lowStockThreshold"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            <div>
+                              <p className="md:hidden">Low stock</p>
+                              <p className="hidden md:block">
+                                Low stock threshold
+                              </p>
+                            </div>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="numeric"
+                              placeholder="e.g. 5"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Dimensions */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="weight"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Weight</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="decimal"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="length"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Length</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="decimal"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="width"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Width</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="decimal"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="height"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Height</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="decimal"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              ) : null}
 
               <div className="rounded-lg border p-4 space-y-4">
                 <SectionHeading>Product details</SectionHeading>
@@ -623,6 +835,26 @@ export function EditProduct({ productId }: Props) {
                             <SelectItem value="simple">Simple</SelectItem>
                           </SelectContent>
                         </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div>
+                <FormField
+                  control={form.control}
+                  name="moq"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>MOQ</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

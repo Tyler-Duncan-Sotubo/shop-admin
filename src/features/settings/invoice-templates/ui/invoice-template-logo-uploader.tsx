@@ -1,3 +1,4 @@
+// components/InvoiceTemplateLogoUploader.tsx
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
@@ -8,8 +9,8 @@ import { useInvoiceTemplateLogoUpload } from "../hooks/use-template-logo";
 import { Button } from "@/shared/ui/button";
 
 type Props = {
-  initialLogoUrl?: string; // existing logo URL from backend (optional)
-  storeId?: string | null; // store scope (optional)
+  initialLogoUrl?: string;
+  storeId?: string | null;
 };
 
 export default function InvoiceTemplateLogoUploader({
@@ -21,7 +22,7 @@ export default function InvoiceTemplateLogoUploader({
 
   const {
     previewSrc: pickedPreview,
-    base64Image,
+    hasSelection,
     isUploading,
     onDrop,
     submit,
@@ -41,7 +42,6 @@ export default function InvoiceTemplateLogoUploader({
       storeId,
       setError: (msg) => setError(msg || null),
       onDone: () => {
-        // If you want to show server url after save, clear base64 preview
         clear();
       },
     });
@@ -88,7 +88,7 @@ export default function InvoiceTemplateLogoUploader({
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              {base64Image ? "New image selected" : "Current logo"}
+              {hasSelection ? "New image selected" : "Current logo"}
             </p>
           </div>
         ) : (
@@ -120,9 +120,9 @@ export default function InvoiceTemplateLogoUploader({
       <div className="flex items-center gap-2">
         <Button
           type="button"
-          variant={"default"}
+          variant="default"
           onClick={handleSubmit}
-          disabled={isUploading || !base64Image}
+          disabled={isUploading || !hasSelection}
         >
           <Save className="h-4 w-4" />
           {isUploading ? "Saving…" : "Save logo"}
@@ -130,12 +130,12 @@ export default function InvoiceTemplateLogoUploader({
 
         <Button
           type="button"
-          variant={"clean"}
+          variant="clean"
           onClick={clearSelected}
-          disabled={isUploading || !base64Image}
+          disabled={isUploading || !hasSelection}
           className={[
             "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium",
-            isUploading || !base64Image
+            isUploading || !hasSelection
               ? "opacity-50 cursor-not-allowed"
               : "hover:bg-muted",
           ].join(" ")}

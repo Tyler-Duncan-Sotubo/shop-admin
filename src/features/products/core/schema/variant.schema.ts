@@ -21,7 +21,7 @@ export const VariantSchema = z.object({
     .nullable()
     .refine(
       (v) => v === null || v === "" || !isNaN(Number(v)),
-      "Must be a valid number"
+      "Must be a valid number",
     ),
 
   // ---------- Dimensions ----------
@@ -31,7 +31,7 @@ export const VariantSchema = z.object({
     .nullable()
     .refine(
       (v) => v === null || v === "" || !isNaN(Number(v)),
-      "Must be a valid number"
+      "Must be a valid number",
     ),
 
   length: z
@@ -40,7 +40,7 @@ export const VariantSchema = z.object({
     .nullable()
     .refine(
       (v) => v === null || v === "" || !isNaN(Number(v)),
-      "Must be a valid number"
+      "Must be a valid number",
     ),
 
   width: z
@@ -49,7 +49,7 @@ export const VariantSchema = z.object({
     .nullable()
     .refine(
       (v) => v === null || v === "" || !isNaN(Number(v)),
-      "Must be a valid number"
+      "Must be a valid number",
     ),
 
   height: z
@@ -58,7 +58,7 @@ export const VariantSchema = z.object({
     .nullable()
     .refine(
       (v) => v === null || v === "" || !isNaN(Number(v)),
-      "Must be a valid number"
+      "Must be a valid number",
     ),
 
   // ---------- Inventory (form strings) ----------
@@ -68,7 +68,7 @@ export const VariantSchema = z.object({
     .nullable()
     .refine(
       (v) => v === null || v === "" || !isNaN(Number(v)),
-      "Must be a valid number"
+      "Must be a valid number",
     ),
 
   lowStockThreshold: z
@@ -77,7 +77,7 @@ export const VariantSchema = z.object({
     .nullable()
     .refine(
       (v) => v === null || v === "" || !isNaN(Number(v)),
-      "Must be a valid number"
+      "Must be a valid number",
     ),
 
   images: z.array(z.string()).optional().nullable(),

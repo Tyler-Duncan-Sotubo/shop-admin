@@ -24,6 +24,9 @@ export function CustomiserClient() {
   const { data: session } = useSession();
   const [active, setActive] = useState<StorefrontSectionId>("appearance");
 
+  // NEW: mobile editor sheet control
+  const [editorOpen, setEditorOpen] = useState(false);
+
   const storeId = activeStoreId ?? "";
   const enabled = !!session?.backendTokens?.accessToken && !!storeId;
 
@@ -55,6 +58,12 @@ export function CustomiserClient() {
     if (active === "contact" && !contactVisible) setActive("appearance");
   }, [active, draft, resolved]);
 
+  // NEW: section select handler for mobile -> open editor
+  const handleSelectMobile = (id: StorefrontSectionId) => {
+    setActive(id);
+    setEditorOpen(true);
+  };
+
   if (!enabled) return <div className="p-6">Select a store to continue.</div>;
   if (isLoading) return <div className="p-6">Loading preview…</div>;
   if (error || !resolved)
@@ -68,7 +77,7 @@ export function CustomiserClient() {
         <div className="md:hidden fixed top-0 left-0 right-0 z-50">
           <CustomiserSidebarMobile
             active={active}
-            onSelect={setActive}
+            onSelect={handleSelectMobile} // <-- open editor on select
             resolved={resolved}
             headerMenu={draft.headerMenu}
           />
@@ -89,6 +98,8 @@ export function CustomiserClient() {
             resolved={resolved}
             draft={draft}
             setDraft={setDraft}
+            editorOpen={editorOpen} // NEW
+            setEditorOpen={setEditorOpen} // NEW
           />
         </main>
       </div>

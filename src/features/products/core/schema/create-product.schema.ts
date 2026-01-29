@@ -70,4 +70,6 @@ export const CreateProductSchema = z.object({
   length: z.string().nullable().optional(),
   width: z.string().nullable().optional(),
   height: z.string().nullable().optional(),
+
+  moq: z.transform(Number).pipe(z.number()),
 });

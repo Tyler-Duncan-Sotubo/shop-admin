@@ -11,7 +11,7 @@ export function useGeneratePaymentReceiptPdf(axios: AxiosInstance) {
   return useMutation({
     mutationFn: async (paymentId: string): Promise<ReceiptPdfResponse> => {
       const res = await axios.post(
-        `/api/payments/admin/${paymentId}/receipt/pdf`
+        `/api/payments/admin/${paymentId}/receipt/pdf`,
       );
 
       const payload = res.data as any;
@@ -28,7 +28,7 @@ export function useGeneratePaymentReceiptPdf(axios: AxiosInstance) {
 
     onSuccess: ({ pdfUrl }) => {
       window.open(pdfUrl, "_blank", "noopener,noreferrer");
-      toast.success("Receipt opened in a new tab");
+      toast.success("Receipt opened in new tab");
     },
 
     onError: (error: any) => {

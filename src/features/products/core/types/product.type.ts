@@ -62,6 +62,7 @@ export type CreateProductPayload = {
 
   // which image is default (index in images array)
   defaultImageIndex?: number;
+  moq?: string;
 };
 
 export const STATUS_LABEL: Record<any, string> = {

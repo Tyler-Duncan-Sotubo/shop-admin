@@ -1,12 +1,41 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// hooks/use-template-logo.ts
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import axios from "axios";
 import { useCreateMutation } from "@/shared/hooks/use-create-mutation";
 
+type PresignResp = {
+  uploads: Array<{ key: string; uploadUrl: string; url: string }>;
+};
+
+async function putToS3(uploadUrl: string, file: File) {
+  const res = await fetch(uploadUrl, {
+    method: "PUT",
+    body: file,
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`S3 upload failed (${res.status}) ${text}`);
+  }
+}
+
+function sanitizeFileName(name: string) {
+  return (name || "upload")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-zA-Z0-9._-]/g, "")
+    .slice(0, 120);
+}
+
 type UpdateInvoiceLogoPayload = {
-  base64Image: string;
-  altText?: string;
   storeId?: string;
+  storageKey: string;
+  url?: string;
+  altText?: string;
 };
 
 type SubmitArgs = {
@@ -16,16 +45,15 @@ type SubmitArgs = {
   onDone?: () => void;
 };
 
-/**
- * ✅ Uses your useCreateMutation (axios + bearer token + toasts + invalidate queries)
- * ✅ Sends exactly: { base64Image, altText?, storeId? }
- * ✅ Endpoint: /api/invoice-templates/branding/logo
- */
 export function useInvoiceTemplateLogoUpload() {
-  const [base64Image, setBase64Image] = useState<string>("");
+  const [file, setFile] = useState<File | null>(null);
+  const [previewSrc, setPreviewSrc] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
 
-  const createLogo = useCreateMutation<UpdateInvoiceLogoPayload>({
+  const hasSelection = useMemo(() => !!file, [file]);
+
+  // ✅ calls your Nest endpoint (now expects storageKey/url)
+  const updateLogo = useCreateMutation<UpdateInvoiceLogoPayload>({
     endpoint: "/api/invoice-templates/branding/logo",
     successMessage: "Logo updated",
     refetchKey: [
@@ -33,55 +61,108 @@ export function useInvoiceTemplateLogoUpload() {
       "billing",
       "invoiceTemplates",
       "branding",
-    ], // change to your query key if needed
+    ],
   });
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles?.[0];
-    if (!file) return;
+    const f = acceptedFiles?.[0];
+    if (!f) return;
 
-    const reader = new FileReader();
-    reader.onload = () => setBase64Image(reader.result as string); // data:image/...base64,...
-    reader.readAsDataURL(file);
+    setFile(f);
+
+    const blobUrl = URL.createObjectURL(f);
+    setPreviewSrc((prev) => {
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return blobUrl;
+    });
   }, []);
 
-  const clear = useCallback(() => setBase64Image(""), []);
+  const clear = useCallback(() => {
+    setFile(null);
+    setPreviewSrc((prev) => {
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return "";
+    });
+  }, []);
 
   const submit = useCallback(
     async ({ altText, storeId, setError, onDone }: SubmitArgs) => {
       setError?.("");
 
-      if (!base64Image) {
+      if (!storeId) {
+        setError?.("Please select a store first.");
+        return;
+      }
+      if (!file) {
         setError?.("Please select an image first.");
         return;
       }
 
       setIsUploading(true);
       try {
+        const mimeType = file.type || "image/png";
+        const finalName = sanitizeFileName(
+          file.name || `invoice-logo-${Date.now()}.png`,
+        );
+
+        // 1) presign (Next.js -> NestJS)
+        const presign = await axios.post<PresignResp>(
+          "/api/uploads/media-presign",
+          {
+            storeId,
+            folder: "invoice-template",
+            files: [{ fileName: finalName, mimeType }],
+          },
+        );
+
+        const first = presign.data.uploads?.[0];
+        if (!first) throw new Error("No presigned upload returned");
+
+        // 2) PUT to S3 (direct from browser)
+        await putToS3(first.uploadUrl, file);
+
+        // 3) finalize (optional but recommended, creates media row)
+        await axios.post("/api/uploads/finalize", {
+          storeId,
+          key: first.key,
+          url: first.url,
+          fileName: finalName,
+          mimeType,
+          folder: "invoice-template",
+          tag: "invoice-template-logo",
+          altText: altText?.trim() ? altText.trim() : null,
+        });
+
+        // 4) set invoice branding logo (server saves logoUrl + logoStorageKey)
         const payload: UpdateInvoiceLogoPayload = {
-          base64Image,
+          storeId,
+          storageKey: first.key,
+          url: first.url,
           ...(altText?.trim() ? { altText: altText.trim() } : {}),
-          ...(storeId ? { storeId } : {}),
         };
 
-        const res = await createLogo(payload, (msg) => setError?.(msg));
+        const res = await updateLogo(payload, (msg) => setError?.(msg));
 
-        // if createLogo fails it returns undefined (your hook swallows errors)
-        if (res) onDone?.();
+        if (res) {
+          onDone?.();
+          clear();
+        }
 
         return res;
+      } catch (err: any) {
+        setError?.(
+          err?.response?.data?.message ?? err?.message ?? "Upload failed",
+        );
       } finally {
         setIsUploading(false);
       }
     },
-    [base64Image, createLogo]
+    [clear, file, updateLogo],
   );
 
   return {
-    // preview for next/image or <img />
-    previewSrc: base64Image,
-    base64Image,
-
+    previewSrc,
+    hasSelection,
     isUploading,
     onDrop,
     submit,
