@@ -71,8 +71,8 @@ export function DataTable<TData, TValue>({
   showSearch = true,
   onRowClick,
 
-  defaultPageSize = 20,
-  pageSizeOptions = [10, 20, 50, 100],
+  defaultPageSize = 100,
+  pageSizeOptions = [50, 100, 150],
   allowCustomPageSize = true,
   disableRowSelection = false,
   toolbarRight,
