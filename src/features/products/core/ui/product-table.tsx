@@ -31,7 +31,7 @@ export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
   const query = useMemo(
     () => ({
       storeId: activeStoreId || undefined,
-      limit: 50,
+      limit: 500,
       offset: 0,
       status: statusTab === "active" ? undefined : statusTab,
     }),

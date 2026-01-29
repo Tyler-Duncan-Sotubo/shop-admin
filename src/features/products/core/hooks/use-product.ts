@@ -29,14 +29,14 @@ export function useCreateProduct() {
 
 export function useGetProducts(
   params: GetProductsParams = {},
-  session?: { backendTokens?: { accessToken?: string } } | null
+  session?: { backendTokens?: { accessToken?: string } } | null,
 ) {
   const axios = useAxiosAuth();
 
   const normalizedParams: GetProductsParams = {
     search: params.search?.trim() || undefined,
     status: params.status || undefined,
-    limit: params.limit ?? 50,
+    limit: params.limit ?? 500,
     offset: params.offset ?? 0,
     storeId: params.storeId || undefined,
   };
@@ -66,7 +66,7 @@ export function useGetProducts(
 
 export function useGetProduct(
   productId: string,
-  session: { backendTokens?: { accessToken?: string } } | null
+  session: { backendTokens?: { accessToken?: string } } | null,
 ) {
   const axios = useAxiosAuth();
   const hasToken = Boolean(session?.backendTokens?.accessToken);
@@ -83,7 +83,7 @@ export function useGetProduct(
 
 export function useGetProductFull(
   productId: string | null,
-  session?: { backendTokens?: { accessToken?: string } } | null
+  session?: { backendTokens?: { accessToken?: string } } | null,
 ) {
   const axios = useAxiosAuth();
   const hasToken = Boolean(session?.backendTokens?.accessToken);
