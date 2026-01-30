@@ -76,10 +76,11 @@ export default function StoreSection() {
           base64Image: values.base64Image,
           coverImageAltText: values.coverImageAltText,
           removeImage: values.removeImage,
+          storeEmail: values.storeEmail,
         },
         setSubmitError,
         undefined, // no form.reset here, modal form handles its own reset on open
-        closeModal
+        closeModal,
       );
     } else if (modalMode === "edit" && selectedStore) {
       await updateStore(
@@ -92,9 +93,10 @@ export default function StoreSection() {
           base64Image: values.base64Image,
           coverImageAltText: values.coverImageAltText,
           removeImage: values.removeImage,
+          storeEmail: values.storeEmail,
         },
         setSubmitError,
-        closeModal
+        closeModal,
       );
     }
   };
@@ -169,7 +171,7 @@ export default function StoreSection() {
                           "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide",
                           store.isActive
                             ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
                         )}
                       >
                         ● {store.isActive ? "Active" : "Inactive"}
@@ -242,7 +244,7 @@ export default function StoreSection() {
                         size="sm"
                         onClick={() =>
                           router.push(
-                            `/settings/stores/${store.id}?tab=general`
+                            `/settings/stores/${store.id}?tab=general`,
                           )
                         }
                       >

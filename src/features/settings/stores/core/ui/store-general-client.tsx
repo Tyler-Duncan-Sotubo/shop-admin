@@ -57,7 +57,7 @@ export default function StoreGeneralClient({ storeId }: { storeId: string }) {
 
   const store = useMemo<Store | null>(
     () => stores.find((s) => s.id === storeId) ?? null,
-    [stores, storeId]
+    [stores, storeId],
   );
 
   const updateStore = useUpdateMutation<UpdateStorePayload>({
@@ -79,6 +79,7 @@ export default function StoreGeneralClient({ storeId }: { storeId: string }) {
       coverImageAltText: "",
       removeImage: false,
       supportedCurrencies: [],
+      storeEmail: "",
     } as any,
     mode: "onChange",
   });
@@ -118,6 +119,7 @@ export default function StoreGeneralClient({ storeId }: { storeId: string }) {
       coverImageAltText: (store as any).imageAltText ?? "",
       removeImage: false,
       supportedCurrencies: store.supportedCurrencies ?? [],
+      storeEmail: store.storeEmail ?? "",
     } as any);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -148,7 +150,7 @@ export default function StoreGeneralClient({ storeId }: { storeId: string }) {
 
       reader.readAsDataURL(file);
     },
-    [form]
+    [form],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -204,8 +206,10 @@ export default function StoreGeneralClient({ storeId }: { storeId: string }) {
         base64Image: values.base64Image,
         coverImageAltText: values.coverImageAltText,
         removeImage: values.removeImage,
+        supportedCurrencies: values.supportedCurrencies,
+        storeEmail: values.storeEmail,
       } as any,
-      setSubmitError
+      setSubmitError,
     );
   };
 
@@ -262,7 +266,7 @@ export default function StoreGeneralClient({ storeId }: { storeId: string }) {
               className={cn(
                 "border rounded-lg w-full flex flex-col items-center justify-center p-6",
                 "border-dashed cursor-pointer hover:border-primary",
-                isDragActive && "border-primary"
+                isDragActive && "border-primary",
               )}
             >
               <input {...getInputProps()} />
@@ -314,76 +318,96 @@ export default function StoreGeneralClient({ storeId }: { storeId: string }) {
             />
           </div>
           {/* Name */}
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel required>Store name</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="My Store"
-                    {...field}
-                    value={field.value ?? ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel required>Store Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="My Store"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="storeEmail"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel required>Store Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="store@example.com"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           {/* Currency */}
-          <FormField
-            control={form.control}
-            name="defaultCurrency"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel required>Default currency</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {currencyOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="defaultCurrency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel required>Default currency</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {currencyOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          {/* Locale */}
-          <FormField
-            control={form.control}
-            name="defaultLocale"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel required>Default locale</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select locale" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {defaultLocaleOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
+            {/* Locale */}
+            <FormField
+              control={form.control}
+              name="defaultLocale"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel required>Default locale</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select locale" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {defaultLocaleOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           <FormField
             control={form.control}
             name={"supportedCurrencies" as any}
@@ -424,7 +448,7 @@ export default function StoreGeneralClient({ storeId }: { storeId: string }) {
                             "transition-colors hover:bg-muted/40",
                             checked
                               ? "border-primary ring-1 ring-primary/30"
-                              : ""
+                              : "",
                           )}
                         >
                           <div className="flex items-center gap-3">

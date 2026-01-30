@@ -64,6 +64,7 @@ export function StoreFormModal({
       base64Image: null,
       coverImageAltText: "",
       removeImage: false,
+      storeEmail: "",
     } as any,
     mode: "onChange",
   });
@@ -102,6 +103,8 @@ export function StoreFormModal({
         base64Image: null,
         coverImageAltText: (store as any).imageAltText ?? "",
         removeImage: false,
+        supportedCurrencies: store.supportedCurrencies ?? [],
+        storeEmail: store.storeEmail ?? "",
       } as any);
 
       // ✅ preview existing store image (url)
@@ -120,6 +123,8 @@ export function StoreFormModal({
         base64Image: null,
         coverImageAltText: "",
         removeImage: false,
+        supportedCurrencies: [],
+        storeEmail: "",
       } as any);
 
       setPreviewImage(null);
@@ -154,7 +159,7 @@ export function StoreFormModal({
 
       reader.readAsDataURL(file);
     },
-    [form]
+    [form],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -222,7 +227,7 @@ export function StoreFormModal({
               className={cn(
                 "border rounded-lg w-full flex flex-col items-center justify-center p-6",
                 "border-dashed cursor-pointer hover:border-primary",
-                isDragActive && "border-primary"
+                isDragActive && "border-primary",
               )}
             >
               <input {...getInputProps()} />
@@ -275,23 +280,42 @@ export function StoreFormModal({
           </div>
 
           {/* Name */}
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel required>Store Name</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="My Store"
-                    {...field}
-                    value={field.value ?? ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel required>Store Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="My Store"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="storeEmail"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel required>Store Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="store@example.com"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           {/* Slug (auto, disabled)
           <FormField
@@ -410,7 +434,7 @@ export function StoreFormModal({
                             "transition-colors hover:bg-muted/40",
                             checked
                               ? "border-primary ring-1 ring-primary/30"
-                              : ""
+                              : "",
                           )}
                         >
                           <div className="flex items-center gap-3">

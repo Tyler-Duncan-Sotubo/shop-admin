@@ -15,6 +15,7 @@ export type Store = {
   supportedCurrencies: [];
   primaryDomain?: string | null;
   domains?: string[]; // includes primary + secondary domains
+  storeEmail?: string | null;
 };
 
 export type CreateStorePayload = {
@@ -26,6 +27,8 @@ export type CreateStorePayload = {
   base64Image?: string | null;
   coverImageAltText?: string | null;
   removeImage?: boolean;
+  supportedCurrencies?: string[];
+  storeEmail: string;
 };
 
 export type UpdateStorePayload = Partial<CreateStorePayload>;
