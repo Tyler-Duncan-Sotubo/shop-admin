@@ -38,24 +38,16 @@ export function StoreSwitcher({
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <div className="text-xs text-muted-foreground hidden md:block">
-        Active store
-      </div>
-
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button
-            type="button"
-            // variant="primary"
-            className="h-10 w-[220px] justify-between px-3 "
-          >
+          <Button type="button" className="h-10 w-full justify-between px-3 ">
             <div className="flex items-center gap-3 min-w-0">
               {active?.imageUrl ? (
                 <Image
                   src={active.imageUrl}
                   alt={active.imageAltText || active.name}
-                  width={28}
-                  height={28}
+                  width={20}
+                  height={20}
                   className="rounded-md object-cover"
                 />
               ) : (
@@ -63,7 +55,7 @@ export function StoreSwitcher({
               )}
 
               <div className="min-w-0 text-left">
-                <div className="font-extrabold truncate">
+                <div className="font-extrabold truncate text-xs">
                   {active?.name ?? placeholder}
                 </div>
               </div>

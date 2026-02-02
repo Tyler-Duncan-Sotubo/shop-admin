@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { LogOut, Settings, User } from "lucide-react";
+import { ChevronDown, ChevronUp, LogOut, Settings, User } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import {
@@ -25,6 +25,7 @@ type UserMenuProps = {
 
 export function UserMenu({ name, email, avatar }: UserMenuProps) {
   const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const markMounted = useEffectEvent(() => {
     setMounted(true);
@@ -40,6 +41,7 @@ export function UserMenu({ name, email, avatar }: UserMenuProps) {
       await signOut({ callbackUrl: "/login" });
     },
   });
+
   const initials =
     name
       ?.split(" ")
@@ -58,12 +60,13 @@ export function UserMenu({ name, email, avatar }: UserMenuProps) {
   if (!mounted) return null;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="rounded-full cursor-pointer outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="flex items-center gap-1 cursor-pointer outline-none"
           aria-label="Open user menu"
+          aria-expanded={open}
         >
           <Avatar className="h-9 w-9">
             <AvatarImage src={avatar ?? ""} alt={name ?? "Profile"} />
@@ -71,10 +74,15 @@ export function UserMenu({ name, email, avatar }: UserMenuProps) {
               {initials ? (
                 <span className="text-sm font-medium">{initials}</span>
               ) : (
-                <FaUserCircle size={36} className="text-gray-400 " />
+                <FaUserCircle size={36} className="text-gray-400" />
               )}
             </AvatarFallback>
           </Avatar>
+
+          {/* ✅ Chevron toggle */}
+          <span className="text-gray-500">
+            {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </span>
         </button>
       </DropdownMenuTrigger>
 
@@ -110,16 +118,13 @@ export function UserMenu({ name, email, avatar }: UserMenuProps) {
 
         <DropdownMenuSeparator />
 
+        {/* ✅ Logout (single click target, no nested Link needed) */}
         <DropdownMenuItem
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center"
+          onClick={handleLogout}
+          className="flex items-center gap-2 cursor-pointer"
         >
-          <Link href="" onClick={() => handleLogout()}>
-            <div className="flex items-center gap-2">
-              <LogOut className="h-4 w-4" />
-              <p className="text-md">Logout</p>
-            </div>
-          </Link>
+          <LogOut className="h-4 w-4" />
+          <span className="text-md">Logout</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

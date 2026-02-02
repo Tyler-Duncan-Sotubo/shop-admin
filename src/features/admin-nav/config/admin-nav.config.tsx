@@ -53,11 +53,11 @@ const isDivider = (i: MenuItem): i is DividerItem =>
  * ------------------------------*/
 export function withBasePerm(
   menu: readonly MenuItem[],
-  basePerm: string
+  basePerm: string,
 ): MenuItem[];
 export function withBasePerm<M extends MenuItem>(
   menu: readonly M[],
-  basePerm: string
+  basePerm: string,
 ): M[];
 
 export function withBasePerm(menu: readonly MenuItem[], basePerm: string) {
@@ -65,7 +65,7 @@ export function withBasePerm(menu: readonly MenuItem[], basePerm: string) {
     if (isDivider(item)) return item;
 
     const permissions = Array.from(
-      new Set([...(item.permissions ?? []), basePerm])
+      new Set([...(item.permissions ?? []), basePerm]),
     );
     const subItems = item.subItems
       ? withBasePerm(item.subItems, basePerm)
@@ -80,7 +80,7 @@ export function withBasePerm(menu: readonly MenuItem[], basePerm: string) {
  * ------------------------------*/
 export function filterMenu(
   menu: readonly MenuItem[],
-  userPermissions: readonly string[]
+  userPermissions: readonly string[],
 ): MenuItem[] {
   const filtered = menu
     .map<MenuItem | null>((item) => {
@@ -95,7 +95,7 @@ export function filterMenu(
 
       if (!item.link) {
         const hasClickableChild = (visibleSubs ?? []).some(
-          (s) => !isDivider(s)
+          (s) => !isDivider(s),
         );
         if (!hasClickableChild) return null;
       }
@@ -128,7 +128,7 @@ export function filterMenu(
 export const main: readonly MenuItem[] = [
   {
     title: "Overview",
-    icon: <MdDashboard size={20} />,
+    icon: <MdDashboard size={18} />,
     link: "/dashboard",
   },
 
@@ -174,7 +174,7 @@ export const main: readonly MenuItem[] = [
 
   {
     title: "Products",
-    icon: <BsFillBoxSeamFill size={20} />,
+    icon: <BsFillBoxSeamFill size={18} />,
     link: "/products",
     permissions: [
       "products.read",
@@ -186,7 +186,7 @@ export const main: readonly MenuItem[] = [
 
   {
     title: "Inventory",
-    icon: <MdOutlineInventory2 size={20} />,
+    icon: <MdOutlineInventory2 size={18} />,
     link: "/inventory",
     permissions: [
       "inventory.read",
@@ -197,7 +197,7 @@ export const main: readonly MenuItem[] = [
 
   {
     title: "Customers",
-    icon: <TbUsers size={20} />,
+    icon: <TbUsers size={18} />,
     link: "/customers",
     permissions: ["customers.read"],
   },
@@ -205,7 +205,7 @@ export const main: readonly MenuItem[] = [
   {
     title: "Shipping",
     link: "/shipping",
-    icon: <FaTruckFast size={20} />,
+    icon: <FaTruckFast size={18} />,
     permissions: [
       "shipping.zones.read",
       "shipping.rates.read",
@@ -215,7 +215,7 @@ export const main: readonly MenuItem[] = [
 
   {
     title: "Analytics",
-    icon: <MdBarChart size={22} />,
+    icon: <MdBarChart size={18} />,
     link: "/analytics",
     permissions: ["analytics.read"],
   },
@@ -224,14 +224,14 @@ export const main: readonly MenuItem[] = [
   {
     title: "Content",
     link: "/content/files",
-    icon: <FaFileAlt size={20} />,
+    icon: <FaFileAlt size={18} />,
     permissions: ["blog.posts.read"],
     subItems: [
       { title: "Files", link: "/content/files", icon: <FaFileAlt size={18} /> },
       {
         title: "Blogpost",
         link: "/content/blog",
-        icon: <MdArticle size={22} />,
+        icon: <MdArticle size={18} />,
       },
     ],
   },
@@ -245,13 +245,13 @@ export const main: readonly MenuItem[] = [
   {
     title: "Online Store",
     link: "/online-store", // or "/stores" if you prefer
-    icon: <FaGlobe size={20} />,
+    icon: <FaGlobe size={18} />,
     permissions: ["stores.read"],
   },
   {
     title: "Apps",
     link: "/apps",
-    icon: <MdIntegrationInstructions size={22} />,
+    icon: <MdIntegrationInstructions size={20} />,
     permissions: ["integrations.analytics.read"],
   },
   {
