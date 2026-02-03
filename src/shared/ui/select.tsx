@@ -10,13 +10,13 @@ function Select(props: React.ComponentProps<typeof SelectPrimitive.Root>) {
 }
 
 function SelectGroup(
-  props: React.ComponentProps<typeof SelectPrimitive.Group>
+  props: React.ComponentProps<typeof SelectPrimitive.Group>,
 ) {
   return <SelectPrimitive.Group data-slot="select-group" {...props} />;
 }
 
 function SelectValue(
-  props: React.ComponentProps<typeof SelectPrimitive.Value>
+  props: React.ComponentProps<typeof SelectPrimitive.Value>,
 ) {
   return <SelectPrimitive.Value data-slot="select-value" {...props} />;
 }
@@ -44,7 +44,7 @@ function SelectTrigger({
         "*:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         "data-[size=default]:h-12 data-[size=sm]:h-10 data-[size=lg]:h-15",
-        className
+        className,
       )}
       {...props}
     >
@@ -86,7 +86,7 @@ function SelectContent({
           "max-h-(--radix-select-content-available-height)",
           position === "popper" &&
             "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
-          className
+          className,
         )}
         {...props}
       >
@@ -98,7 +98,7 @@ function SelectContent({
             "p-1",
             // ✅ FIX: remove forced trigger-height viewport (caused tiny dropdown)
             position === "popper" &&
-              "w-full min-w-(--radix-select-trigger-width) scroll-my-1"
+              "w-full min-w-(--radix-select-trigger-width) scroll-my-1",
           )}
         >
           {children}
@@ -137,7 +137,7 @@ function SelectItem({
         "data-disabled:pointer-events-none data-disabled:opacity-50",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         "*:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
-        className
+        className,
       )}
       {...props}
     >
@@ -173,7 +173,7 @@ function SelectScrollUpButton({
       data-slot="select-scroll-up-button"
       className={cn(
         "bg-white! dark:bg-white! flex cursor-default items-center justify-center py-1",
-        className
+        className,
       )}
       {...props}
     >
@@ -191,7 +191,7 @@ function SelectScrollDownButton({
       data-slot="select-scroll-down-button"
       className={cn(
         "bg-white! dark:bg-white! flex cursor-default items-center justify-center py-1",
-        className
+        className,
       )}
       {...props}
     >

@@ -18,6 +18,7 @@ import Link from "next/link";
 
 import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
 import { ProductsMobileRow } from "./products-mobile-row";
+import { ExportMenu } from "@/shared/ui/export-menu";
 
 type StatusTab = "active" | "draft" | "archived";
 
@@ -64,11 +65,20 @@ export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
 
   // only show the “Add Product” button when this is the main page table
   const toolbarRight = !data.length ? (
-    <Link href="/products/new?tab=products">
-      <Button className="w-full">
-        <FaPlus /> Add Product
-      </Button>
-    </Link>
+    <>
+      <Link href="/products/new?tab=products">
+        <Button className="w-full">
+          <FaPlus /> Add Product
+        </Button>
+      </Link>
+      <ExportMenu
+        exportPath="/api/catalog/products/export-products"
+        query={{
+          storeId: activeStoreId || undefined,
+          status: "active",
+        }}
+      />
+    </>
   ) : null;
 
   const chips: FilterChip<StatusTab>[] = [
