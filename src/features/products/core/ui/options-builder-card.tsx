@@ -31,6 +31,7 @@ const OPTION_PRESETS = [
   { value: "Size", label: "Size" },
   { value: "Material", label: "Material" },
   { value: "Style", label: "Style" },
+  { value: "Type", label: "Type" },
 ] as const;
 
 type OptionPreset = (typeof OPTION_PRESETS)[number]["value"];
@@ -40,7 +41,7 @@ const CreateOptionSchema = z.object({
     OPTION_PRESETS.map((p) => p.value) as [OptionPreset, ...OptionPreset[]],
     {
       message: "Select a valid option name",
-    }
+    },
   ),
   valuesCsv: z.string().min(1, "Add at least one value (comma-separated)"),
 });
