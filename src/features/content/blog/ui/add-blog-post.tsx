@@ -114,7 +114,7 @@ export function AddBlogPost({ afterCreatePath }: AddBlogPostProps) {
       };
       reader.readAsDataURL(file);
     },
-    [form]
+    [form],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -362,7 +362,7 @@ export function AddBlogPost({ afterCreatePath }: AddBlogPostProps) {
                   {...getRootProps()}
                   className={cn(
                     "border rounded-lg w-full flex flex-col items-center justify-center p-6",
-                    "border-dashed cursor-pointer hover:border-primary"
+                    "border-dashed cursor-pointer hover:border-primary",
                   )}
                 >
                   <input {...getInputProps()} />

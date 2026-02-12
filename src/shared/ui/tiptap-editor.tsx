@@ -10,10 +10,9 @@ import CharacterCount from "@tiptap/extension-character-count";
 import Blockquote from "@tiptap/extension-blockquote";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { common, createLowlight } from "lowlight";
-
+import axios from "axios";
 import { useDropzone } from "react-dropzone";
-import useAxiosAuth from "@/shared/hooks/use-axios-auth";
-
+import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -23,7 +22,6 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 
-// ✅ react-icons (more understandable)
 import {
   FaBold,
   FaItalic,
@@ -46,43 +44,63 @@ type TiptapEditorProps = {
   onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
-  uploadEndpoint?: string; // e.g. "/api/media/editor-image"
   maxCharacters?: number;
+};
+
+type PresignResp = {
+  uploads: Array<{ key: string; uploadUrl: string; url: string }>;
 };
 
 function isImageFile(file: File) {
   return file.type.startsWith("image/");
 }
 
-function fileToBase64(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+function sanitizeFileName(name: string) {
+  return (name || "upload")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-zA-Z0-9._-]/g, "")
+    .slice(0, 120);
+}
+
+async function putToS3(uploadUrl: string, file: File) {
+  const res = await fetch(uploadUrl, {
+    method: "PUT",
+    body: file,
+    headers: { "Content-Type": file.type || "application/octet-stream" },
   });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`S3 upload failed (${res.status}) ${text}`);
+  }
 }
 
 function ImageUploadDialog({
   open,
   onOpenChange,
   onUploaded,
-  uploadEndpoint,
+  uploadFile,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onUploaded: (url: string) => void;
-  uploadEndpoint: string;
+  uploadFile: (file: File) => Promise<string>;
 }) {
-  const axios = useAxiosAuth();
+  const [file, setFile] = React.useState<File | null>(null);
   const [preview, setPreview] = React.useState<string | null>(null);
   const [uploading, setUploading] = React.useState(false);
 
-  const onDrop = React.useCallback(async (accepted: File[]) => {
-    const file = accepted?.[0];
-    if (!file) return;
-    const base64 = await fileToBase64(file);
-    setPreview(base64);
+  const onDrop = React.useCallback((accepted: File[]) => {
+    const f = accepted?.[0];
+    if (!f) return;
+
+    setFile(f);
+    const blobUrl = URL.createObjectURL(f);
+    setPreview((prev) => {
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return blobUrl;
+    });
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -91,29 +109,29 @@ function ImageUploadDialog({
     multiple: false,
   });
 
-  const reset = () => {
-    setPreview(null);
+  const reset = React.useCallback(() => {
+    setFile(null);
+    setPreview((prev) => {
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return null;
+    });
     setUploading(false);
-  };
+  }, []);
 
-  const upload = async () => {
-    if (!preview) return;
+  const upload = React.useCallback(async () => {
+    if (!file) return;
 
     try {
       setUploading(true);
-      const res = await axios.post(uploadEndpoint, { base64: preview });
-      const url = res.data?.url ?? res.data?.data?.url;
-      if (!url) throw new Error("Upload failed: no url returned");
-
+      const url = await uploadFile(file);
       onUploaded(url);
       onOpenChange(false);
       reset();
     } catch (e) {
       console.error(e);
-      alert("Image upload failed");
       setUploading(false);
     }
-  };
+  }, [file, uploadFile, onUploaded, onOpenChange, reset]);
 
   return (
     <Dialog
@@ -134,10 +152,11 @@ function ImageUploadDialog({
             className={cn(
               "border rounded-lg w-full flex flex-col items-center justify-center p-6",
               "border-dashed cursor-pointer hover:border-primary",
-              isDragActive && "border-primary"
+              isDragActive && "border-primary",
             )}
           >
             <input {...getInputProps()} />
+
             {preview ? (
               <div className="w-full">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -146,16 +165,30 @@ function ImageUploadDialog({
                   alt="Preview"
                   className="w-full max-h-60 object-contain rounded-md border"
                 />
-                <div className="mt-3 flex justify-between gap-2">
+                <div
+                  className="mt-3 flex justify-between gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Button
                     type="button"
                     variant="clean"
-                    onClick={() => setPreview(null)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      reset();
+                    }}
                   >
                     <FaTimes className="h-4 w-4 mr-2" />
                     Remove
                   </Button>
-                  <Button type="button" onClick={upload} disabled={uploading}>
+
+                  <Button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      upload();
+                    }}
+                    disabled={uploading}
+                  >
                     {uploading ? "Uploading..." : "Upload & insert"}
                   </Button>
                 </div>
@@ -179,37 +212,61 @@ function ImageUploadDialog({
   );
 }
 
-/**
- * ✅ Fix for "HTML changes not visible":
- * - We apply Tailwind Typography (`prose`) to a WRAPPER around EditorContent.
- * - We also add a small CSS block to force list markers + heading sizing,
- *   in case your global CSS resets list-style.
- *
- * This means: headings, ul/ol/li, blockquotes will look correct immediately.
- */
 export function TiptapEditor({
   value,
   onChange,
   placeholder = "Write something…",
   className,
-  uploadEndpoint = "/api/media/editor-image",
   maxCharacters = 20000,
 }: TiptapEditorProps) {
-  const axios = useAxiosAuth();
+  const { activeStoreId: storeId } = useStoreScope();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
   const [uploading, setUploading] = React.useState(false);
   const [uploadOpen, setUploadOpen] = React.useState(false);
 
-  const uploadImageToS3 = React.useCallback(
-    async (base64: string) => {
-      const res = await axios.post(uploadEndpoint, { base64 });
-      const url = res.data?.url ?? res.data?.data?.url;
-      if (!url) throw new Error("Upload failed: no url returned");
-      return url as string;
+  // ✅ same logic you shared: presign -> PUT -> finalize
+  const uploadImageFile = React.useCallback(
+    async (file: File) => {
+      if (!storeId)
+        throw new Error("Missing storeId (pass it into <TiptapEditor />)");
+
+      const fileName = sanitizeFileName(
+        file.name || `editor-${Date.now()}.png`,
+      );
+      const mimeType = file.type || "application/octet-stream";
+
+      // 1) presign
+      const presign = await axios.post<PresignResp>(
+        "/api/uploads/media-presign",
+        {
+          storeId,
+          folder: "editor",
+          files: [{ fileName, mimeType }],
+        },
+      );
+
+      const first = presign.data.uploads?.[0];
+      if (!first) throw new Error("No presigned upload returned");
+
+      // 2) PUT to S3
+      await putToS3(first.uploadUrl, file);
+
+      // 3) finalize
+      await axios.post("/api/uploads/finalize", {
+        storeId,
+        key: first.key,
+        url: first.url,
+        fileName,
+        mimeType,
+        folder: "editor",
+        tag: "tiptap-image",
+      });
+
+      return first.url;
     },
-    [axios, uploadEndpoint]
+    [storeId],
   );
 
   const editor = useEditor({
@@ -228,18 +285,17 @@ export function TiptapEditor({
     content: value || "",
     editorProps: {
       attributes: {
-        // ✅ keep this to layout only; prose goes on wrapper below
         class: "focus:outline-none min-h-[260px] px-3 py-3",
       },
 
-      // paste image -> upload -> insert
+      // paste image -> presign -> put -> finalize -> insert
       handlePaste: (view, event) => {
         const clipboard = event.clipboardData;
         if (!clipboard) return false;
 
         const items = Array.from(clipboard.items || []);
         const imageItem = items.find(
-          (i) => i.kind === "file" && i.type.startsWith("image/")
+          (i) => i.kind === "file" && i.type.startsWith("image/"),
         );
         if (!imageItem) return false;
 
@@ -250,8 +306,7 @@ export function TiptapEditor({
         (async () => {
           try {
             setUploading(true);
-            const base64 = await fileToBase64(file);
-            const url = await uploadImageToS3(base64);
+            const url = await uploadImageFile(file);
 
             const { state, dispatch } = view;
             const node = state.schema.nodes.image.create({ src: url });
@@ -267,7 +322,7 @@ export function TiptapEditor({
         return true;
       },
 
-      // drop image -> upload -> insert
+      // drop image -> presign -> put -> finalize -> insert
       handleDrop: (view, event) => {
         const dt = event.dataTransfer;
         if (!dt?.files?.length) return false;
@@ -279,8 +334,7 @@ export function TiptapEditor({
         (async () => {
           try {
             setUploading(true);
-            const base64 = await fileToBase64(file);
-            const url = await uploadImageToS3(base64);
+            const url = await uploadImageFile(file);
 
             const coords = view.posAtCoords({
               left: event.clientX,
@@ -333,21 +387,20 @@ export function TiptapEditor({
   const words = editor.storage.characterCount.words();
   const overLimit = chars > maxCharacters;
 
-  // Small helper for active button styles
   const active = (isActive: boolean) => cn(isActive && "bg-muted");
 
   return (
     <div className={cn("rounded-lg border", className)}>
+      {/* Dialog upload -> presign -> put -> finalize -> insert */}
       <ImageUploadDialog
         open={uploadOpen}
         onOpenChange={setUploadOpen}
-        uploadEndpoint={uploadEndpoint}
+        uploadFile={uploadImageFile}
         onUploaded={(url) =>
           editor.chain().focus().setImage({ src: url }).run()
         }
       />
 
-      {/* ✅ Local styles to fix "no ul/ol markers" & heading sizes even if global CSS resets them */}
       <style jsx global>{`
         .tiptap-shell .ProseMirror ul {
           list-style: disc;
@@ -552,7 +605,7 @@ export function TiptapEditor({
           <span
             className={cn(
               "text-xs tabular-nums",
-              overLimit ? "text-destructive" : "text-muted-foreground"
+              overLimit ? "text-destructive" : "text-muted-foreground",
             )}
           >
             {words} words • {chars}/{maxCharacters} chars
@@ -582,7 +635,7 @@ export function TiptapEditor({
         </div>
       </div>
 
-      {/* ✅ Typography wrapper fixes "HTML changes not visible" (headings/lists/etc.) */}
+      {/* Typography wrapper */}
       <div className="tiptap-shell">
         <div className="prose prose-sm max-w-none">
           <EditorContent editor={editor} />
