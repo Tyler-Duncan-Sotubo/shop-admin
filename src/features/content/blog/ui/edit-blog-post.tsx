@@ -48,11 +48,7 @@ type EditBlogPostProps = {
   session?: { backendTokens?: { accessToken?: string } } | null;
 };
 
-export function EditBlogPost({
-  postId,
-  afterSavePath,
-  uploadEndpoint = "/api/media/editor-image",
-}: EditBlogPostProps) {
+export function EditBlogPost({ postId, afterSavePath }: EditBlogPostProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const { data: post, isLoading } = useGetBlogPost(postId, session);
@@ -141,7 +137,7 @@ export function EditBlogPost({
       };
       reader.readAsDataURL(file);
     },
-    [form]
+    [form],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -176,7 +172,7 @@ export function EditBlogPost({
 
     const payload = buildPayload(values);
     const updated = await updateBlogPost(payload, (msg: string) =>
-      setSubmitError(msg)
+      setSubmitError(msg),
     );
 
     const id = updated?.id ?? postId;
@@ -288,7 +284,6 @@ export function EditBlogPost({
                           value={field.value ?? ""}
                           onChange={field.onChange}
                           placeholder="Write your post…"
-                          uploadEndpoint={uploadEndpoint}
                           maxCharacters={20000}
                         />
                       </FormControl>
@@ -398,7 +393,7 @@ export function EditBlogPost({
                   className={cn(
                     "border rounded-lg w-full flex flex-col items-center justify-center p-6",
                     "border-dashed cursor-pointer hover:border-primary",
-                    isDragActive && "border-primary"
+                    isDragActive && "border-primary",
                   )}
                 >
                   <input {...getInputProps()} />
