@@ -41,8 +41,8 @@ function Delta({
   const cls = good
     ? "text-emerald-600"
     : isZero
-    ? "text-muted-foreground"
-    : "text-red-600";
+      ? "text-muted-foreground"
+      : "text-red-600";
 
   return (
     <div className={`flex items-center gap-1 text-[10px] font-semibold ${cls}`}>
@@ -106,7 +106,7 @@ export function CommerceSalesCards({
 }) {
   const [preset, setPreset] = usePersistedState<Preset>(
     "analytics:preset",
-    "today"
+    "today",
   );
 
   const presetRange = usePresetRange(preset);

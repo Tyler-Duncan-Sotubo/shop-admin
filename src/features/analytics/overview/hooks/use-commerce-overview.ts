@@ -13,9 +13,23 @@ import type {
   LatestPaymentRow,
 } from "../../overview/types/commerce-analytics.type";
 
+/** ✅ only for Sales over time */
+export type SalesChartPreset =
+  | "30m"
+  | "12h"
+  | "today"
+  | "yesterday"
+  | "last_week"
+  | "last_month"
+  | "7d"
+  | "30d"
+  | "90d"
+  | "365d"
+  | "12m";
+
 export function useCommerceCards(
   params: DashboardRangeParams,
-  session?: { backendTokens?: { accessToken?: string } } | null
+  session?: { backendTokens?: { accessToken?: string } } | null,
 ) {
   const axios = useAxiosAuth();
   const hasToken = Boolean(session?.backendTokens?.accessToken);
@@ -38,10 +52,9 @@ export function useCommerceCards(
   });
 }
 
-/** ✅ NEW: gross sales cards */
 export function useCommerceGrossSalesCards(
   params: DashboardRangeParams,
-  session?: { backendTokens?: { accessToken?: string } } | null
+  session?: { backendTokens?: { accessToken?: string } } | null,
 ) {
   const axios = useAxiosAuth();
   const hasToken = Boolean(session?.backendTokens?.accessToken);
@@ -57,7 +70,7 @@ export function useCommerceGrossSalesCards(
     queryFn: async () => {
       const res = await axios.get(
         "/api/analytics/commerce/admin/gross-sales-cards",
-        { params: normalized }
+        { params: normalized },
       );
       return (res.data.data ?? res.data) as CommerceGrossSalesCards;
     },
@@ -65,19 +78,17 @@ export function useCommerceGrossSalesCards(
   });
 }
 
-/** ✅ UPDATED: bucket supports 15m for "today" chart */
+/** ✅ ONLY THIS uses preset */
 export function useCommerceSalesTimeseries(
-  params: DashboardRangeParams & { bucket?: "15m" | "day" | "month" },
-  session?: { backendTokens?: { accessToken?: string } } | null
+  params: { preset: SalesChartPreset; storeId?: string | null },
+  session?: { backendTokens?: { accessToken?: string } } | null,
 ) {
   const axios = useAxiosAuth();
   const hasToken = Boolean(session?.backendTokens?.accessToken);
 
   const normalized = {
-    from: params.from,
-    to: params.to,
+    preset: params.preset,
     storeId: params.storeId ?? undefined,
-    bucket: params.bucket ?? "day",
   };
 
   return useQuery<SalesTimeseriesPoint[]>({
@@ -85,18 +96,17 @@ export function useCommerceSalesTimeseries(
     queryFn: async () => {
       const res = await axios.get(
         "/api/analytics/commerce/admin/sales-timeseries",
-        { params: normalized }
+        { params: normalized },
       );
-
       return (res.data.data ?? res.data) as SalesTimeseriesPoint[];
     },
-    enabled: hasToken && !!normalized.from && !!normalized.to,
+    enabled: hasToken && !!normalized.preset,
   });
 }
 
 export function useCommerceTopProducts(
   params: DashboardRangeParams & { limit?: number; by?: "revenue" | "units" },
-  session?: { backendTokens?: { accessToken?: string } } | null
+  session?: { backendTokens?: { accessToken?: string } } | null,
 ) {
   const axios = useAxiosAuth();
   const hasToken = Boolean(session?.backendTokens?.accessToken);
@@ -116,7 +126,7 @@ export function useCommerceTopProducts(
         "/api/analytics/commerce/admin/top-products",
         {
           params: normalized,
-        }
+        },
       );
       return (res.data.data ?? res.data) as TopProductRow[];
     },
@@ -131,7 +141,7 @@ export function useCommerceRecentOrders(
     orderBy?: "paidAt" | "createdAt";
     itemsPerOrder?: number;
   },
-  session?: { backendTokens?: { accessToken?: string } } | null
+  session?: { backendTokens?: { accessToken?: string } } | null,
 ) {
   const axios = useAxiosAuth();
   const hasToken = Boolean(session?.backendTokens?.accessToken);
@@ -151,7 +161,7 @@ export function useCommerceRecentOrders(
     queryFn: async () => {
       const res = await axios.get(
         "/api/analytics/commerce/admin/recent-orders",
-        { params: normalized }
+        { params: normalized },
       );
       return (res.data.data ?? res.data) as RecentOrderRow[];
     },
@@ -161,7 +171,7 @@ export function useCommerceRecentOrders(
 
 export function useCommerceOrdersByChannel(
   params: DashboardRangeParams & { metric?: "orders" | "revenue" },
-  session?: { backendTokens?: { accessToken?: string } } | null
+  session?: { backendTokens?: { accessToken?: string } } | null,
 ) {
   const axios = useAxiosAuth();
   const hasToken = Boolean(session?.backendTokens?.accessToken);
@@ -178,7 +188,7 @@ export function useCommerceOrdersByChannel(
     queryFn: async () => {
       const res = await axios.get(
         "/api/analytics/commerce/admin/orders-by-channel",
-        { params: normalized }
+        { params: normalized },
       );
       return (res.data.data ?? res.data) as OrdersByChannelPoint[];
     },
@@ -186,10 +196,9 @@ export function useCommerceOrdersByChannel(
   });
 }
 
-/** ✅ NEW: latest payments */
 export function useCommerceLatestPayments(
   params: DashboardRangeParams & { limit?: number },
-  session?: { backendTokens?: { accessToken?: string } } | null
+  session?: { backendTokens?: { accessToken?: string } } | null,
 ) {
   const axios = useAxiosAuth();
   const hasToken = Boolean(session?.backendTokens?.accessToken);
@@ -206,7 +215,7 @@ export function useCommerceLatestPayments(
     queryFn: async () => {
       const res = await axios.get(
         "/api/analytics/commerce/admin/latest-payments",
-        { params: normalized }
+        { params: normalized },
       );
       return (res.data.data ?? res.data) as LatestPaymentRow[];
     },

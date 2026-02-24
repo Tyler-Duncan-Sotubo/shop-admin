@@ -24,7 +24,7 @@ function isGroupRow(r: RowType): r is InventoryGroupRow {
 export const inventoryColumns = (
   locationId: string,
   expanded: Record<string, boolean>,
-  toggleExpanded: (productName: string) => void
+  toggleExpanded: (productName: string) => void,
 ): ColumnDef<RowType>[] => [
   {
     accessorKey: "productName",
@@ -46,7 +46,7 @@ export const inventoryColumns = (
             ) : (
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             )}
-            <div className="font-medium">{r.productName}</div>
+            <div className="font-medium text-xs">{r.productName}</div>
             <span className="text-xs text-muted-foreground">
               ({r.children.length} variants)
             </span>
@@ -57,7 +57,7 @@ export const inventoryColumns = (
       // Variant row (indent)
       return (
         <div className="pl-6 space-y-0.5">
-          <div className="text-sm">{r.variantTitle ?? "Default"}</div>
+          <div className="text-xs ">{r.variantTitle ?? "Default"}</div>
           <div className="text-xs text-muted-foreground">
             {r.sku ? `SKU: ${r.sku}` : ""}
           </div>
@@ -68,17 +68,19 @@ export const inventoryColumns = (
   {
     accessorKey: "inStock",
     header: "In Stock",
-    cell: ({ row }) => <span>{row.original.inStock}</span>,
+    cell: ({ row }) => <span className="text-xs ">{row.original.inStock}</span>,
   },
   {
     accessorKey: "committed",
     header: "Committed",
-    cell: ({ row }) => <span>{row.original.committed}</span>,
+    cell: ({ row }) => (
+      <span className="text-xs ">{row.original.committed}</span>
+    ),
   },
   {
     accessorKey: "onHand",
     header: "On hand",
-    cell: ({ row }) => <span>{row.original.onHand}</span>,
+    cell: ({ row }) => <span className="text-xs ">{row.original.onHand}</span>,
   },
   {
     accessorKey: "lowStock",
@@ -88,7 +90,9 @@ export const inventoryColumns = (
       return (
         <span
           className={cn(
-            r.lowStock ? "text-amber-600" : "text-muted-foreground"
+            r.lowStock
+              ? "text-amber-600 text-xs "
+              : "text-muted-foreground text-xs ",
           )}
         >
           {r.lowStock ? "Low stock" : "OK"}

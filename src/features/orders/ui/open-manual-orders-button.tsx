@@ -20,7 +20,7 @@ export function CreateManualOrderButton() {
     const orderId = (created?.data?.id ?? created?.id) as string;
 
     setOpen(false);
-    router.push(`/orders/${orderId}`);
+    router.push(`/sales/orders/${orderId}`);
   };
 
   return (
