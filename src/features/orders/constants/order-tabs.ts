@@ -1,10 +1,17 @@
-export type OrderTab = "all" | "on_hold" | "paid" | "fulfilled" | "cancelled";
+export type OrderTab =
+  | "all"
+  | "on_hold"
+  | "paid"
+  | "fulfilled"
+  | "cancelled"
+  | "draft";
 
 export type OrderStatus =
   | "pending_payment"
   | "paid"
   | "fulfilled"
-  | "cancelled";
+  | "cancelled"
+  | "draft";
 
 export const ORDER_TAB_TO_STATUS: Record<OrderTab, OrderStatus | undefined> = {
   all: undefined,
@@ -12,4 +19,5 @@ export const ORDER_TAB_TO_STATUS: Record<OrderTab, OrderStatus | undefined> = {
   paid: "paid",
   fulfilled: "fulfilled",
   cancelled: "cancelled",
+  draft: "draft",
 };

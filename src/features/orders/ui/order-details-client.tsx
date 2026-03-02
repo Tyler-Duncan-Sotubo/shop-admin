@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Separator } from "@/shared/ui/separator";
 import { FaRegEdit } from "react-icons/fa";
 import type { OrderWithItems } from "../types/order.type";
-import { useGetOrder } from "../hooks/use-orders";
+import { useGetOrder, useSyncZohoOrder } from "../hooks/use-orders";
 import { OrderItemsCard } from "./order-items-card";
 import { OrderAddressCard } from "./order-address-card";
 import { OrderActionsCard } from "./order-actions-card";
@@ -19,6 +19,7 @@ import { Button } from "@/shared/ui/button";
 import { useState } from "react";
 import { AddManualOrderItemsModal } from "./add-manual-order-items-modal";
 import { useManualOrders } from "../hooks/use-manual-orders";
+import { RefreshCcw } from "lucide-react";
 
 function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
   if (status === "paid") return <Badge>Paid</Badge>;
@@ -34,6 +35,8 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   const { data, isLoading } = useGetOrder(session, axios, orderId);
   const [isOpen, setIsOpen] = useState(false);
   const { createManualPayment } = useManualOrders(orderId);
+
+  const syncZoho = useSyncZohoOrder(session, axios);
 
   if (authStatus === "loading" || isLoading) return <Loading />;
   if (!data) return null;
@@ -58,12 +61,26 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
           order.status !== "pending_payment" &&
           order.status !== "paid" && (
             <>
-              <Button onClick={() => setIsOpen(true)}>
+              <Button onClick={() => setIsOpen(true)} variant={"clean"}>
                 <FaRegEdit />
                 Add Item
               </Button>
-              <Button onClick={() => handleCreateManualPayment()}>
-                Submit For Payment
+              <Button
+                onClick={() => handleCreateManualPayment()}
+                variant={"clean"}
+              >
+                Convert to Invoice
+              </Button>
+              <Button
+                onClick={() => syncZoho.mutate(order.id)}
+                disabled={syncZoho.isPending}
+                variant={"clean"}
+                className="flex items-center gap-2"
+              >
+                <RefreshCcw
+                  className={`h-4 w-4 ${syncZoho.isPending ? "animate-spin" : ""}`}
+                />
+                {syncZoho.isPending ? "Syncing…" : "Sync to Zoho"}
               </Button>
             </>
           )}

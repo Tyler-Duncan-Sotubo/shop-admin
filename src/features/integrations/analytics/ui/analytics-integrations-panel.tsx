@@ -2,13 +2,8 @@
 "use client";
 
 import * as React from "react";
-import { useSession } from "next-auth/react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
-import { MdCheckCircle, MdErrorOutline } from "react-icons/md";
-import { AnalyticsProvider, IntegrationRow } from "../types/analytics.types";
-import { INTEGRATIONS } from "../config/integrations.config";
-import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { toast } from "sonner";
 
 import { Switch } from "@/shared/ui/switch";
@@ -16,7 +11,6 @@ import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { Label } from "@/shared/ui/label";
 
-// shadcn dialog
 import {
   Dialog,
   DialogContent,
@@ -26,8 +20,17 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/shared/ui/dialog";
-import { FiSettings } from "react-icons/fi";
 
+import { FiSettings } from "react-icons/fi";
+import { MdCheckCircle } from "react-icons/md";
+
+import type {
+  AnalyticsProvider,
+  IntegrationRow,
+} from "../types/analytics.types";
+import { INTEGRATIONS } from "../config/integrations.config";
+
+/** keep existing normalizer behavior */
 function normalizeRows(input: unknown): IntegrationRow[] {
   if (Array.isArray(input)) return input as IntegrationRow[];
   if (input && typeof input === "object") {
@@ -63,27 +66,16 @@ function buildDefaultStateFromRows(input: unknown) {
   };
 }
 
-export function AnalyticsIntegrationsClient() {
+export function AnalyticsIntegrationsPanel(props: {
+  rows: IntegrationRow[];
+  activeStoreId: string;
+  accessToken: string;
+  queryKey: any[];
+}) {
   const axios = useAxiosAuth();
-  const { activeStoreId } = useStoreScope();
-  const { data: session } = useSession();
   const qc = useQueryClient();
 
-  const accessToken = session?.backendTokens.accessToken as string | undefined;
-  const enabled = Boolean(activeStoreId && accessToken);
-  const queryKey = ["integrations", "analytics", "admin", activeStoreId];
-
-  const integrationsQuery = useQuery({
-    queryKey,
-    enabled,
-    queryFn: async () => {
-      const res = await axios.get<IntegrationRow[]>(
-        `/api/integrations/analytics/admin`,
-        { params: { storeId: activeStoreId } }
-      );
-      return res.data ?? [];
-    },
-  });
+  const { rows, activeStoreId, accessToken, queryKey } = props;
 
   const [rowsByProvider, setRowsByProvider] = React.useState<
     Record<string, IntegrationRow | null>
@@ -97,20 +89,17 @@ export function AnalyticsIntegrationsClient() {
   const [consentByProvider, setConsentByProvider] = React.useState<
     Record<string, boolean>
   >({});
-
-  // modal open state per provider (so each integration has its own dialog)
   const [openByProvider, setOpenByProvider] = React.useState<
     Record<string, boolean>
   >({});
 
   React.useEffect(() => {
-    if (!integrationsQuery.data) return;
-    const next = buildDefaultStateFromRows(integrationsQuery.data);
+    const next = buildDefaultStateFromRows(rows);
     setRowsByProvider(next.rowsByProvider);
     setFormByProvider(next.formByProvider);
     setEnabledByProvider(next.enabledByProvider);
     setConsentByProvider(next.consentByProvider);
-  }, [integrationsQuery.data]);
+  }, [rows]);
 
   const upsertMutation = useMutation({
     mutationFn: async (payload: {
@@ -124,7 +113,8 @@ export function AnalyticsIntegrationsClient() {
         payload,
         {
           params: { storeId: activeStoreId },
-        }
+          headers: { Authorization: `Bearer ${accessToken}` },
+        },
       );
       return res.data;
     },
@@ -140,13 +130,13 @@ export function AnalyticsIntegrationsClient() {
     }) => {
       const res = await axios.patch(
         `/api/integrations/analytics/admin/${encodeURIComponent(
-          payload.provider
+          payload.provider,
         )}/enabled`,
         { enabled: payload.enabled },
         {
           params: { storeId: activeStoreId },
           headers: { Authorization: `Bearer ${accessToken}` },
-        }
+        },
       );
       return res.data;
     },
@@ -194,10 +184,9 @@ export function AnalyticsIntegrationsClient() {
       },
       {
         onSuccess: () => {
-          // close only this provider's dialog
           setOpenByProvider((p) => ({ ...p, [provider]: false }));
         },
-      }
+      },
     );
   };
 
@@ -206,64 +195,12 @@ export function AnalyticsIntegrationsClient() {
     setEnabledMutation.mutate({ provider, enabled: nextEnabled });
   };
 
-  // ----------- UI states -----------
-  if (!activeStoreId) {
-    return (
-      <div className="p-8">
-        <div className="flex items-center gap-2 text-yellow-700">
-          <MdErrorOutline size={20} />
-          <span className="font-medium">No active store selected</span>
-        </div>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Select a store to manage integrations.
-        </p>
-      </div>
-    );
-  }
-
-  if (!accessToken) {
-    return (
-      <div className="p-8">
-        <div className="flex items-center gap-2 text-yellow-700">
-          <MdErrorOutline size={20} />
-          <span className="font-medium">Not authenticated</span>
-        </div>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Please sign in again to manage integrations.
-        </p>
-      </div>
-    );
-  }
-
-  if (integrationsQuery.isLoading) {
-    return (
-      <div className="p-8 text-sm text-muted-foreground">
-        Loading integrations…
-      </div>
-    );
-  }
-
-  if (integrationsQuery.isError) {
-    const msg =
-      (integrationsQuery.error as any)?.response?.data?.message ??
-      (integrationsQuery.error as any)?.message ??
-      "Failed to load";
-
-    return (
-      <div className="p-8">
-        <div className="flex items-center gap-2 text-red-600">
-          <MdErrorOutline size={20} />
-          <span className="font-medium">Error</span>
-        </div>
-        <p className="mt-2 text-sm">{String(msg)}</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto space-y-6">
+    <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-3xl font-semibold">Integrations</h1>
+        <h1 className="text-base font-semibold">
+          Google Analytics, Facebook Pixel, and more
+        </h1>
         <p className="text-sm text-muted-foreground">
           Configure analytics and pixels for your storefront.
         </p>
@@ -279,9 +216,7 @@ export function AnalyticsIntegrationsClient() {
 
           return (
             <div key={provider} className="border rounded-lg p-4 shadow-sm">
-              {/* TOP: icon | title+desc | toggle */}
               <div>
-                {/* left: icon */}
                 <div className="flex items-center justify-between gap-3 mr-2">
                   <div
                     className="shrink-0 mt-0.5 text-3xl"
@@ -308,7 +243,6 @@ export function AnalyticsIntegrationsClient() {
                 </div>
               </div>
 
-              {/* BOTTOM: settings button (with cog) */}
               <div className="mt-4 flex items-center justify-between">
                 <Dialog
                   open={!!openByProvider[provider]}
@@ -337,7 +271,6 @@ export function AnalyticsIntegrationsClient() {
                       </DialogDescription>
                     </DialogHeader>
 
-                    {/* fields */}
                     <div className="space-y-4">
                       {cfg.fields
                         .filter((f) => f.type !== "switch")
@@ -370,7 +303,6 @@ export function AnalyticsIntegrationsClient() {
                           );
                         })}
 
-                      {/* consent toggle */}
                       <div className="flex items-center justify-between gap-4 rounded-md border p-3">
                         <div className="space-y-1">
                           <div className="text-sm font-medium">

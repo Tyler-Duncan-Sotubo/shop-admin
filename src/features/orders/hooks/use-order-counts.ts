@@ -6,7 +6,7 @@ import type { AxiosInstance } from "axios";
 async function fetchCount(
   axios: AxiosInstance,
   storeId: string | null,
-  status?: string
+  status?: string,
 ): Promise<number> {
   const params: Record<string, any> = { limit: 1, offset: 0 };
   if (status) params.status = status;
@@ -19,13 +19,14 @@ async function fetchCount(
 export function useOrderCountsForTabs(
   session: Session | null,
   axios: AxiosInstance,
-  storeId: string | null
+  storeId: string | null,
 ) {
   const enabled = !!session?.backendTokens?.accessToken; // add && !!storeId if required
 
   const queries = useQueries({
     queries: [
       { key: "all", status: undefined },
+      { key: "draft", status: "draft" },
       { key: "on_hold", status: "pending_payment" },
       { key: "paid", status: "paid" },
       { key: "fulfilled", status: "fulfilled" },
@@ -41,9 +42,10 @@ export function useOrderCountsForTabs(
 
   return {
     all: queries[0].data ?? 0,
-    onHold: queries[1].data ?? 0,
-    paid: queries[2].data ?? 0,
-    fulfilled: queries[3].data ?? 0,
+    draft: queries[1].data ?? 0,
+    onHold: queries[2].data ?? 0,
+    paid: queries[3].data ?? 0,
+    fulfilled: queries[4].data ?? 0,
     cancelled: queries[4].data ?? 0,
   };
 }

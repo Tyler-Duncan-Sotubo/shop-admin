@@ -29,6 +29,9 @@ import { ConvertQuoteToOrderModal } from "./convert-quote-to-order-modal";
 import { useConvertQuoteToOrder } from "../hooks/use-convert-quote-to-order";
 import { useRouter } from "next/navigation";
 import { ConvertQuoteFormValues } from "../schema/convert-quote.schema";
+import { useSendQuoteToZoho } from "../hooks/use-send-quote-to-zoho";
+import { toast } from "sonner";
+import { SiZoho } from "react-icons/si";
 
 function StatusBadge({ status }: { status: QuoteStatus }) {
   if (status === "new") return <Badge>New</Badge>;
@@ -65,6 +68,20 @@ export function QuoteDetailsSheet({ quoteId }: { quoteId: string }) {
     router.push(`/sales/orders/${res.orderId}`);
   };
 
+  const sendToZoho = useSendQuoteToZoho(session, axios);
+
+  const handleSendToZoho = async () => {
+    try {
+      const res = await sendToZoho.mutateAsync({ quoteId });
+
+      // Navigate to the created order
+      router.push(`/sales/orders/${res.orderId}`);
+    } catch (e) {
+      // optional: toast.error((e as Error).message)
+      toast.error((e as Error).message);
+    }
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -81,23 +98,46 @@ export function QuoteDetailsSheet({ quoteId }: { quoteId: string }) {
               {quote ? <StatusBadge status={quote.status} /> : null}
             </div>
 
-            {/* ✅ Create/Open Order button */}
-            {convertedOrderId ? (
-              <Button
-                size="sm"
-                onClick={() => router.push(`/sales/orders/${convertedOrderId}`)}
-              >
-                Open Order
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                onClick={() => setConvertOpen(true)}
-                disabled={!quote || quote.status === "archived"}
-              >
-                Create Order
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {/* ✅ Send to Zoho button */}
+
+              {/* ✅ Create/Open Order button */}
+              {convertedOrderId ? (
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    router.push(`/sales/orders/${convertedOrderId}`)
+                  }
+                >
+                  Open Order
+                </Button>
+              ) : (
+                <div className="flex gap-3">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={handleSendToZoho}
+                    disabled={
+                      !quote ||
+                      quote.status === "archived" ||
+                      sendToZoho.isPending
+                    }
+                    className="flex items-center gap-2"
+                    isLoading={sendToZoho.isPending}
+                  >
+                    <SiZoho className="h-4 w-4 size-3" color="red" />
+                    {sendToZoho.isPending ? "Sending…" : "Send to Zoho"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setConvertOpen(true)}
+                    disabled={!quote || quote.status === "archived"}
+                  >
+                    Create Order
+                  </Button>
+                </div>
+              )}
+            </div>
           </SheetTitle>
         </SheetHeader>
 

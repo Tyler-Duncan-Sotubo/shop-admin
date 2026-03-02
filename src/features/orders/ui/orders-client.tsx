@@ -24,7 +24,7 @@ export default function OrdersClient() {
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
 
-  const [tab, setTab] = useState<OrderTab>("all");
+  const [tab, setTab] = useState<OrderTab>("draft");
 
   const counts = useOrderCountsForTabs(session, axios, activeStoreId);
 
@@ -47,6 +47,7 @@ export default function OrdersClient() {
 
   const orderChips: FilterChip<OrderTab>[] = [
     { value: "all", label: "All", count: counts.all },
+    { value: "draft", label: "Draft", count: counts.draft },
     { value: "on_hold", label: "On hold", count: counts.onHold },
     { value: "paid", label: "Paid", count: counts.paid, showZero: false },
     {
@@ -92,8 +93,8 @@ export default function OrdersClient() {
 
               <div className="hidden sm:block w-full sm:w-auto overflow-x-auto">
                 <TabsList className="w-max whitespace-nowrap">
-                  <TabsTrigger value="all">
-                    <TabLabel label="All" count={counts.all} />
+                  <TabsTrigger value="draft">
+                    <TabLabel label="Draft" count={counts.draft} />
                   </TabsTrigger>
                   <TabsTrigger value="on_hold">
                     <TabLabel label="On hold" count={counts.onHold} />
@@ -119,6 +120,10 @@ export default function OrdersClient() {
                       count={counts.cancelled}
                       showZero={false}
                     />
+                  </TabsTrigger>
+
+                  <TabsTrigger value="all">
+                    <TabLabel label="All" count={counts.all} />
                   </TabsTrigger>
                 </TabsList>
               </div>

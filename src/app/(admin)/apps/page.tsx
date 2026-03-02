@@ -1,7 +1,7 @@
-import { AnalyticsIntegrationsClient } from "@/features/integrations/analytics/ui/analytics-integrations-client";
+import { IntegrationsPageClient } from "@/features/integrations/integrations-page-client";
 
 const page = () => {
-  return <AnalyticsIntegrationsClient />;
+  return <IntegrationsPageClient />;
 };
 
 export default page;

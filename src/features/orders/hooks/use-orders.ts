@@ -16,7 +16,7 @@ type ApiError = {
 export function useGetOrders(
   session: Session | null,
   axios: AxiosInstance,
-  params: ListOrdersParams
+  params: ListOrdersParams,
 ) {
   return useQuery({
     queryKey: ["orders", params],
@@ -37,7 +37,7 @@ export function useGetOrders(
 export function useGetOrder(
   session: Session | null,
   axios: AxiosInstance,
-  id?: string
+  id?: string,
 ) {
   return useQuery({
     queryKey: ["orders", id],
@@ -94,6 +94,34 @@ export function useFulfillOrder(session: Session | null, axios: AxiosInstance) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useSyncZohoOrder(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await axios.post(`/api/orders/${id}/sync-zoho`);
+      return res.data.data;
+    },
+    onSuccess: (_data, id) => {
+      // refresh order list + single order
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["orders", id] });
+    },
+    onError: (err) => {
+      const e = err as AxiosError<ApiError>;
+      const msg =
+        e.response?.data?.error?.message ??
+        e.response?.data?.message ??
+        e.message;
+
+      throw new Error(msg);
     },
   });
 }

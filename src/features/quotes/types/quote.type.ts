@@ -44,6 +44,7 @@ export type Quote = {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  zohoEstimateId: string | null;
 };
 
 export type QuoteWithItems = Quote & { items: QuoteItem[] };

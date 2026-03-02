@@ -34,7 +34,7 @@ export default function QuotesClient() {
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
 
-  const [tab, setTab] = useState<QuoteTab>("all");
+  const [tab, setTab] = useState<QuoteTab>("new");
 
   const counts = useQuoteCountsForTabs(session, axios, activeStoreId);
 
@@ -106,6 +106,10 @@ export default function QuotesClient() {
                     <TabLabel label="New" count={counts.new} />
                   </TabsTrigger>
 
+                  <TabsTrigger value="all">
+                    <TabLabel label="All" count={counts.all} />
+                  </TabsTrigger>
+
                   <TabsTrigger value="in_progress">
                     <TabLabel label="In progress" count={counts.inProgress} />
                   </TabsTrigger>
@@ -124,10 +128,6 @@ export default function QuotesClient() {
                       count={counts.archived}
                       showZero={false}
                     />
-                  </TabsTrigger>
-
-                  <TabsTrigger value="all">
-                    <TabLabel label="All" count={counts.all} />
                   </TabsTrigger>
                 </TabsList>
               </div>

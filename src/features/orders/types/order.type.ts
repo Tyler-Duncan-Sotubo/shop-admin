@@ -4,7 +4,8 @@ export type OrderStatus =
   | "pending_payment"
   | "paid"
   | "cancelled"
-  | "fulfilled";
+  | "fulfilled"
+  | "draft";
 
 export type OrderChannel = "online" | "pos" | string;
 
