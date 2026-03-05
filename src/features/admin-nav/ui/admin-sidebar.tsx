@@ -170,7 +170,9 @@ export default function AdminSidebar() {
       className="md:fixed hidden left-0 z-40 bg-white border-r p-2 md:flex flex-col overflow-y-auto no-scrollbar w-[14.5%]"
       style={{
         top: TOPBAR_HEIGHT,
-        height: `calc(100vh - ${TOPBAR_HEIGHT})`,
+        height: `calc(100dvh - ${TOPBAR_HEIGHT})`,
+        WebkitOverflowScrolling: "touch",
+        overscrollBehavior: "contain",
       }}
     >
       {/* Store selector */}
