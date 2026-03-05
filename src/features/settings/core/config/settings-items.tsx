@@ -7,6 +7,7 @@ import {
   FaCreditCard,
   FaCode,
   FaStore,
+  FaPlug,
 } from "react-icons/fa";
 
 export const settingsItems = [
@@ -103,5 +104,13 @@ export const settingsItems = [
       "Manage API keys and integrations for developers and external systems.",
     link: "/settings/developers",
     icon: <FaCode size={20} />,
+  },
+  {
+    category: "Advanced",
+    title: "Integrations",
+    description:
+      "Connect external services like payment providers, shipping platforms, and third-party tools.",
+    link: "/settings/integrations",
+    icon: <FaPlug size={20} />,
   },
 ];

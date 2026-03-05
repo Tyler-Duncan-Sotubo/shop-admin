@@ -5,9 +5,8 @@ import {
   MdOutlineInventory2,
   MdBarChart,
   MdArticle,
-  MdIntegrationInstructions,
 } from "react-icons/md";
-import { FaReceipt, FaFileAlt, FaCog } from "react-icons/fa";
+import { FaReceipt, FaFileAlt } from "react-icons/fa";
 import { TbUsers } from "react-icons/tb";
 import { hasPermission } from "@/lib/auth/has-permission";
 import { BsFillBoxSeamFill } from "react-icons/bs";
@@ -247,17 +246,5 @@ export const main: readonly MenuItem[] = [
     link: "/online-store", // or "/stores" if you prefer
     icon: <FaGlobe size={18} />,
     permissions: ["stores.read"],
-  },
-  {
-    title: "Apps",
-    link: "/apps",
-    icon: <MdIntegrationInstructions size={20} />,
-    permissions: ["integrations.analytics.read"],
-  },
-  {
-    title: "Settings",
-    link: "/settings",
-    icon: <FaCog size={20} />,
-    permissions: ["settings.read"],
   },
 ] as const;
