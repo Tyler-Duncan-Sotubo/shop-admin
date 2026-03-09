@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Separator } from "@/shared/ui/separator";
 import { FaRegEdit } from "react-icons/fa";
 import type { OrderWithItems } from "../types/order.type";
-import { useGetOrder, useSyncZohoOrder } from "../hooks/use-orders";
+import { useGetOrder } from "../hooks/use-orders";
 import { OrderItemsCard } from "./order-items-card";
 import { OrderAddressCard } from "./order-address-card";
 import { OrderActionsCard } from "./order-actions-card";
@@ -19,7 +19,7 @@ import { Button } from "@/shared/ui/button";
 import { useState } from "react";
 import { AddManualOrderItemsModal } from "./add-manual-order-items-modal";
 import { useManualOrders } from "../hooks/use-manual-orders";
-import { RefreshCcw } from "lucide-react";
+import { EditOrderCustomerShippingModal } from "./edit-order-customer-shipping-modal";
 
 function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
   if (status === "paid") return <Badge>Paid</Badge>;
@@ -33,17 +33,17 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   const { data: session, status: authStatus } = useSession();
   const axios = useAxiosAuth();
   const { data, isLoading } = useGetOrder(session, axios, orderId);
-  const [isOpen, setIsOpen] = useState(false);
-  const { createManualPayment } = useManualOrders(orderId);
 
-  const syncZoho = useSyncZohoOrder(session, axios);
+  const [isOpen, setIsOpen] = useState(false);
+  const [editCustomerShippingOpen, setEditCustomerShippingOpen] =
+    useState(false);
+
+  const { createManualPayment } = useManualOrders(orderId);
 
   if (authStatus === "loading" || isLoading) return <Loading />;
   if (!data) return null;
 
   const order = data;
-
-  // ✅ fallback: if billing is null, use shipping
   const billingOrShipping = order.billingAddress ?? order.shippingAddress;
 
   const handleCreateManualPayment = () => {
@@ -61,35 +61,21 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
           order.status !== "pending_payment" &&
           order.status !== "paid" && (
             <>
-              <Button onClick={() => setIsOpen(true)} variant={"clean"}>
-                <FaRegEdit />
-                Add Item
-              </Button>
-              <Button
-                onClick={() => handleCreateManualPayment()}
-                variant={"clean"}
-              >
+              {order.sourceType === "manual" && (
+                <Button onClick={() => setIsOpen(true)} variant="clean">
+                  <FaRegEdit />
+                  Add Item
+                </Button>
+              )}
+              <Button onClick={handleCreateManualPayment} variant="clean">
                 Convert to Invoice
-              </Button>
-              <Button
-                onClick={() => syncZoho.mutate(order.id)}
-                disabled={syncZoho.isPending}
-                variant={"clean"}
-                className="flex items-center gap-2"
-              >
-                <RefreshCcw
-                  className={`h-4 w-4 ${syncZoho.isPending ? "animate-spin" : ""}`}
-                />
-                {syncZoho.isPending ? "Syncing…" : "Sync to Zoho"}
               </Button>
             </>
           )}
       </PageHeader>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        {/* LEFT */}
         <div className="space-y-6">
-          {/* Order summary */}
           <Card>
             <CardHeader className="flex flex-row items-start justify-between gap-4">
               <div className="space-y-1">
@@ -178,28 +164,28 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
             </CardContent>
           </Card>
 
-          {/* Addresses */}
           <div className="grid gap-6 md:grid-cols-2">
             <OrderAddressCard
               title="Shipping address"
               address={order.shippingAddress}
+              editable
+              onEdit={() => setEditCustomerShippingOpen(true)}
             />
+
             <OrderAddressCard
               title="Billing address"
               address={billingOrShipping}
+              editable
+              onEdit={() => setEditCustomerShippingOpen(true)}
             />
           </div>
 
-          {/* Items w/ images */}
           <OrderItemsCard currency={order.currency} items={order.items ?? []} />
         </div>
 
-        {/* RIGHT */}
         <div className="space-y-6">
           <OrderActionsCard order={order} session={session} axios={axios} />
           <OrderAuditCard events={order.events ?? []} />
-
-          {/* Placeholder */}
         </div>
       </div>
 
@@ -209,6 +195,13 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
         orderId={order.id}
         currency={order.currency}
         rows={[]}
+      />
+
+      <EditOrderCustomerShippingModal
+        open={editCustomerShippingOpen}
+        onClose={() => setEditCustomerShippingOpen(false)}
+        orderId={order.id}
+        storeId={order.storeId ?? null}
       />
     </section>
   );

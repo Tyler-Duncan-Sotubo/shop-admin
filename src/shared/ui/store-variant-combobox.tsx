@@ -36,7 +36,7 @@ export function StoreVariantCombobox({
 
   const selected = React.useMemo(
     () => options.find((o) => o.id === value),
-    [options, value]
+    [options, value],
   );
 
   return (
@@ -48,7 +48,7 @@ export function StoreVariantCombobox({
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
-          disabled={disabled}
+          disabled={disabled || !storeId}
         >
           <span className="truncate text-xs">
             {selected?.label ?? placeholder}
@@ -61,12 +61,13 @@ export function StoreVariantCombobox({
         className="w-[--radix-popover-trigger-width] p-0"
         align="start"
       >
-        <Command>
+        <Command shouldFilter={false}>
           <CommandInput
-            placeholder="Search variants…"
+            placeholder="Search variants or product name…"
             value={search}
             onValueChange={setSearch}
           />
+
           <CommandEmpty>
             {isLoading ? "Loading..." : "No variants found."}
           </CommandEmpty>
@@ -75,16 +76,16 @@ export function StoreVariantCombobox({
             {options.map((opt: any) => (
               <CommandItem
                 key={opt.id}
-                value={opt.label}
+                value={`${opt.productName ?? ""} ${opt.title ?? ""} ${opt.sku ?? ""}`}
                 onSelect={() => {
-                  onChange(opt.id, opt.unitPrice ?? null);
+                  onChange(opt.id, opt.suggestedUnitPrice ?? null);
                   setOpen(false);
                 }}
               >
                 <Check
                   className={cn(
                     "mr-2 h-4 w-4",
-                    value === opt.id ? "opacity-100" : "opacity-0"
+                    value === opt.id ? "opacity-100" : "opacity-0",
                   )}
                 />
                 <span className="truncate text-xs">{opt.label}</span>

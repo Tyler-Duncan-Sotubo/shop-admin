@@ -22,13 +22,14 @@ export type QuoteItem = {
 
   createdAt: string;
   deletedAt: string | null;
+  name: string;
 };
 
 export type Quote = {
   id: string;
   companyId: string;
   storeId: string;
-
+  quoteNumber: string | null;
   status: QuoteStatus;
   customerEmail: string;
   customerNote: string | null;
@@ -45,6 +46,7 @@ export type Quote = {
   updatedAt: string;
   deletedAt: string | null;
   zohoEstimateId: string | null;
+  zohoEstimateNumber: string | null;
 };
 
 export type QuoteWithItems = Quote & { items: QuoteItem[] };

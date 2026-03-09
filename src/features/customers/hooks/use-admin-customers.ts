@@ -13,9 +13,8 @@ export type AdminCustomersQuery = {
   includeInactive?: boolean;
   storeId?: string | null;
 
-  // ✅ NEW
-  includeSubscribers?: boolean; // default true on client if you want
-  marketingStatus?: "subscribed" | "unsubscribed" | "pending"; // optional filter
+  includeSubscribers?: boolean;
+  marketingStatus?: "subscribed" | "unsubscribed" | "pending";
 };
 
 function toQueryString(q?: AdminCustomersQuery) {
@@ -28,10 +27,10 @@ function toQueryString(q?: AdminCustomersQuery) {
     sp.set("includeInactive", String(q.includeInactive));
   }
 
-  // ✅ NEW
   if (typeof q.includeSubscribers === "boolean") {
     sp.set("includeSubscribers", String(q.includeSubscribers));
   }
+
   if (q.marketingStatus) {
     sp.set("marketingStatus", q.marketingStatus);
   }
@@ -39,7 +38,10 @@ function toQueryString(q?: AdminCustomersQuery) {
   sp.set("limit", String(q.limit ?? 50));
   sp.set("offset", String(q.offset ?? 0));
 
-  if (q.storeId) sp.set("storeId", q.storeId);
+  // ✅ store scoped
+  if (q.storeId) {
+    sp.set("storeId", q.storeId);
+  }
 
   const qs = sp.toString();
   return qs ? `?${qs}` : "";
@@ -48,34 +50,35 @@ function toQueryString(q?: AdminCustomersQuery) {
 export function useAdminCustomers(
   query: AdminCustomersQuery,
   session: Session | null,
-  axios: AxiosInstance
+  axios: AxiosInstance,
 ) {
+  const token = session?.backendTokens?.accessToken;
+
   return useQuery({
-    queryKey: ["admin", "customers", query],
-    enabled: !!session?.backendTokens?.accessToken,
+    queryKey: ["admin", "customers", query.storeId, query],
+    enabled: !!token && !!query.storeId, // ✅ only fetch when storeId exists
     queryFn: async (): Promise<AdminCustomerRow[]> => {
       const res = await axios.get(
-        `/api/admin/customers${toQueryString(query)}`
+        `/api/admin/customers${toQueryString(query)}`,
       );
       return res.data.data as AdminCustomerRow[];
     },
   });
 }
 
-// unchanged
 export function useAdminCustomerDetail(
   customerId: string | null,
   session: Session | null,
-  axios: AxiosInstance
+  axios: AxiosInstance,
 ) {
   const token = session?.backendTokens?.accessToken;
 
   return useQuery({
-    queryKey: ["customers", "detail", customerId, "bundle"],
+    queryKey: ["customers", "detail", customerId],
     enabled: !!customerId && !!token,
     queryFn: async () => {
-      const customerRes = await axios.get(`/api/admin/customers/${customerId}`);
-      return customerRes.data.data as CustomerDetail;
+      const res = await axios.get(`/api/admin/customers/${customerId}`);
+      return res.data.data as CustomerDetail;
     },
   });
 }
@@ -83,14 +86,16 @@ export function useAdminCustomerDetail(
 export function useAdminCustomersOnly(
   query: AdminCustomersQuery,
   session: Session | null,
-  axios: AxiosInstance
+  axios: AxiosInstance,
 ) {
+  const token = session?.backendTokens?.accessToken;
+
   return useQuery({
-    queryKey: ["admin", "customers", query],
-    enabled: !!session?.backendTokens?.accessToken,
+    queryKey: ["admin", "customers-only", query.storeId, query],
+    enabled: !!token && !!query.storeId, // ✅ enforce store scope
     queryFn: async (): Promise<AdminCustomerRow[]> => {
       const res = await axios.get(
-        `/api/admin/customers/only${toQueryString(query)}`
+        `/api/admin/customers/only${toQueryString(query)}`,
       );
       return res.data.data as AdminCustomerRow[];
     },

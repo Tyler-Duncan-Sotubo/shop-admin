@@ -3,9 +3,9 @@ import { getServerSession } from "next-auth/next";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 interface BackendTokens {
-  accessToken: string; // e.g. JWT string used for API calls
-  refreshToken: string; // e.g. refresh token string
-  expiresIn: number; // how many seconds until accessToken expires
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
 }
 
 interface CustomUser {
@@ -31,7 +31,7 @@ export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
-      credentials: {}, // no built‐in fields; we pass user+tokens manually at signIn()
+      credentials: {},
       async authorize(credentials: unknown) {
         const { user, backendTokens, permissions } = credentials as {
           user: string;
@@ -54,7 +54,7 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       // Initial sign-in
       if (user) {
         const u = user as CustomUser & { userId?: string | null };
@@ -72,7 +72,25 @@ export const authOptions: NextAuthOptions = {
 
         token.backendTokens = u.backendTokens;
         token.permissions = u.permissions ?? [];
-        token.accessTokenExpires = u.backendTokens.expiresIn;
+        token.accessTokenExpires =
+          Date.now() + u.backendTokens.expiresIn * 1000;
+
+        return token;
+      }
+
+      // Client-side useSession().update(...)
+      if (trigger === "update" && session?.backendTokens) {
+        const current = (token.backendTokens ?? {}) as Partial<BackendTokens>;
+        const next = session.backendTokens as BackendTokens;
+
+        token.backendTokens = {
+          ...current,
+          ...next,
+        };
+
+        if (next.expiresIn) {
+          token.accessTokenExpires = Date.now() + next.expiresIn * 1000;
+        }
 
         return token;
       }
@@ -81,10 +99,14 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ token, session }) {
-      session.user = token.user;
-      session.backendTokens = token.backendTokens;
-      session.permissions = token.permissions;
-      session.expires = new Date(token.accessTokenExpires).toISOString();
+      session.user = token.user as typeof session.user;
+      session.backendTokens = token.backendTokens as BackendTokens;
+      session.permissions = (token.permissions as string[]) ?? [];
+
+      session.expires = token.accessTokenExpires
+        ? new Date(token.accessTokenExpires as number).toISOString()
+        : session.expires;
+
       return session;
     },
   },

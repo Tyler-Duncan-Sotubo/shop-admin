@@ -20,6 +20,7 @@ import {
 import { Checkbox } from "@/shared/ui/checkbox"; // adjust to your shadcn path
 import { useCreateCustomer } from "../hooks/use-create-customer";
 import type { CreateCustomerPayload } from "../hooks/use-create-customer";
+import { useStoreScope } from "@/lib/providers/store-scope-provider";
 
 type Props = {
   open: boolean;
@@ -39,6 +40,7 @@ type FormValues = z.infer<typeof schema>;
 export function CreateCustomerModal({ open, onClose }: Props) {
   const [serverError, setServerError] = useState("");
   const { createCustomer } = useCreateCustomer();
+  const { activeStoreId } = useStoreScope();
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -71,6 +73,7 @@ export function CreateCustomerModal({ open, onClose }: Props) {
       lastName: values.lastName?.trim() ? values.lastName.trim() : undefined,
       phone: values.phone?.trim() ? values.phone.trim() : undefined,
       marketingOptIn: !!values.marketingOptIn,
+      storeId: activeStoreId,
     };
 
     // useCreateMutation expects setError/resetForm/onClose

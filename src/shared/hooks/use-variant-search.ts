@@ -16,7 +16,11 @@ export function useVariantSearch(storeId?: string | null) {
     queryKey: ["variants", "store", storeId, "search", search],
     enabled: !!storeId,
     queryFn: () =>
-      searchStoreVariantsApi(axios, { storeId: storeId!, search, limit: 50 }),
+      searchStoreVariantsApi(axios, {
+        storeId: storeId!,
+        search,
+        limit: 50,
+      }),
     staleTime: 30_000,
   });
 
@@ -24,12 +28,16 @@ export function useVariantSearch(storeId?: string | null) {
     () =>
       (query.data ?? []).map((v) => ({
         id: v.id,
+        title: v.title,
+        sku: v.sku ?? null,
+        productName: v.productName ?? null,
+        suggestedUnitPrice: v.suggestedUnitPrice ?? null,
+        imageUrl: v.imageUrl ?? null,
         label: `${v.productName ?? "Product"} • ${v.title}${
           v.sku ? ` • ${v.sku}` : ""
         }`,
-        unitPrice: v.unitPrice ?? null,
       })),
-    [query.data]
+    [query.data],
   );
 
   return { ...query, search, setSearch, options };

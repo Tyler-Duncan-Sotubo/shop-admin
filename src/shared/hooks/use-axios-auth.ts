@@ -13,29 +13,37 @@ const useAxiosAuth = () => {
     const requestIntercept = axiosInstance.interceptors.request.use(
       (config) => {
         if (!config.headers["Authorization"]) {
-          config.headers[
-            "Authorization"
-          ] = `Bearer ${session?.backendTokens?.accessToken}`;
+          config.headers["Authorization"] =
+            `Bearer ${session?.backendTokens?.accessToken}`;
         }
         return config;
       },
-      (error) => Promise.reject(error)
+      (error) => Promise.reject(error),
     );
 
     const responseIntercept = axiosInstance.interceptors.response.use(
       (response) => response,
       async (error) => {
         const prevRequest = error?.config;
-        if (error?.response?.status === 401 && !prevRequest?.sent) {
+
+        const status = error?.response?.status;
+
+        // Handle refresh flow
+        if (status === 401 && !prevRequest?.sent) {
           prevRequest.sent = true;
-          await refreshToken();
-          prevRequest.headers[
-            "Authorization"
-          ] = `Bearer ${session?.backendTokens.accessToken}`;
-          return axiosInstance(prevRequest);
+
+          try {
+            await refreshToken();
+            prevRequest.headers["Authorization"] =
+              `Bearer ${session?.backendTokens?.accessToken}`;
+            return axiosInstance(prevRequest);
+          } catch (refreshErr) {
+            return Promise.reject(refreshErr);
+          }
         }
+
         return Promise.reject(error);
-      }
+      },
     );
 
     return () => {

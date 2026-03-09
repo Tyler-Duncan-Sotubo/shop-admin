@@ -135,7 +135,6 @@ export const main: readonly MenuItem[] = [
   {
     title: "Sales",
     icon: <MdShoppingCart size={18} />,
-    link: "/sales/orders",
     permissions: [
       "billing.invoices.read",
       "billing.payments.read",
@@ -151,7 +150,7 @@ export const main: readonly MenuItem[] = [
         badgeKey: "ordersCount",
       },
       {
-        title: "Quote Requests",
+        title: "Quotes",
         link: "/sales/rfqs",
         icon: <FaReceipt size={18} />,
         permissions: ["quotes.read"],
@@ -222,7 +221,6 @@ export const main: readonly MenuItem[] = [
   // ✅ keep Content exactly as-is (per your request)
   {
     title: "Content",
-    link: "/content/files",
     icon: <FaFileAlt size={18} />,
     permissions: ["blog.posts.read"],
     subItems: [

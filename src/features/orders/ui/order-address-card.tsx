@@ -1,8 +1,11 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Button } from "@/shared/ui/button";
+import { FaRegEdit } from "react-icons/fa";
 
 type Address = {
+  customerAddressId?: string;
   firstName?: string;
   lastName?: string;
   email?: string;
@@ -62,16 +65,28 @@ export function OrderAddressCard({
   title,
   address,
   emptyText = "No address available.",
+  editable = false,
+  onEdit,
 }: {
   title: string;
   address: Address | null | undefined;
   emptyText?: string;
+  editable?: boolean;
+  onEdit?: () => void;
 }) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-4">
         <CardTitle className="text-lg">{title}</CardTitle>
+
+        {editable ? (
+          <Button type="button" variant="ghost" size="sm" onClick={onEdit}>
+            <FaRegEdit className="mr-2 h-4 w-4" />
+            Edit
+          </Button>
+        ) : null}
       </CardHeader>
+
       <CardContent>
         {address ? (
           <AddressBlock a={address} />

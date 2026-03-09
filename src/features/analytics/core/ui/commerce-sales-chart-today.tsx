@@ -107,8 +107,8 @@ export function CommerceSalesChartToday({
               (bucket === "15m"
                 ? "Today"
                 : bucket === "month"
-                ? "Last 12 months"
-                : "Daily")}
+                  ? "Last 12 months"
+                  : "Daily")}
           </CardDescription>
         </div>
       </div>

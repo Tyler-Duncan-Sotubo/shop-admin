@@ -26,7 +26,7 @@ function toQueryString(query?: InventoryOverviewQuery) {
 export function useGetInventoryOverview(
   query: InventoryOverviewQuery | null,
   session: Session | null,
-  axios: AxiosInstance
+  axios: AxiosInstance,
 ) {
   return useQuery({
     queryKey: [
@@ -45,19 +45,7 @@ export function useGetInventoryOverview(
 
       const url = `/api/inventory/overview${toQueryString(query)}`;
 
-      console.log("[useGetInventoryOverview] fetching", {
-        queryKeyStoreId: query.storeId,
-        queryKeyLocationId: query.locationId,
-        url,
-        query,
-      });
-
       const res = await axios.get(url);
-
-      console.log("[useGetInventoryOverview] response", {
-        count: res.data?.data?.length ?? 0,
-        sample: res.data?.data?.[0] ?? null,
-      });
 
       return res.data.data as InventoryOverviewRow[];
     },
@@ -67,14 +55,14 @@ export function useGetInventoryOverview(
 export function useGetStoreLocations(
   storeId: string | null,
   session: Session | null,
-  axios: AxiosInstance
+  axios: AxiosInstance,
 ) {
   return useQuery({
     queryKey: ["inventory", "store", storeId, "locations"],
     enabled: !!storeId && !!session?.backendTokens?.accessToken,
     queryFn: async (): Promise<StoreLocationRow[]> => {
       const res = await axios.get(
-        `/api/inventory/stores/${storeId}/locations/options`
+        `/api/inventory/stores/${storeId}/locations/options`,
       );
       return res.data.data as StoreLocationRow[];
     },

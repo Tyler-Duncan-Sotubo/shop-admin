@@ -10,6 +10,7 @@ export type CreateCustomerPayload = {
   lastName?: string;
   phone?: string;
   marketingOptIn?: boolean;
+  storeId?: string | null;
 };
 
 export type CreatedCustomerResponse = {

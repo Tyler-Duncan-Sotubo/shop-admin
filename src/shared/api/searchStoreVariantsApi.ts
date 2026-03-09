@@ -5,17 +5,19 @@ export type VariantSearchRow = {
   title: string;
   sku?: string | null;
   productName?: string | null;
-  unitPrice?: number | null; // default price suggestion
+  suggestedUnitPrice?: number | null;
   imageUrl?: string | null;
+  available?: number;
+  label?: string;
 };
 
 export async function searchStoreVariantsApi(
   axios: AxiosInstance,
-  params: { storeId: string; search?: string; limit?: number }
+  params: { storeId: string; search?: string; limit?: number },
 ): Promise<VariantSearchRow[]> {
   const res = await axios.get("/api/catalog/products/variants/store", {
     params,
   });
-  console.log("searchStoreVariantsApi response:", res.data);
+
   return (res.data.data ?? res.data) as VariantSearchRow[];
 }

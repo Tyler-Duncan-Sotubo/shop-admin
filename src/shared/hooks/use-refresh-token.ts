@@ -6,40 +6,48 @@ interface BackendTokens {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
+  accessTokenExpiresAt?: number;
 }
 
 export const useRefreshToken = () => {
   const { data: session, update } = useSession();
 
-  async function refreshToken() {
+  return async function refreshToken() {
+    const refresh = session?.backendTokens?.refreshToken;
+
+    if (!refresh) {
+      await signOut();
+      return null;
+    }
+
     const resp = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/refresh`,
       {
         method: "POST",
         headers: {
-          authorization: `Refresh ${session?.backendTokens?.refreshToken}`,
+          authorization: `Refresh ${refresh}`,
         },
-      }
+      },
     );
 
     if (!resp.ok) {
-      signOut();
+      await signOut();
+      return null;
     }
 
     const refreshedTokens: BackendTokens = await resp.json();
 
-    if (session) {
-      await update({
-        ...session,
-        backendTokens: {
-          ...session.backendTokens,
-          accessToken: refreshedTokens.accessToken,
-        },
-      });
-    } else {
-      signOut();
-    }
-  }
+    const nextTokens = {
+      accessToken: refreshedTokens.accessToken,
+      refreshToken: session.backendTokens.refreshToken,
+      expiresIn: refreshedTokens.expiresIn,
+      accessTokenExpiresAt: Date.now() + refreshedTokens.expiresIn * 1000,
+    };
 
-  return refreshToken;
+    await update({
+      backendTokens: nextTokens,
+    });
+
+    return nextTokens.accessToken;
+  };
 };

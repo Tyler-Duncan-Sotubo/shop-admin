@@ -18,6 +18,9 @@ import { quoteColumns } from "./quote-columns";
 
 import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
 import { QuotesMobileRow } from "./quotes-mobile-row";
+import { Button } from "@/shared/ui/button";
+import { Plus } from "lucide-react";
+import { CreateQuoteModal } from "./create-quote-modal";
 
 type QuoteTab = "all" | "new" | "in_progress" | "converted" | "archived";
 
@@ -31,6 +34,7 @@ const TAB_TO_STATUS: Record<QuoteTab, ListQuotesParams["status"]> = {
 
 export default function QuotesClient() {
   const { data: session, status: authStatus } = useSession();
+  const [open, setOpen] = useState(false);
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
 
@@ -79,7 +83,12 @@ export default function QuotesClient() {
         title="Quote Requests"
         description="View and manage customer quote requests."
         tooltip="New = just submitted. In progress = being handled. Converted = turned into an order/invoice. Archived = hidden from active work."
-      />
+      >
+        <Button onClick={() => setOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          New Quote
+        </Button>
+      </PageHeader>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as QuoteTab)}>
         <DataTable
@@ -135,6 +144,7 @@ export default function QuotesClient() {
           }
         />
       </Tabs>
+      <CreateQuoteModal open={open} onClose={() => setOpen(false)} />
     </section>
   );
 }

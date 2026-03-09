@@ -11,7 +11,7 @@ import type {
 
 export function useDashboardOverview(
   params: DashboardRangeParams,
-  session?: { backendTokens?: { accessToken?: string } } | null
+  session?: { backendTokens?: { accessToken?: string } } | null,
 ) {
   const axios = useAxiosAuth();
   const hasToken = Boolean(session?.backendTokens?.accessToken);
@@ -28,7 +28,6 @@ export function useDashboardOverview(
       const res = await axios.get("/api/analytics/dashboard/overview", {
         params: normalized,
       });
-      console.log("Dashboard overview response:", res.data);
       return res.data.data as DashboardOverview;
     },
     enabled: hasToken && !!normalized.from && !!normalized.to,
@@ -37,7 +36,7 @@ export function useDashboardOverview(
 
 export function useDashboardTopPages(
   params: DashboardRangeParams & { limit?: number },
-  session?: { backendTokens?: { accessToken?: string } } | null
+  session?: { backendTokens?: { accessToken?: string } } | null,
 ) {
   const axios = useAxiosAuth();
   const hasToken = Boolean(session?.backendTokens?.accessToken);
@@ -63,7 +62,7 @@ export function useDashboardTopPages(
 
 export function useDashboardLandingPages(
   params: DashboardRangeParams & { limit?: number },
-  session?: { backendTokens?: { accessToken?: string } } | null
+  session?: { backendTokens?: { accessToken?: string } } | null,
 ) {
   const axios = useAxiosAuth();
   const hasToken = Boolean(session?.backendTokens?.accessToken);

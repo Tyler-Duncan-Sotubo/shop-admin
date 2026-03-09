@@ -1,8 +1,8 @@
-/* eslint-disable react-hooks/rules-of-hooks */
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useEffectEvent, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -28,7 +28,6 @@ const isDivider = (
 const isLinkOrDescendant = (pathname: string, link?: string | null) =>
   !!link && (pathname === link || pathname.startsWith(link + "/"));
 
-// Badge rules
 const SALES_ORDERS_LINKS = new Set(["/sales/orders"]);
 const SALES_QUOTES_LINKS = new Set(["/sales/rfqs"]);
 
@@ -54,104 +53,62 @@ export default function AdminSidebar() {
 
   const salesTotalCount = ordersCount + quotesCount;
 
-  const userPermissions =
-    (session as any)?.user?.permissions ?? (session as any)?.permissions ?? [];
-
-  const filteredMenu = filterMenu(main, userPermissions);
-
-  const isInSalesSection = useMemo(() => {
-    return pathname === "/sales/orders" || pathname.startsWith("/sales/");
-  }, [pathname]);
-
-  const flatSubs = useMemo(
+  const userPermissions = useMemo(
     () =>
-      filteredMenu.flatMap((menu) =>
-        "subItems" in menu && (menu as any).subItems
-          ? (menu as any).subItems
-              .filter((s: any) => !s.name)
-              .map((sub: any) => ({ parent: menu, sub }))
-          : [],
-      ),
-    [filteredMenu],
+      (session as any)?.user?.permissions ??
+      (session as any)?.permissions ??
+      [],
+    [session],
   );
 
-  const activeSubMatch = useMemo(() => {
-    const matches = flatSubs.filter(({ sub }: any) =>
-      isLinkOrDescendant(pathname, sub.link),
-    );
+  const filteredMenu = useMemo(
+    () => filterMenu(main, userPermissions),
+    [userPermissions],
+  );
 
-    matches.sort(
-      (a: any, b: any) => (b.sub.link?.length ?? 0) - (a.sub.link?.length ?? 0),
-    );
+  const activeSectionTitle = useMemo(() => {
+    for (const item of filteredMenu) {
+      if (isDivider(item)) continue;
 
-    return matches[0] ?? null;
-  }, [flatSubs, pathname]);
+      const subItems = (item as any).subItems ?? [];
+      const hasActiveSub = subItems.some(
+        (sub: any) => !sub.name && isLinkOrDescendant(pathname, sub.link),
+      );
 
-  const activeSectionTitle = activeSubMatch?.parent?.title ?? null;
+      if (hasActiveSub) return item.title;
+    }
+
+    return null;
+  }, [filteredMenu, pathname]);
 
   const [openSection, setOpenSection] = useState<string | null>(
     activeSectionTitle,
   );
 
-  const [suppressedSection, setSuppressedSection] = useState<string | null>(
-    null,
-  );
-
-  const clearSuppressionOnActiveChange = useEffectEvent(
-    (nextActive: string | null) => {
-      setSuppressedSection((prev) => {
-        if (prev && prev !== nextActive) return null;
-        return prev;
-      });
-    },
-  );
-
   useEffect(() => {
-    clearSuppressionOnActiveChange(activeSectionTitle);
-  }, [activeSectionTitle]);
+    if (activeSectionTitle) {
+      setOpenSection(activeSectionTitle);
+      return;
+    }
 
-  const syncOpenSection = useEffectEvent((title: string | null) => {
-    if (!title) return;
-    if (suppressedSection === title) return;
-    setOpenSection(title);
-  });
-
-  useEffect(() => {
-    syncOpenSection(activeSectionTitle);
-  }, [activeSectionTitle]);
-
-  const toggleSection = (title: string) => {
-    setOpenSection((prev) => {
-      const willClose = prev === title;
-
-      if (willClose && activeSectionTitle === title) {
-        setSuppressedSection(title);
-        return null;
-      }
-
-      if (!willClose) {
-        setSuppressedSection((s) => (s === title ? null : s));
-        return title;
-      }
-
-      return null;
-    });
-  };
-
-  const closeAllSections = useEffectEvent(() => {
-    setOpenSection(null);
-    setSuppressedSection(null);
-  });
-
-  useEffect(() => {
     const activeTopNoSub = filteredMenu.find((m: any) => {
-      const hasSub = "subItems" in m && m.subItems?.length;
+      const hasSub = !!m?.subItems?.length;
       if (hasSub) return false;
       return isLinkOrDescendant(pathname, m.link);
     });
 
-    if (activeTopNoSub) closeAllSections();
-  }, [pathname, filteredMenu]);
+    if (activeTopNoSub) {
+      setOpenSection(null);
+    }
+  }, [activeSectionTitle, filteredMenu, pathname]);
+
+  const toggleSection = (title: string) => {
+    setOpenSection((prev) => (prev === title ? null : title));
+  };
+
+  const isInSalesSection = useMemo(() => {
+    return pathname === "/sales/orders" || pathname.startsWith("/sales/");
+  }, [pathname]);
 
   const getSubBadge = (link?: string | null) => {
     if (!link) return null;
@@ -175,7 +132,6 @@ export default function AdminSidebar() {
         overscrollBehavior: "contain",
       }}
     >
-      {/* Store selector */}
       <div className="py-1">
         <StoreSwitcher
           stores={stores}
@@ -204,6 +160,12 @@ export default function AdminSidebar() {
             ? isLinkOrDescendant(pathname, (item as any).link)
             : false;
 
+          const isActiveParent =
+            hasSub &&
+            ((item as any).subItems ?? []).some(
+              (sub: any) => !sub.name && isLinkOrDescendant(pathname, sub.link),
+            );
+
           const showTopBadge =
             item.title === "Sales"
               ? salesParentBadgeVisible(isSectionOpen)
@@ -211,14 +173,14 @@ export default function AdminSidebar() {
 
           const topBadge = showTopBadge ? salesTotalCount : null;
 
+          const topLevelClassName = `flex items-center gap-2 px-2 py-1.5 rounded transition-colors cursor-pointer ${
+            isActiveTopLevel || isActiveParent
+              ? "text-primary font-extrabold"
+              : "hover:bg-muted font-semibold text-gray-500"
+          }`;
+
           const TopLevelContent = (
-            <div
-              className={`flex items-center gap-2 px-2 py-1.5 rounded transition-colors cursor-pointer ${
-                isActiveTopLevel
-                  ? "text-primary font-extrabold"
-                  : "hover:bg-muted font-semibold text-gray-500"
-              }`}
-            >
+            <div className={topLevelClassName}>
               {(item as any).icon}
 
               <span className="flex items-center justify-between w-full text-[13px]">
@@ -229,39 +191,34 @@ export default function AdminSidebar() {
                   ) : null}
                 </span>
 
-                {hasSub && (
+                {hasSub ? (
                   <FiChevronDown
                     size={16}
                     className={`transition-transform ${
                       isSectionOpen ? "rotate-180" : ""
                     }`}
                   />
-                )}
+                ) : null}
               </span>
             </div>
           );
 
           return (
             <div key={item.title}>
-              {(item as any).link ? (
-                <Link
-                  href={(item as any).link}
-                  className="block"
-                  onClick={() => {
-                    if (hasSub) toggleSection(item.title);
-                    else closeAllSections();
-                  }}
+              {hasSub ? (
+                <button
+                  type="button"
+                  onClick={() => toggleSection(item.title)}
+                  className="block w-full text-left"
                 >
+                  {TopLevelContent}
+                </button>
+              ) : (item as any).link ? (
+                <Link href={(item as any).link} className="block">
                   {TopLevelContent}
                 </Link>
               ) : (
-                <div
-                  onClick={() => {
-                    if (hasSub) toggleSection(item.title);
-                  }}
-                >
-                  {TopLevelContent}
-                </div>
+                <div>{TopLevelContent}</div>
               )}
 
               {hasSub && isSectionOpen && (
@@ -277,8 +234,10 @@ export default function AdminSidebar() {
                     ) : (
                       <li key={sub.link}>
                         {(() => {
-                          const isActiveSub =
-                            !!sub.link && activeSubMatch?.sub.link === sub.link;
+                          const isActiveSub = isLinkOrDescendant(
+                            pathname,
+                            sub.link,
+                          );
 
                           const subBadge = getSubBadge(sub.link);
 

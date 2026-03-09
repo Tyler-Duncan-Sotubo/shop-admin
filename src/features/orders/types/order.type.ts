@@ -24,11 +24,11 @@ export type OrderEvent = {
 export type Order = {
   id: string;
   orderNumber: string;
-
+  storeId: string | null;
   status: OrderStatus;
   channel: OrderChannel;
   currency: string;
-
+  sourceType: string;
   deliveryMethodType?: "shipping" | "pickup" | null;
   shippingMethodLabel?: string | null;
 

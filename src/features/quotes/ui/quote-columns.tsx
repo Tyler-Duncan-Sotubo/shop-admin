@@ -4,7 +4,8 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/shared/ui/badge";
 import type { Quote, QuoteStatus } from "../types/quote.type";
-import { QuoteDetailsSheet } from "./quote-details-sheet";
+import Link from "next/link";
+import { Button } from "@/shared/ui/button";
 
 function StatusBadge({ status }: { status: QuoteStatus }) {
   if (status === "new") return <Badge>New</Badge>;
@@ -46,6 +47,12 @@ export const quoteColumns: ColumnDef<Quote>[] = [
   {
     id: "actions",
     header: "",
-    cell: ({ row }) => <QuoteDetailsSheet quoteId={row.original.id} />,
+    cell: ({ row }) => (
+      <Link href={`/sales/rfqs/${row.original.id}`}>
+        <Button size="sm" variant="outline">
+          View
+        </Button>
+      </Link>
+    ),
   },
 ];
