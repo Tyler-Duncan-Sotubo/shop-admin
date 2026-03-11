@@ -22,6 +22,7 @@ function StatusBadge({ status }: { status: PaymentStatus }) {
 const PAYMENT_METHOD_LABEL: Record<string, string> = {
   bank_transfer: "Bank Transfer",
   cash: "Cash",
+  gateway: "Gateway",
   card_manual: "Card",
   other: "Other",
 };
@@ -47,20 +48,13 @@ export const paymentColumns = (opts?: {
     },
   },
   {
-    id: "invoice",
-    header: () => "Invoice",
+    accessorKey: "provider",
+    header: ({ column }) => <SortableHeader column={column} title="Provider" />,
     cell: ({ row }) => {
-      const invoiceId = row.original.invoiceId;
-      if (!invoiceId) return "—";
-      return (
-        <Link
-          href={`/sales/invoices/${invoiceId}`}
-          className="text-primary underline"
-          onClick={(e) => e.stopPropagation()}
-        >
-          View
-        </Link>
-      );
+      const provider = row.original.provider;
+      return provider
+        ? provider.charAt(0).toUpperCase() + provider.slice(1)
+        : "—";
     },
   },
   {
@@ -81,12 +75,30 @@ export const paymentColumns = (opts?: {
     },
   },
   {
+    id: "invoice",
+    header: () => "Invoice",
+    cell: ({ row }) => {
+      const invoiceId = row.original.invoiceId;
+      if (!invoiceId) return "—";
+      return (
+        <Link
+          href={`/sales/invoices/${invoiceId}`}
+          className="text-primary underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          View
+        </Link>
+      );
+    },
+  },
+
+  {
     accessorKey: "amountMinor",
     header: ({ column }) => <SortableHeader column={column} title="Amount" />,
     cell: ({ row }) =>
       formatMoneyNGN(
         minorToMajor(row.original.amountMinor),
-        row.original.currency
+        row.original.currency,
       ),
   },
   {
