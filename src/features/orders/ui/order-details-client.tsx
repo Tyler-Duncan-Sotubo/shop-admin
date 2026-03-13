@@ -20,6 +20,7 @@ import { useState } from "react";
 import { AddManualOrderItemsModal } from "./add-manual-order-items-modal";
 import { useManualOrders } from "../hooks/use-manual-orders";
 import { EditOrderCustomerShippingModal } from "./edit-order-customer-shipping-modal";
+import { StockWarning } from "./stock-warning";
 
 function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
   if (status === "paid") return <Badge>Paid</Badge>;
@@ -33,12 +34,19 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   const { data: session, status: authStatus } = useSession();
   const axios = useAxiosAuth();
   const { data, isLoading } = useGetOrder(session, axios, orderId);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isOpen, setIsOpen] = useState(false);
   const [editCustomerShippingOpen, setEditCustomerShippingOpen] =
     useState(false);
 
-  const { createManualPayment } = useManualOrders(orderId);
+  const { createManualPayment, stockCheck } = useManualOrders(
+    orderId,
+    data?.status === "pending_payment" ? "Invoice synced" : "Invoice created",
+  );
+
+  const insufficientItems =
+    stockCheck.data?.items.filter((i) => !i.sufficient) ?? [];
 
   if (authStatus === "loading" || isLoading) return <Loading />;
   if (!data) return null;
@@ -47,7 +55,14 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   const billingOrShipping = order.billingAddress ?? order.shippingAddress;
 
   const handleCreateManualPayment = () => {
-    createManualPayment();
+    try {
+      setIsSubmitting(true);
+      createManualPayment();
+    } catch (error) {
+      console.error("Error creating manual payment:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -58,18 +73,34 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
         tooltip="On hold = pending payment. Completed = fulfilled."
       >
         {order.channel === "manual" &&
-          order.status !== "pending_payment" &&
-          order.status !== "paid" && (
+          order.status !== "paid" &&
+          order.status !== "fulfilled" &&
+          order.status !== "cancelled" && (
             <>
-              {order.sourceType === "manual" && (
+              {(order.sourceType === "manual" ||
+                order.sourceType === "quote") && (
                 <Button onClick={() => setIsOpen(true)} variant="clean">
                   <FaRegEdit />
                   Add Item
                 </Button>
               )}
-              <Button onClick={handleCreateManualPayment} variant="clean">
-                Convert to Invoice
-              </Button>
+
+              {order.status === "draft" && (
+                <Button onClick={handleCreateManualPayment} variant="clean">
+                  Convert to Invoice
+                </Button>
+              )}
+
+              {order.status === "pending_payment" && (
+                <Button
+                  onClick={handleCreateManualPayment}
+                  variant="clean"
+                  isLoading={isSubmitting}
+                  disabled={isSubmitting}
+                >
+                  Sync Invoice
+                </Button>
+              )}
             </>
           )}
       </PageHeader>
@@ -184,6 +215,10 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
         </div>
 
         <div className="space-y-6">
+          <StockWarning
+            insufficientItems={insufficientItems}
+            fulfillmentModel={stockCheck.data?.fulfillmentModel}
+          />
           <OrderActionsCard order={order} session={session} axios={axios} />
           <OrderAuditCard events={order.events ?? []} />
         </div>

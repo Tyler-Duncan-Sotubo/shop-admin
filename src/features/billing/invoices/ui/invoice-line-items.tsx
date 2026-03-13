@@ -136,24 +136,7 @@ export function InvoiceLineItemsTable({
                   </TableCell>
 
                   <TableCell>
-                    <Input
-                      value={String(quantity)}
-                      disabled={disabledRow}
-                      className="h-9 bg-white"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      onChange={(e) => {
-                        const q = Number(e.target.value);
-
-                        setDraftEdits((s) => ({
-                          ...s,
-                          [l.id]: { ...s[l.id], quantity: q },
-                        }));
-
-                        if (!disabledRow)
-                          debouncedSaveLine(l.id, { quantity: q });
-                      }}
-                    />
+                    <span className="text-sm">{quantity}</span>
                   </TableCell>
 
                   <TableCell>

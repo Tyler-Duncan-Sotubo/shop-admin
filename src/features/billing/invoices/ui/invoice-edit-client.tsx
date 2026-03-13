@@ -17,8 +17,6 @@ import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { useUpdateInvoiceDraft } from "../hooks/use-invoices";
 import { useGetTaxes } from "@/features/settings/tax-settings/hooks/use-taxes";
 import { InvoiceLineItemsTable } from "./invoice-line-items";
-import { DownloadInvoicePdfButton } from "./download-invoice-pdf-button";
-import { ShareInvoiceLinkButton } from "./share-invoice-link-button";
 import { RecordPaymentModal } from "./record-payment-modal";
 import { InvoicePaymentsAccordion } from "../../payments/ui/invoice-payments-accordion";
 
@@ -90,7 +88,7 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
   const { data: taxes = [] } = useGetTaxes(
     { active: true, storeId: activeStoreId },
     session,
-    axios
+    axios,
   );
 
   const inv = data?.invoice as any;
@@ -138,7 +136,7 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
         tooltip="Draft invoices are editable. Issued invoices are locked."
       >
         <div className="flex gap-2">
-          {isDraft ? (
+          {isDraft && (
             <>
               <Button
                 variant="clean"
@@ -167,25 +165,6 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
                 <span className="ml-2">Issue invoice</span>
               </Button>
             </>
-          ) : (
-            <div className="flex gap-2">
-              {inv.balanceMinor > 0 && (
-                <Button onClick={() => setOpen(true)}>Record payment</Button>
-              )}
-              <DownloadInvoicePdfButton
-                invoiceId={invoiceId}
-                session={session}
-                axios={axios}
-                storeId={activeStoreId}
-                invoiceStatus={inv.status}
-              />
-
-              <ShareInvoiceLinkButton
-                invoiceId={invoiceId}
-                session={session}
-                axios={axios}
-              />
-            </div>
           )}
         </div>
       </PageHeader>

@@ -8,20 +8,23 @@ import {
   VariantSearchRow,
 } from "../api/searchStoreVariantsApi";
 
-export function useVariantSearch(storeId?: string | null) {
+export function useVariantSearch(
+  storeId?: string | null,
+  requireStock?: boolean,
+) {
   const axios = useAxiosAuth();
   const [search, setSearch] = useState("");
 
   const query = useQuery<VariantSearchRow[]>({
-    queryKey: ["variants", "store", storeId, "search", search],
+    queryKey: ["variants", "store", storeId, "search", search, requireStock],
     enabled: !!storeId,
     queryFn: () =>
       searchStoreVariantsApi(axios, {
         storeId: storeId!,
         search,
         limit: 50,
+        requireStock,
       }),
-    staleTime: 30_000,
   });
 
   const options = useMemo(
@@ -33,11 +36,12 @@ export function useVariantSearch(storeId?: string | null) {
         productName: v.productName ?? null,
         suggestedUnitPrice: v.suggestedUnitPrice ?? null,
         imageUrl: v.imageUrl ?? null,
+        available: v.available ?? 0,
         label: `${v.productName ?? "Product"} • ${v.title}${
           v.sku ? ` • ${v.sku}` : ""
-        }`,
+        }${!requireStock ? ` • ${v.available ?? 0} in stock` : ""}`,
       })),
-    [query.data],
+    [query.data, requireStock],
   );
 
   return { ...query, search, setSearch, options };

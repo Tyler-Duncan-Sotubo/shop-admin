@@ -13,7 +13,12 @@ export type VariantSearchRow = {
 
 export async function searchStoreVariantsApi(
   axios: AxiosInstance,
-  params: { storeId: string; search?: string; limit?: number },
+  params: {
+    storeId: string;
+    search?: string;
+    limit?: number;
+    requireStock?: boolean;
+  },
 ): Promise<VariantSearchRow[]> {
   const res = await axios.get("/api/catalog/products/variants/store", {
     params,

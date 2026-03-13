@@ -13,6 +13,7 @@ import {
   FormLabel,
   FormMessage,
   FormControl,
+  FormDescription,
 } from "@/shared/ui/form";
 import {
   Select,
@@ -56,6 +57,7 @@ export function ConvertQuoteToOrderModal({
       currency: "NGN",
       channel: "manual",
       originInventoryLocationId: "",
+      fulfillmentModel: "payment_first", // default for quote-derived orders
       customerId: null,
       shippingAddress: null,
       billingAddress: null,
@@ -70,12 +72,11 @@ export function ConvertQuoteToOrderModal({
 
   useEffect(() => {
     if (!open) return;
-
-    // reset on open
     form.reset({
       currency: "NGN",
       channel: "manual",
       originInventoryLocationId: "",
+      fulfillmentModel: "payment_first",
       customerId: null,
       shippingAddress: null,
       billingAddress: null,
@@ -183,6 +184,34 @@ export function ConvertQuoteToOrderModal({
             )}
           />
 
+          {/* Fulfillment Model */}
+          <FormField
+            control={form.control}
+            name="fulfillmentModel"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel required>Fulfillment Model</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select fulfillment model" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="payment_first">Payment First</SelectItem>
+                    <SelectItem value="stock_first">Stock First</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  {field.value === "payment_first"
+                    ? "Client pays first, then you procure and fulfil. Stock is checked at fulfillment."
+                    : "Stock must be available before submitting for payment."}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           {/* Origin Inventory Location */}
           <FormField
             control={form.control}
@@ -212,13 +241,11 @@ export function ConvertQuoteToOrderModal({
                         <SelectItem key={loc.locationId} value={loc.locationId}>
                           {loc.name}
                         </SelectItem>
-                      )
+                      ),
                     )}
                   </SelectContent>
                 </Select>
-
                 <FormMessage />
-
                 {!locationsLoading &&
                   activeStoreId &&
                   locations.length === 0 && (

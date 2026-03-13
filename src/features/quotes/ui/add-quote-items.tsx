@@ -7,6 +7,8 @@ import { Input } from "@/shared/ui/input";
 import { useCreateMutation } from "@/shared/hooks/use-create-mutation";
 import { StoreVariantCombobox } from "@/shared/ui/store-variant-combobox";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
+import { Trash2, Plus } from "lucide-react";
+import { Separator } from "@/shared/ui/separator";
 
 type Props = {
   open: boolean;
@@ -31,7 +33,6 @@ export function AddQuoteItemsModal({ open, onClose, quoteId }: Props) {
   const { activeStoreId } = useStoreScope();
 
   const [lines, setLines] = useState<Line[]>([{ variantId: "", quantity: 1 }]);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -75,14 +76,7 @@ export function AddQuoteItemsModal({ open, onClose, quoteId }: Props) {
     setIsSubmitting(true);
 
     try {
-      await addItem(
-        {
-          quoteId,
-          items: cleaned,
-        },
-        setSubmitError,
-      );
-
+      await addItem({ quoteId, items: cleaned }, setSubmitError);
       setIsSubmitting(false);
       setSubmitError(null);
       setLines([{ variantId: "", quantity: 1 }]);
@@ -97,36 +91,39 @@ export function AddQuoteItemsModal({ open, onClose, quoteId }: Props) {
       open={open}
       onClose={onClose}
       mode="create"
-      title="Add quote items"
-      description="Add items to this quote."
+      title="Add items to quote"
+      description="Select variants and quantities to add to this quote."
       onSubmit={onSubmit}
       isSubmitting={isSubmitting}
-      submitLabel="Add items"
+      submitLabel={`Add ${lines.filter((l) => l.variantId).length || ""} item${lines.filter((l) => l.variantId).length === 1 ? "" : "s"}`}
+      contentClassName="max-w-3xl"
     >
-      <div className="space-y-2">
-        <div className="text-sm font-medium">Items</div>
+      <div className="space-y-4">
+        {/* column headers */}
+        <div className="hidden md:grid md:grid-cols-12 gap-2 px-1">
+          <div className="md:col-span-9 text-xs text-muted-foreground">
+            Variant
+          </div>
+          <div className="md:col-span-2 text-xs text-muted-foreground">Qty</div>
+          <div className="md:col-span-1" />
+        </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {lines.map((line, idx) => (
             <div
               key={idx}
-              className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end"
+              className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-muted/30 rounded-lg p-2"
             >
-              <div className="md:col-span-9 space-y-2">
-                <div className="text-xs text-muted-foreground">Variant</div>
-
+              <div className="md:col-span-9">
                 <StoreVariantCombobox
                   storeId={activeStoreId}
                   value={line.variantId}
-                  onChange={(variantId) => {
-                    setLine(idx, { variantId });
-                  }}
+                  onChange={(variantId) => setLine(idx, { variantId })}
+                  requireStock={false}
                 />
               </div>
 
-              <div className="md:col-span-2 space-y-2">
-                <div className="text-xs text-muted-foreground">Qty</div>
-
+              <div className="md:col-span-2">
                 <Input
                   type="number"
                   min={1}
@@ -134,20 +131,23 @@ export function AddQuoteItemsModal({ open, onClose, quoteId }: Props) {
                   onChange={(e) =>
                     setLine(idx, { quantity: Number(e.target.value) })
                   }
+                  className="h-9 text-sm"
+                  placeholder="Qty"
                 />
               </div>
 
               <div className="md:col-span-1 flex justify-end">
-                {lines.length > 1 ? (
+                {lines.length > 1 && (
                   <Button
                     type="button"
-                    variant="link"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => removeLine(idx)}
-                    className="p-0 text-red-500"
+                    className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
                   >
-                    Remove
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
-                ) : null}
+                )}
               </div>
             </div>
           ))}
@@ -155,17 +155,22 @@ export function AddQuoteItemsModal({ open, onClose, quoteId }: Props) {
 
         <Button
           type="button"
-          variant="clean"
+          variant="ghost"
+          size="sm"
           onClick={addLine}
-          className="h-10"
+          className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
         >
-          + Add item
+          <Plus className="h-3.5 w-3.5" />
+          Add another item
         </Button>
-      </div>
 
-      {submitError ? (
-        <div className="text-sm text-red-600">{submitError}</div>
-      ) : null}
+        {submitError && (
+          <>
+            <Separator />
+            <p className="text-xs text-destructive">{submitError}</p>
+          </>
+        )}
+      </div>
     </FormModal>
   );
 }

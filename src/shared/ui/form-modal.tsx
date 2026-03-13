@@ -10,6 +10,7 @@ import {
   DialogFooter,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
+import { cn } from "@/lib/utils";
 
 type FormModalProps = {
   open: boolean;
@@ -44,6 +45,7 @@ export function FormModal({
   submitLabel,
   cancelLabel = "Cancel",
   showFooter = true, // ✅ default
+  contentClassName,
   children,
 }: FormModalProps) {
   const finalSubmitLabel =
@@ -57,7 +59,9 @@ export function FormModal({
         if (!nextOpen) onClose();
       }}
     >
-      <DialogContent className={"bg-white max-w-lg w-[90vw]"}>
+      <DialogContent
+        className={cn("bg-white max-w-2xl w-[90vw]", contentClassName)}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
