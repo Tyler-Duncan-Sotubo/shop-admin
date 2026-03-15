@@ -40,16 +40,6 @@ export function PaymentsClient() {
     }
   };
 
-  const cols = useMemo(
-    () =>
-      paymentColumns({
-        receiptLoadingId,
-        onReceipt,
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [receiptLoadingId], // onReceipt stable enough; or include receiptPdf if lint complains
-  );
-
   if (isLoading) return <Loading />;
 
   return (
@@ -61,10 +51,13 @@ export function PaymentsClient() {
 
       <div className="mt-10">
         <DataTable
-          columns={cols}
+          columns={paymentColumns({
+            onReceipt,
+            receiptLoadingId,
+            payments, // 👈 pass rows so allZoho check works
+          })}
           data={payments}
           mobileRow={PaymentsMobileRow}
-          // ✅ pass receipt handler + loading to mobile row via table meta
           tableMeta={{
             onReceipt,
             receiptLoadingId,

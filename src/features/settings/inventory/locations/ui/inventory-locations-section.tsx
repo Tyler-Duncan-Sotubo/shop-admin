@@ -74,7 +74,7 @@ export default function InventoryLocationsSection() {
         },
         setSubmitError,
         undefined,
-        close
+        close,
       );
     } else if (modalMode === "edit" && selected) {
       await updateLocation(
@@ -93,7 +93,7 @@ export default function InventoryLocationsSection() {
           isActive: values.isActive,
         },
         setSubmitError,
-        close
+        close,
       );
     }
   };
@@ -115,6 +115,11 @@ export default function InventoryLocationsSection() {
 
   return (
     <section className="space-y-6 mt-6">
+      <PageHeader
+        title="Inventory Locations"
+        description="Manage warehouses and store locations where stock is held and tracked."
+      />
+
       {!hasLocations ? (
         <EmptyState
           icon={<FaWarehouse />}

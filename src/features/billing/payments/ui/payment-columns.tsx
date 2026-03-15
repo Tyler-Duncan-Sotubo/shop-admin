@@ -30,108 +30,122 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
 export const paymentColumns = (opts?: {
   onReceipt?: (paymentId: string) => void;
   receiptLoadingId?: string | null;
-}): ColumnDef<Payment>[] => [
-  {
-    accessorKey: "createdAt",
-    header: ({ column }) => <SortableHeader column={column} title="Date" />,
-    cell: ({ row }) => {
-      const v = row.original.createdAt;
-      return v ? format(new Date(v), "dd MMM yyyy") : "—";
-    },
-  },
-  {
-    accessorKey: "method",
-    header: ({ column }) => <SortableHeader column={column} title="Method" />,
-    cell: ({ row }) => {
-      const method = row.original.method;
-      return PAYMENT_METHOD_LABEL[method] ?? method ?? "—";
-    },
-  },
-  {
-    accessorKey: "provider",
-    header: ({ column }) => <SortableHeader column={column} title="Provider" />,
-    cell: ({ row }) => {
-      const provider = row.original.provider;
-      return provider
-        ? provider.charAt(0).toUpperCase() + provider.slice(1)
-        : "—";
-    },
-  },
-  {
-    id: "order",
-    header: () => "Order",
-    cell: ({ row }) => {
-      const orderId = row.original.orderId;
-      if (!orderId) return "—";
-      return (
-        <Link
-          href={`/sales/orders/${orderId}`}
-          className="text-primary underline"
-          onClick={(e) => e.stopPropagation()}
-        >
-          View
-        </Link>
-      );
-    },
-  },
-  {
-    id: "invoice",
-    header: () => "Invoice",
-    cell: ({ row }) => {
-      const invoiceId = row.original.invoiceId;
-      if (!invoiceId) return "—";
-      return (
-        <Link
-          href={`/sales/invoices/${invoiceId}`}
-          className="text-primary underline"
-          onClick={(e) => e.stopPropagation()}
-        >
-          View
-        </Link>
-      );
-    },
-  },
+  payments?: Payment[];
+}): ColumnDef<Payment>[] => {
+  // If every row is Zoho-managed, drop the actions column entirely
+  const allZoho =
+    (opts?.payments?.length ?? 0) > 0 &&
+    (opts?.payments?.every((p) => p.provider === "zoho") ?? false);
 
-  {
-    accessorKey: "amountMinor",
-    header: ({ column }) => <SortableHeader column={column} title="Amount" />,
-    cell: ({ row }) =>
-      formatMoneyNGN(
-        minorToMajor(row.original.amountMinor),
-        row.original.currency,
+  const cols: ColumnDef<Payment>[] = [
+    {
+      accessorKey: "createdAt",
+      header: ({ column }) => <SortableHeader column={column} title="Date" />,
+      cell: ({ row }) => {
+        const v = row.original.createdAt;
+        return v ? format(new Date(v), "dd MMM yyyy") : "—";
+      },
+    },
+    {
+      accessorKey: "method",
+      header: ({ column }) => <SortableHeader column={column} title="Method" />,
+      cell: ({ row }) => {
+        const method = row.original.method;
+        return PAYMENT_METHOD_LABEL[method] ?? method ?? "—";
+      },
+    },
+    {
+      accessorKey: "provider",
+      header: ({ column }) => (
+        <SortableHeader column={column} title="Provider" />
       ),
-  },
-  {
-    accessorKey: "reference",
-    header: () => "Reference",
-    cell: ({ row }) => row.original.reference ?? "—",
-  },
-  {
-    accessorKey: "status",
-    header: ({ column }) => <SortableHeader column={column} title="Status" />,
-    cell: ({ row }) => <StatusBadge status={row.original.status} />,
-  },
-  {
-    id: "actions",
-    header: () => "Actions",
-    cell: ({ row }) => {
-      const paymentId = row.original.id;
-      const loading = opts?.receiptLoadingId === paymentId;
-
-      return (
-        <Button
-          disabled={loading}
-          onClick={(e) => {
-            e.stopPropagation();
-            opts?.onReceipt?.(paymentId);
-          }}
-          isLoading={loading}
-          className="min-w-[120px] h-10"
-        >
-          <IoMdPrint />
-          Print Receipt
-        </Button>
-      );
+      cell: ({ row }) => {
+        const provider = row.original.provider;
+        return provider
+          ? provider.charAt(0).toUpperCase() + provider.slice(1)
+          : "—";
+      },
     },
-  },
-];
+    {
+      id: "order",
+      header: () => "Order",
+      cell: ({ row }) => {
+        const orderId = row.original.orderId;
+        if (!orderId) return "—";
+        return (
+          <Link
+            href={`/sales/orders/${orderId}`}
+            className="text-primary underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            View
+          </Link>
+        );
+      },
+    },
+    {
+      id: "invoice",
+      header: () => "Invoice",
+      cell: ({ row }) => {
+        const invoiceId = row.original.invoiceId;
+        if (!invoiceId) return "—";
+        return (
+          <Link
+            href={`/sales/invoices/${invoiceId}`}
+            className="text-primary underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            View
+          </Link>
+        );
+      },
+    },
+    {
+      accessorKey: "amountMinor",
+      header: ({ column }) => <SortableHeader column={column} title="Amount" />,
+      cell: ({ row }) =>
+        formatMoneyNGN(
+          minorToMajor(row.original.amountMinor),
+          row.original.currency,
+        ),
+    },
+    {
+      accessorKey: "reference",
+      header: () => "Reference",
+      cell: ({ row }) => row.original.reference ?? "—",
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => <SortableHeader column={column} title="Status" />,
+      cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    },
+  ];
+
+  if (!allZoho) {
+    cols.push({
+      id: "actions",
+      header: () => "Actions",
+      cell: ({ row }) => {
+        const paymentId = row.original.id;
+        const loading = opts?.receiptLoadingId === paymentId;
+
+        return (
+          <Button
+            disabled={loading}
+            onClick={(e) => {
+              e.stopPropagation();
+              opts?.onReceipt?.(paymentId);
+            }}
+            isLoading={loading}
+            className="min-w-[120px] h-10"
+          >
+            <IoMdPrint />
+            Print Receipt
+          </Button>
+        );
+      },
+    });
+  }
+
+  return cols;
+};

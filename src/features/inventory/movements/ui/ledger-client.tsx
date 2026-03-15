@@ -10,7 +10,7 @@ import { Input } from "@/shared/ui/input";
 import { useDebounceCallback } from "@/shared/hooks/use-debounce";
 import { DataTable } from "@/shared/ui/data-table";
 
-import { useGetLedger } from "../hooks/use-ledger";
+import { LedgerQueryParams, useGetLedger } from "../hooks/use-ledger";
 import type { LedgerTab } from "../constants/ledger-tabs";
 import { ledgerColumns } from "./ledger-columns";
 
@@ -28,7 +28,7 @@ export default function LedgerClient() {
   const { debounced } = useDebounceCallback((v: string) => setQ(v), 400);
 
   const params = useMemo(
-    () => ({
+    (): LedgerQueryParams => ({
       limit: 50,
       offset: 0,
       tab,
@@ -48,7 +48,17 @@ export default function LedgerClient() {
     { value: "deductions", label: "Deductions" },
     { value: "reservations", label: "Reservations" },
     { value: "releases", label: "Releases" },
+    { value: "transfers", label: "Transfers" },
+    { value: "adjustments", label: "Adjustments" },
   ];
+
+  const emptyDescription = () => {
+    if (q.trim()) return "Try a different search term.";
+    if (tab === "transfers") return "Completed transfers will appear here.";
+    if (tab === "adjustments")
+      return "Manual stock adjustments will appear here.";
+    return "Once orders reserve or deduct stock, movements will appear here.";
+  };
 
   return (
     <section className="space-y-6">
@@ -76,6 +86,8 @@ export default function LedgerClient() {
                   <TabsTrigger value="deductions">Deductions</TabsTrigger>
                   <TabsTrigger value="reservations">Reservations</TabsTrigger>
                   <TabsTrigger value="releases">Releases</TabsTrigger>
+                  <TabsTrigger value="transfers">Transfers</TabsTrigger>
+                  <TabsTrigger value="adjustments">Adjustments</TabsTrigger>
                 </TabsList>
               </div>
             </>
@@ -98,11 +110,7 @@ export default function LedgerClient() {
         {!isLoading && rows.length === 0 ? (
           <EmptyState
             title={q.trim() ? "No results" : "No ledger movements"}
-            description={
-              q.trim()
-                ? "Try a different search term."
-                : "Once orders reserve or deduct stock, movements will appear here."
-            }
+            description={emptyDescription()}
           />
         ) : null}
       </Tabs>

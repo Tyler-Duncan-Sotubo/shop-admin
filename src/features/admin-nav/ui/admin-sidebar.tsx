@@ -124,7 +124,7 @@ export default function AdminSidebar() {
 
   return (
     <aside
-      className="md:fixed hidden left-0 z-40 bg-white border-r p-2 md:flex flex-col overflow-y-auto no-scrollbar w-[14.5%]"
+      className="md:fixed hidden left-0 z-40 bg-white border-r p-2 md:flex flex-col overflow-y-auto no-scrollbar w-[180px]"
       style={{
         top: TOPBAR_HEIGHT,
         height: `calc(100dvh - ${TOPBAR_HEIGHT})`,

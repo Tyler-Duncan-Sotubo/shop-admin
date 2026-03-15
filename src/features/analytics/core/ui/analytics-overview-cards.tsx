@@ -35,8 +35,8 @@ function Delta({
   const cls = good
     ? "text-emerald-600"
     : isZero
-    ? "text-muted-foreground"
-    : "text-red-600";
+      ? "text-muted-foreground"
+      : "text-red-600";
 
   return (
     <div className={`flex items-center gap-1 text-xs font-semibold ${cls}`}>
@@ -54,7 +54,7 @@ function Stat({
   label,
   value,
   icon,
-  cardBg,
+  iconColor,
   deltaPct,
   invertDeltaGood,
   isLoading,
@@ -62,36 +62,26 @@ function Stat({
   label: string;
   value: string;
   icon: React.ReactNode;
-
-  iconBg: string;
-  cardBg?: string;
-
+  iconColor: string;
   deltaPct: number | null;
   invertDeltaGood?: boolean;
   isLoading?: boolean;
 }) {
   return (
-    <div className={`rounded-xl p-4 ${cardBg ?? "bg-background"}`}>
-      {/* Top: icon + label */}
-      <div className="flex items-center gap-2">
-        <div
-          className={`flex h-5 w-5 items-center justify-center rounded-full`}
-        >
-          <div className="text-black">{icon}</div>
-        </div>
-
-        <div className="text-xs font-semibold text-muted-foreground">
+    <div className="rounded-xl border bg-white p-4 h-[110px] flex flex-col justify-between">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-medium text-muted-foreground">
           {label}
-        </div>
+        </span>
+        <span className={iconColor}>{icon}</span>
       </div>
 
-      {/* Value + delta */}
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           {isLoading ? (
             <Skeleton className="h-5 w-24" />
           ) : (
-            <div className="text-lg font-bold">{value}</div>
+            <div className="text-lg font-bold text-foreground">{value}</div>
           )}
         </div>
 
@@ -124,39 +114,32 @@ export function AnalyticsOverviewCards({
       <Stat
         label="Page views"
         value={pageViews}
-        icon={<FiEye size={18} />}
-        iconBg="bg-blue-600"
-        cardBg="bg-blue-50"
+        icon={<FiEye size={14} />}
+        iconColor="text-blue-500"
         deltaPct={deltas?.pageViews?.changePct ?? null}
         isLoading={isLoading}
       />
-
       <Stat
         label="Visits"
         value={visits}
-        icon={<FiUsers size={18} />}
-        iconBg="bg-emerald-600"
-        cardBg="bg-emerald-50"
+        icon={<FiUsers size={14} />}
+        iconColor="text-emerald-500"
         deltaPct={deltas?.visits?.changePct ?? null}
         isLoading={isLoading}
       />
-
       <Stat
         label="Pages / visit"
         value={pagesPerVisit}
-        icon={<FiLayers size={18} />}
-        iconBg="bg-violet-600"
-        cardBg="bg-violet-50"
+        icon={<FiLayers size={14} />}
+        iconColor="text-violet-500"
         deltaPct={deltas?.pagesPerVisit?.changePct ?? null}
         isLoading={isLoading}
       />
-
       <Stat
         label="Bounce rate"
         value={bounceRate}
-        icon={<FiCornerDownLeft size={18} />}
-        iconBg="bg-amber-600"
-        cardBg="bg-amber-50"
+        icon={<FiCornerDownLeft size={14} />}
+        iconColor="text-amber-500"
         deltaPct={deltas?.bounceRate?.changePct ?? null}
         invertDeltaGood
         isLoading={isLoading}

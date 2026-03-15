@@ -46,6 +46,6 @@ export function useOrderCountsForTabs(
     onHold: queries[2].data ?? 0,
     paid: queries[3].data ?? 0,
     fulfilled: queries[4].data ?? 0,
-    cancelled: queries[4].data ?? 0,
+    cancelled: queries[5].data ?? 0,
   };
 }

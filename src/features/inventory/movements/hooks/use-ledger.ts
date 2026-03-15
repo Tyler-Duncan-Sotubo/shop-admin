@@ -5,12 +5,17 @@ import type {
   LedgerListResponse,
   ListLedgerParams,
 } from "../types/ledger.type";
+import type { LedgerTab } from "../constants/ledger-tabs";
 import { LEDGER_TAB_TO_TYPES } from "../constants/ledger-tabs";
+
+export type LedgerQueryParams = Omit<ListLedgerParams, "tab"> & {
+  tab?: LedgerTab;
+};
 
 export function useGetLedger(
   session: Session | null,
   axios: AxiosInstance,
-  params: ListLedgerParams
+  params: LedgerQueryParams,
 ) {
   const enabled = !!session?.backendTokens?.accessToken;
 
@@ -20,8 +25,6 @@ export function useGetLedger(
     queryFn: async (): Promise<LedgerListResponse> => {
       const types = params.tab ? LEDGER_TAB_TO_TYPES[params.tab] : undefined;
 
-      // If tab maps to multiple types, we’ll request “all” and filter client-side
-      // OR you can add backend support for `types[]=...` later.
       const res = await axios.get("/api/inventory/movements", {
         params: {
           limit: params.limit ?? 50,
@@ -29,21 +32,12 @@ export function useGetLedger(
           locationId: params.locationId || undefined,
           orderId: params.orderId || undefined,
           q: params.q || undefined,
-          // backend currently supports `type` only (single); keep undefined for multi
+          // pass multiple types as repeated query params: ?type[]=fulfill&type[]=pos_deduct
+          "type[]": types ?? undefined,
         },
       });
 
-      const data = res.data.data as LedgerListResponse;
-
-      if (!types) return data;
-
-      return {
-        ...data,
-        rows: data.rows.filter((r) => types.includes(r.type)),
-        // count is not perfect when filtering client-side
-        // (optional: if you want perfect counts, we’ll extend backend to accept types[])
-        count: data.rows.filter((r) => types.includes(r.type)).length,
-      };
+      return res.data.data as LedgerListResponse;
     },
   });
 }

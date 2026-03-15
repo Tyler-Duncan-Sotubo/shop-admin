@@ -6,9 +6,23 @@ import type { InventoryLedgerRow } from "../types/ledger.type";
 
 function TypeBadge({ type }: { type: string }) {
   if (type === "fulfill" || type === "pos_deduct")
-    return <Badge>Deducted</Badge>;
+    return <Badge variant="destructive">Deducted</Badge>;
   if (type === "reserve") return <Badge variant="secondary">Reserved</Badge>;
-  if (type === "release") return <Badge variant="secondary">Released</Badge>;
+  if (type === "release") return <Badge variant="outline">Released</Badge>;
+  if (type === "transfer_out")
+    return <Badge variant="outline">Transfer Out</Badge>;
+  if (type === "transfer_in")
+    return (
+      <Badge className="bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-100">
+        Transfer In
+      </Badge>
+    );
+  if (type === "adjustment")
+    return (
+      <Badge className="bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-100">
+        Adjustment
+      </Badge>
+    );
   return <Badge variant="secondary">{type}</Badge>;
 }
 
@@ -65,17 +79,29 @@ export const ledgerColumns = (): ColumnDef<InventoryLedgerRow>[] => [
   },
   {
     id: "deltaAvailable",
-    header: "Available",
-    cell: ({ row }) => <Delta n={Number(row.original.deltaAvailable ?? 0)} />,
+    header: "Available Δ",
+    cell: ({ row }) => {
+      const n = Number(row.original.deltaAvailable ?? 0);
+      if (n === 0) return <span className="text-muted-foreground">—</span>;
+      return <Delta n={n} />;
+    },
   },
   {
     id: "deltaReserved",
-    header: "Reserved",
-    cell: ({ row }) => <Delta n={Number(row.original.deltaReserved ?? 0)} />,
+    header: "Reserved Δ",
+    cell: ({ row }) => {
+      const n = Number(row.original.deltaReserved ?? 0);
+      if (n === 0) return <span className="text-muted-foreground">—</span>;
+      return <Delta n={n} />;
+    },
   },
   {
     accessorKey: "note",
     header: "Note",
-    cell: ({ row }) => row.original.note ?? "—",
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">
+        {row.original.note ?? "—"}
+      </span>
+    ),
   },
 ];

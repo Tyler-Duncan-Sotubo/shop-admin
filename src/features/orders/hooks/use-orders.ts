@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "next-auth";
 import type { AxiosError, AxiosInstance } from "axios";
@@ -89,8 +90,17 @@ export function useFulfillOrder(session: Session | null, axios: AxiosInstance) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await axios.post(`/api/orders/${id}/fulfill`);
-      return res.data.data;
+      try {
+        const res = await axios.post(`/api/orders/${id}/fulfill`);
+        return res.data.data;
+      } catch (err) {
+        const e = err as AxiosError<any>;
+        const msg =
+          e.response?.data?.error?.message ??
+          e.response?.data?.message ??
+          e.message;
+        throw new Error(msg); // 👈 throw here, not in onError
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });

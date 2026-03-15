@@ -9,27 +9,22 @@ import { getServerAuthSession } from "@/lib/auth/auth-options";
 const Layout = async ({ children }: { children: React.ReactNode }) => {
   const session = await getServerAuthSession();
 
-  // 🚫 No session → send user to homepage
   if (!session) {
     redirect("/");
   }
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Fixed full-width nav */}
       <AdminTopNav />
 
-      {/* Push content under fixed nav */}
       <div className="pt-18">
-        {/* Fixed sidebar */}
         <AdminSidebar />
 
-        {/* Main area */}
-        <div className="w-full md:ml-[14.5%] md:w-[calc(100%-14.5%)]">
+        <div className="w-full md:ml-[180px] md:w-[calc(100%-180px)]">
           <main className="min-h-[calc(100vh-4.5rem)]">
             <ScrollToTop />
 
-            <div className="px-3 py-3 pb-20 sm:px-6 sm:pb-10">
+            <div className="px-3 py-3 pb-20 sm:px-5 sm:pb-10">
               <div>{children}</div>
             </div>
 

@@ -27,13 +27,14 @@ export function OrderActionsCard({
   const payMut = usePayOrder(session, axios);
   const cancelMut = useCancelOrder(session, axios);
   const fulfillMut = useFulfillOrder(session, axios);
+  const fulfillError = fulfillMut.error as Error | null;
 
   const isMutating =
     payMut.isPending || cancelMut.isPending || fulfillMut.isPending;
 
   const cancelError = cancelMut.isError
-    ? (cancelMut.error as any)?.response?.data?.error?.message ??
-      "Unable to cancel order"
+    ? ((cancelMut.error as any)?.response?.data?.error?.message ??
+      "Unable to cancel order")
     : null;
 
   const canCancel = order.status === "pending_payment";
@@ -92,6 +93,7 @@ export function OrderActionsCard({
           description="This will fulfill the order (reserved → deducted) and mark it as fulfilled."
           confirmLabel="Yes, fulfill"
           isLoading={fulfillMut.isPending}
+          error={fulfillError?.message} // 👈 pass error down
           onConfirm={() =>
             fulfillMut.mutate(order.id, {
               onSuccess: () => setOpenFulfill(false),
