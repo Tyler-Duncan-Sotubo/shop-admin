@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { fetchStoreLocations } from "../api/store-locations.api";
-import { InventoryLocation } from "@/features/inventory/locations/types/inventory-location.type";
+import { InventoryLocation } from "@/features/settings/inventory/locations/types/inventory-location.type";
 
 export function useStoreLocations(storeId: string) {
   const { data: session } = useSession();
