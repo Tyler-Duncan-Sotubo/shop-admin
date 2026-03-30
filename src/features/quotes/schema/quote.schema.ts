@@ -12,6 +12,7 @@ export const quoteItemSchema = z.object({
 
 export const createQuoteSchema = z.object({
   storeId: z.string("Store is required"),
+  customerName: z.string().min(1, "Customer name is required"), // ← add
   customerEmail: z.email("Valid email is required"),
   customerNote: z.string().nullable(),
 });

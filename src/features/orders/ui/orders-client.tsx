@@ -64,6 +64,38 @@ export default function OrdersClient() {
     },
   ];
 
+  const EMPTY_STATE: Record<OrderTab, { title: string; description: string }> =
+    {
+      draft: {
+        title: "No draft orders",
+        description:
+          "Manually created orders that haven't been submitted yet will appear here.",
+      },
+      on_hold: {
+        title: "No orders on hold",
+        description: "Unpaid orders waiting for payment will appear here.",
+      },
+      paid: {
+        title: "No paid orders",
+        description: "Orders with confirmed payment will appear here.",
+      },
+      fulfilled: {
+        title: "No fulfilled orders",
+        description: "Shipped or delivered orders will appear here.",
+      },
+      cancelled: {
+        title: "No cancelled orders",
+        description: "Cancelled orders will appear here.",
+      },
+      all: {
+        title: "No orders yet",
+        description:
+          "Orders will appear here once customers start placing them.",
+      },
+    };
+
+  const empty = EMPTY_STATE[tab];
+
   return (
     <section className="space-y-6 w-full">
       <PageHeader
@@ -81,6 +113,11 @@ export default function OrdersClient() {
           filterKey="orderNumber"
           filterPlaceholder="Search by order #, id, address..."
           mobileRow={OrdersMobileRow}
+          emptyState={{
+            title: empty.title,
+            description: empty.description,
+            action: <CreateManualOrderButton />,
+          }}
           toolbarLeft={
             <>
               {/* Mobile dropdown, desktop scroll tabs (recommended) */}

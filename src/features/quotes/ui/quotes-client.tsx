@@ -12,11 +12,9 @@ import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import type { ListQuotesParams, Quote } from "../types/quote.type";
 import { useGetQuotes } from "../hooks/use-quotes";
 import { useQuoteCountsForTabs } from "../hooks/use-quotes-count";
-
 import { DataTable } from "@/shared/ui/data-table";
 import { quoteColumns } from "./quote-columns";
-
-import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
+import { FilterChips } from "@/shared/ui/filter-chips";
 import { QuotesMobileRow } from "./quotes-mobile-row";
 import { Button } from "@/shared/ui/button";
 import { Plus } from "lucide-react";
@@ -30,6 +28,29 @@ const TAB_TO_STATUS: Record<QuoteTab, ListQuotesParams["status"]> = {
   in_progress: "in_progress",
   converted: "converted",
   archived: "archived",
+};
+
+const EMPTY_STATE: Record<QuoteTab, { title: string; description: string }> = {
+  new: {
+    title: "No new quote requests",
+    description: "New quote requests submitted by customers will appear here.",
+  },
+  in_progress: {
+    title: "Nothing in progress",
+    description: "Quotes you're actively working on will appear here.",
+  },
+  converted: {
+    title: "No converted quotes yet",
+    description: "Quotes turned into orders or invoices will appear here.",
+  },
+  archived: {
+    title: "No archived quotes",
+    description: "Quotes you've archived will appear here.",
+  },
+  all: {
+    title: "No quote requests yet",
+    description: "Quote requests submitted by customers will appear here.",
+  },
 };
 
 export default function QuotesClient() {
@@ -58,24 +79,7 @@ export default function QuotesClient() {
   if (authStatus === "loading") return <Loading />;
 
   const rows: Quote[] = data?.rows ?? [];
-
-  const chips: FilterChip<QuoteTab>[] = [
-    { value: "new", label: "New", count: counts.new },
-    { value: "in_progress", label: "In progress", count: counts.inProgress },
-    {
-      value: "converted",
-      label: "Converted",
-      count: counts.converted,
-      showZero: false,
-    },
-    {
-      value: "archived",
-      label: "Archived",
-      count: counts.archived,
-      showZero: false,
-    },
-    { value: "all", label: "All", count: counts.all },
-  ];
+  const empty = EMPTY_STATE[tab];
 
   return (
     <section className="space-y-6">
@@ -97,28 +101,53 @@ export default function QuotesClient() {
           filterKey="customerEmail"
           filterPlaceholder="Search by email, id..."
           mobileRow={QuotesMobileRow}
+          emptyState={{
+            title: empty.title,
+            description: empty.description,
+            action: (
+              <Button size="sm" onClick={() => setOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                New Quote
+              </Button>
+            ),
+          }}
           toolbarLeft={
             <>
-              {/* ✅ Mobile: Filter chips */}
               <FilterChips<QuoteTab>
                 value={tab}
                 onChange={setTab}
-                chips={chips}
+                chips={[
+                  { value: "new", label: "New", count: counts.new },
+                  {
+                    value: "in_progress",
+                    label: "In progress",
+                    count: counts.inProgress,
+                  },
+                  {
+                    value: "converted",
+                    label: "Converted",
+                    count: counts.converted,
+                    showZero: false,
+                  },
+                  {
+                    value: "archived",
+                    label: "Archived",
+                    count: counts.archived,
+                    showZero: false,
+                  },
+                  { value: "all", label: "All", count: counts.all },
+                ]}
                 wrap
-                // or: scrollable
               />
 
-              {/* ✅ Desktop: Tabs */}
               <div className="hidden sm:block">
                 <TabsList>
                   <TabsTrigger value="new">
                     <TabLabel label="New" count={counts.new} />
                   </TabsTrigger>
-
                   <TabsTrigger value="in_progress">
                     <TabLabel label="In progress" count={counts.inProgress} />
                   </TabsTrigger>
-
                   <TabsTrigger value="converted">
                     <TabLabel
                       label="Converted"
@@ -126,7 +155,6 @@ export default function QuotesClient() {
                       showZero={false}
                     />
                   </TabsTrigger>
-
                   <TabsTrigger value="archived">
                     <TabLabel
                       label="Archived"
@@ -143,6 +171,7 @@ export default function QuotesClient() {
           }
         />
       </Tabs>
+
       <CreateQuoteModal open={open} onClose={() => setOpen(false)} />
     </section>
   );

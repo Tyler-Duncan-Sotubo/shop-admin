@@ -17,6 +17,18 @@ function StatusBadge({ status }: { status: QuoteStatus }) {
 
 export const quoteColumns: ColumnDef<Quote>[] = [
   {
+    accessorKey: "customerName",
+    header: "Customer",
+    cell: ({ row }) => {
+      const q = row.original;
+      return (
+        <div className="flex flex-col">
+          <span className="font-medium">{q.customerName}</span>
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "customerEmail",
     header: "Customer",
     cell: ({ row }) => {

@@ -38,6 +38,7 @@ export function CreateQuoteModal({ open, onClose }: Props) {
     resolver: zodResolver(createQuoteSchema),
     defaultValues: {
       storeId: activeStoreId ?? "",
+      customerName: "", // ← add
       customerEmail: "",
       customerNote: "",
     },
@@ -78,6 +79,19 @@ export function CreateQuoteModal({ open, onClose }: Props) {
       submitLabel="Create quote"
     >
       <Form {...form}>
+        <FormField
+          control={form.control}
+          name="customerName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Customer name</FormLabel>
+              <FormControl>
+                <Input placeholder="John Smith" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         {/* Email */}
         <FormField
           control={form.control}

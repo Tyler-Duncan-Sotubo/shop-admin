@@ -61,6 +61,12 @@ interface DataTableProps<TData, TValue> {
   hideTableOnMobile?: boolean;
 
   tableMeta?: Record<string, unknown>;
+
+  emptyState?: {
+    title?: string;
+    description?: string;
+    action?: React.ReactNode; // a Button or Link
+  };
 }
 
 export function DataTable<TData, TValue>({
@@ -81,6 +87,7 @@ export function DataTable<TData, TValue>({
   mobileRow: MobileRow,
   hideTableOnMobile = false,
   tableMeta,
+  emptyState,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -176,11 +183,15 @@ export function DataTable<TData, TValue>({
                 ))}
               </div>
             ) : (
-              <div className="p-6 text-center text-muted-foreground">
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <SlSocialDropbox size={56} />
-                  <span className="text-sm">No record found</span>
-                </div>
+              <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground p-5">
+                <SlSocialDropbox size={40} />
+                <p className="text-xs font-medium text-foreground">
+                  {emptyState?.title ?? "No records found"}
+                </p>
+                {emptyState?.description && (
+                  <p className="text-xs max-w-lg">{emptyState.description}</p>
+                )}
+                {emptyState?.action}
               </div>
             )}
           </div>
@@ -249,11 +260,19 @@ export function DataTable<TData, TValue>({
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="h-40 text-center"
+                    className="h-50 text-center"
                   >
-                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                      <SlSocialDropbox size={70} />
-                      <span className="text-sm">No record found</span>
+                    <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                      <SlSocialDropbox size={40} />
+                      <p className="text-sm font-medium text-foreground">
+                        {emptyState?.title ?? "No records found"}
+                      </p>
+                      {emptyState?.description && (
+                        <p className="text-xs max-w-lg">
+                          {emptyState.description}
+                        </p>
+                      )}
+                      {emptyState?.action}
                     </div>
                   </TableCell>
                 </TableRow>

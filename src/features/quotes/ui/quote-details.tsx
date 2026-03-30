@@ -149,7 +149,8 @@ export default function QuoteDetailsClient({ quoteId }: { quoteId: string }) {
             <div className="space-y-4">
               <div>
                 <div className="text-xs text-muted-foreground">Customer</div>
-                <div className="text-sm">{quote.customerEmail}</div>
+                <div className="text-sm font-medium">{quote.customerName}</div>
+                <div className="text-xs">{quote.customerEmail}</div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">

@@ -32,6 +32,7 @@ export type Quote = {
   quoteNumber: string | null;
   status: QuoteStatus;
   customerEmail: string;
+  customerName: string;
   customerNote: string | null;
 
   meta: unknown | null;
