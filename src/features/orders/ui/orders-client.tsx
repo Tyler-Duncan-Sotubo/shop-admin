@@ -51,6 +51,12 @@ export default function OrdersClient() {
     { value: "on_hold", label: "On hold", count: counts.onHold },
     { value: "paid", label: "Paid", count: counts.paid, showZero: false },
     {
+      value: "lay_buy",
+      label: "Lay-buy",
+      count: counts.layBuy,
+      showZero: false,
+    }, // 👈
+    {
       value: "fulfilled",
       label: "Fulfilled",
       count: counts.fulfilled,
@@ -91,6 +97,11 @@ export default function OrdersClient() {
         title: "No orders yet",
         description:
           "Orders will appear here once customers start placing them.",
+      },
+      lay_buy: {
+        title: "No lay-buy orders",
+        description:
+          "Orders being fulfilled before payment is collected will appear here.",
       },
     };
 
@@ -135,6 +146,13 @@ export default function OrdersClient() {
                   </TabsTrigger>
                   <TabsTrigger value="on_hold">
                     <TabLabel label="On hold" count={counts.onHold} />
+                  </TabsTrigger>
+                  <TabsTrigger value="lay_buy">
+                    <TabLabel
+                      label="Lay Buy"
+                      count={counts.layBuy}
+                      showZero={false}
+                    />
                   </TabsTrigger>
                   <TabsTrigger value="paid">
                     <TabLabel

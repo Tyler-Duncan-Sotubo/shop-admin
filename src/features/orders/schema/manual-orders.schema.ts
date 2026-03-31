@@ -8,6 +8,8 @@ export const ManualOrderSchema = z.object({
   customerId: z.uuid().nullable().optional(),
   shippingAddress: z.record(z.string(), z.any()).nullable().optional(),
   billingAddress: z.record(z.string(), z.any()).nullable().optional(),
+  fulfillmentModel: z.enum(["payment_first", "stock_first"]),
+  skipDraft: z.boolean(),
 });
 
 export type ManualOrderFormValues = z.infer<typeof ManualOrderSchema>;

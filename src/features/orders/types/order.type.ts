@@ -5,7 +5,8 @@ export type OrderStatus =
   | "paid"
   | "cancelled"
   | "fulfilled"
-  | "draft";
+  | "draft"
+  | "lay_buy";
 
 export type OrderChannel = "online" | "pos" | string;
 

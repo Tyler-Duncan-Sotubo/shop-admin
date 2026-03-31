@@ -8,6 +8,7 @@ export const ConvertQuoteSchema = z.object({
   customerId: z.string().nullable().optional(),
   shippingAddress: z.any().nullable().optional(),
   billingAddress: z.any().nullable().optional(),
+  skipDraft: z.boolean(),
 });
 
 export type ConvertQuoteFormValues = z.infer<typeof ConvertQuoteSchema>;

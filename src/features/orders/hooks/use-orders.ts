@@ -7,6 +7,7 @@ import type {
   Order,
   OrderWithItems,
 } from "../types/order.type";
+import { toast } from "sonner";
 
 type ApiError = {
   status: "error";
@@ -132,6 +133,28 @@ export function useSyncZohoOrder(
         e.message;
 
       throw new Error(msg);
+    },
+  });
+}
+
+export function useConvertToLayBuy(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orderId: string) =>
+      axios.patch(`/api/orders/${orderId}/lay-buy`).then((res) => res.data),
+    onSuccess: (_, orderId) => {
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      toast.success("Order converted to lay-buy");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.error?.message ?? "Failed to convert to lay-buy",
+      );
     },
   });
 }

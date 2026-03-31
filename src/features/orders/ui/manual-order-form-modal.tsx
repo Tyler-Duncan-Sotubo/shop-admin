@@ -13,6 +13,7 @@ import {
   FormLabel,
   FormMessage,
   FormControl,
+  FormDescription,
 } from "@/shared/ui/form";
 import {
   Select,
@@ -22,7 +23,6 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { FormModal } from "@/shared/ui/form-modal";
-
 import { ManualOrderFormModalProps } from "../types/manual-order.type";
 import {
   ManualOrderFormValues,
@@ -30,6 +30,8 @@ import {
 } from "../schema/manual-orders.schema";
 import { currencyOptions } from "../../settings/account/config/general-settings.config";
 import { useGetStoreLocations } from "@/features/inventory/core/hooks/use-inventory";
+import { AdminCustomerCombobox } from "@/shared/ui/customer-combobox";
+import { Checkbox } from "@/shared/ui/checkbox";
 
 export function ManualOrderFormModal({
   open,
@@ -51,38 +53,36 @@ export function ManualOrderFormModal({
       currency: "NGN",
       channel: "manual",
       originInventoryLocationId: "",
+      fulfillmentModel: "payment_first",
       customerId: null,
       shippingAddress: null,
       billingAddress: null,
-      // storeId removed from form — we’ll inject activeStoreId at submit time
+      skipDraft: false,
     },
     mode: "onChange",
   });
 
-  // If you want a sensible default origin location:
   const defaultOriginId = useMemo(() => {
-    // Pick first location; if your location object has `isDefault` use that instead
     const first = locations?.[0];
     return first?.locationId ?? "";
   }, [locations]);
 
   useEffect(() => {
     if (mode !== "create") return;
-
-    // reset on open / create
     if (open && !order) {
       form.reset({
         currency: "NGN",
         channel: "manual",
         originInventoryLocationId: "",
+        fulfillmentModel: "payment_first",
         customerId: null,
         shippingAddress: null,
         billingAddress: null,
+        skipDraft: false,
       });
     }
   }, [open, mode, order, form]);
 
-  // Auto-fill originInventoryLocationId when locations load (only if empty)
   useEffect(() => {
     if (!open) return;
     const current = form.getValues("originInventoryLocationId");
@@ -95,7 +95,6 @@ export function ManualOrderFormModal({
   }, [defaultOriginId, open, form]);
 
   const handleSubmit = async (values: ManualOrderFormValues) => {
-    // inject storeId from scope here (not user-editable)
     await onSubmit({
       ...values,
       storeId: activeStoreId ?? null,
@@ -114,6 +113,27 @@ export function ManualOrderFormModal({
     >
       <Form {...form}>
         <div className="space-y-4">
+          {/* Customer */}
+          <FormField
+            control={form.control}
+            name="customerId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Customer (optional)</FormLabel>
+                <FormControl>
+                  <AdminCustomerCombobox
+                    storeId={activeStoreId}
+                    value={field.value ?? ""}
+                    onChange={(id) => field.onChange(id || null)}
+                    placeholder="Select a customer (optional)"
+                    disabled={!activeStoreId}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           {/* Channel */}
           <FormField
             control={form.control}
@@ -166,6 +186,34 @@ export function ManualOrderFormModal({
             )}
           />
 
+          {/* Fulfillment Model */}
+          <FormField
+            control={form.control}
+            name="fulfillmentModel"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel required>Fulfillment Model</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select fulfillment model" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="payment_first">Payment First</SelectItem>
+                    <SelectItem value="stock_first">Stock First</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  {field.value === "payment_first"
+                    ? "Client pays first, then you procure and fulfil. Stock is checked at fulfillment."
+                    : "Stock must be available before submitting for payment."}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           {/* Origin Inventory Location */}
           <FormField
             control={form.control}
@@ -195,13 +243,11 @@ export function ManualOrderFormModal({
                         <SelectItem key={loc.locationId} value={loc.locationId}>
                           {loc.name}
                         </SelectItem>
-                      )
+                      ),
                     )}
                   </SelectContent>
                 </Select>
-
                 <FormMessage />
-
                 {!locationsLoading &&
                   activeStoreId &&
                   locations.length === 0 && (
@@ -209,6 +255,27 @@ export function ManualOrderFormModal({
                       No locations found for this store.
                     </p>
                   )}
+              </FormItem>
+            )}
+          />
+          {/* Skip Draft */}
+          <FormField
+            control={form.control}
+            name="skipDraft"
+            render={({ field }) => (
+              <FormItem className="flex items-start gap-3 rounded-lg border p-3">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-0.5">
+                  <FormLabel>Ready to invoice</FormLabel>
+                  <FormDescription>
+                    Skip draft and immediately create an invoice for this order.
+                  </FormDescription>
+                </div>
               </FormItem>
             )}
           />

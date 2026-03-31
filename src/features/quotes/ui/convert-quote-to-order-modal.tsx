@@ -30,6 +30,7 @@ import {
   ConvertQuoteSchema,
 } from "../schema/convert-quote.schema";
 import { AdminCustomerCombobox } from "@/shared/ui/customer-combobox";
+import { Checkbox } from "@/shared/ui/checkbox";
 
 export type ConvertQuoteToOrderModalProps = {
   open: boolean;
@@ -61,6 +62,7 @@ export function ConvertQuoteToOrderModal({
       customerId: null,
       shippingAddress: null,
       billingAddress: null,
+      skipDraft: false,
     },
     mode: "onChange",
   });
@@ -80,6 +82,7 @@ export function ConvertQuoteToOrderModal({
       customerId: null,
       shippingAddress: null,
       billingAddress: null,
+      skipDraft: false,
     });
   }, [open, form, quoteId]);
 
@@ -253,6 +256,27 @@ export function ConvertQuoteToOrderModal({
                       No locations found for this store.
                     </p>
                   )}
+              </FormItem>
+            )}
+          />
+          {/* Skip Draft */}
+          <FormField
+            control={form.control}
+            name="skipDraft"
+            render={({ field }) => (
+              <FormItem className="flex items-start gap-3 rounded-lg border p-3">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-0.5">
+                  <FormLabel>Ready to invoice</FormLabel>
+                  <FormDescription>
+                    Skip draft and immediately create an invoice for this order.
+                  </FormDescription>
+                </div>
               </FormItem>
             )}
           />

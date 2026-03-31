@@ -25,6 +25,7 @@ import { StockWarning } from "./stock-warning";
 function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
   if (status === "paid") return <Badge>Paid</Badge>;
   if (status === "fulfilled") return <Badge>Fulfilled</Badge>;
+  if (status === "lay_buy") return <Badge variant="pending">Lay-buy</Badge>;
   if (status === "cancelled")
     return <Badge variant="secondary">Cancelled</Badge>;
   return <Badge variant="secondary">On hold</Badge>;

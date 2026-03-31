@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// features/orders/components/order-actions-card.tsx
 "use client";
 
 import { useState } from "react";
@@ -9,6 +8,7 @@ import {
   usePayOrder,
   useCancelOrder,
   useFulfillOrder,
+  useConvertToLayBuy, // 👈 new hook — see below
 } from "../hooks/use-orders";
 import type { Session } from "next-auth";
 import type { AxiosInstance } from "axios";
@@ -27,22 +27,29 @@ export function OrderActionsCard({
   const payMut = usePayOrder(session, axios);
   const cancelMut = useCancelOrder(session, axios);
   const fulfillMut = useFulfillOrder(session, axios);
+  const layBuyMut = useConvertToLayBuy(session, axios);
+
   const fulfillError = fulfillMut.error as Error | null;
-
-  const isMutating =
-    payMut.isPending || cancelMut.isPending || fulfillMut.isPending;
-
   const cancelError = cancelMut.isError
     ? ((cancelMut.error as any)?.response?.data?.error?.message ??
       "Unable to cancel order")
     : null;
 
-  const canCancel = order.status === "pending_payment";
-  const canFulfill = order.status === "paid";
+  const isMutating =
+    payMut.isPending ||
+    cancelMut.isPending ||
+    fulfillMut.isPending ||
+    layBuyMut.isPending;
 
-  const [openPay, setOpenPay] = useState(false);
+  const canFulfill = order.status === "paid" || order.status === "lay_buy";
+  const canCancel =
+    order.status === "pending_payment" || order.status === "lay_buy";
+  const canConvertToLayBuy =
+    order.status === "pending_payment" || order.status === "draft";
+
   const [openFulfill, setOpenFulfill] = useState(false);
   const [openCancel, setOpenCancel] = useState(false);
+  const [openLayBuy, setOpenLayBuy] = useState(false);
 
   return (
     <div className="border rounded-lg p-2">
@@ -60,6 +67,17 @@ export function OrderActionsCard({
           Fulfill order
         </Button>
 
+        {canConvertToLayBuy && (
+          <Button
+            className="w-full"
+            variant="outline"
+            disabled={isMutating}
+            onClick={() => setOpenLayBuy(true)}
+          >
+            Convert to lay-buy
+          </Button>
+        )}
+
         <Button
           className="w-full"
           variant="destructive"
@@ -73,19 +91,6 @@ export function OrderActionsCard({
           Actions require confirmation to prevent mistakes.
         </div>
 
-        {/* Modals */}
-        <ConfirmOrderActionDialog
-          open={openPay}
-          onOpenChange={setOpenPay}
-          title="Mark order as paid?"
-          description="This will change the order status to paid."
-          confirmLabel="Yes, mark as paid"
-          isLoading={payMut.isPending}
-          onConfirm={() =>
-            payMut.mutate(order.id, { onSuccess: () => setOpenPay(false) })
-          }
-        />
-
         <ConfirmOrderActionDialog
           open={openFulfill}
           onOpenChange={setOpenFulfill}
@@ -93,7 +98,7 @@ export function OrderActionsCard({
           description="This will fulfill the order (reserved → deducted) and mark it as fulfilled."
           confirmLabel="Yes, fulfill"
           isLoading={fulfillMut.isPending}
-          error={fulfillError?.message} // 👈 pass error down
+          error={fulfillError?.message}
           onConfirm={() =>
             fulfillMut.mutate(order.id, {
               onSuccess: () => setOpenFulfill(false),
@@ -102,13 +107,27 @@ export function OrderActionsCard({
         />
 
         <ConfirmOrderActionDialog
+          open={openLayBuy}
+          onOpenChange={setOpenLayBuy}
+          title="Convert to lay-buy?"
+          description="The order will be fulfilled now and payment collected later. The customer will still owe the full amount."
+          confirmLabel="Yes, convert to lay-buy"
+          isLoading={layBuyMut.isPending}
+          onConfirm={() =>
+            layBuyMut.mutate(order.id, {
+              onSuccess: () => setOpenLayBuy(false),
+            })
+          }
+        />
+
+        <ConfirmOrderActionDialog
           open={openCancel}
           onOpenChange={setOpenCancel}
           title="Cancel this order?"
-          description="This will cancel the order and release reservations "
+          description="This will cancel the order and release any reservations."
           confirmLabel="Yes, cancel order"
           confirmVariant="destructive"
-          requireText={order.orderNumber} // ✅ extra safety
+          requireText={order.orderNumber}
           isLoading={cancelMut.isPending}
           onConfirm={() =>
             cancelMut.mutate(order.id, {

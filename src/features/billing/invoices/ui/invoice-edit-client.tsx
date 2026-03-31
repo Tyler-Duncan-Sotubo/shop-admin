@@ -17,6 +17,8 @@ import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { useUpdateInvoiceDraft } from "../hooks/use-invoices";
 import { useGetTaxes } from "@/features/settings/tax-settings/hooks/use-taxes";
 import { InvoiceLineItemsTable } from "./invoice-line-items";
+import { DownloadInvoicePdfButton } from "./download-invoice-pdf-button";
+import { ShareInvoiceLinkButton } from "./share-invoice-link-button";
 import { RecordPaymentModal } from "./record-payment-modal";
 import { InvoicePaymentsAccordion } from "../../payments/ui/invoice-payments-accordion";
 
@@ -136,7 +138,7 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
         tooltip="Draft invoices are editable. Issued invoices are locked."
       >
         <div className="flex gap-2">
-          {isDraft && (
+          {isDraft ? (
             <>
               <Button
                 variant="clean"
@@ -165,6 +167,12 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
                 <span className="ml-2">Issue invoice</span>
               </Button>
             </>
+          ) : (
+            <div className="flex gap-2">
+              {inv.balanceMinor > 0 && !inv.zohoOrganizationId && (
+                <Button onClick={() => setOpen(true)}>Record payment</Button>
+              )}
+            </div>
           )}
         </div>
       </PageHeader>
