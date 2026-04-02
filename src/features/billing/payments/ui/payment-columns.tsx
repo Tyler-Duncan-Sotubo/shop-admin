@@ -10,6 +10,7 @@ import type { Payment, PaymentStatus } from "../types/payment.type";
 import { formatMoneyNGN } from "@/shared/utils/format-to-naira";
 import { minorToMajor } from "../../invoices/schema/invoice.schema";
 import { IoMdPrint } from "react-icons/io";
+import { FaMailBulk } from "react-icons/fa";
 
 function StatusBadge({ status }: { status: PaymentStatus }) {
   if (status === "confirmed") return <Badge>Confirmed</Badge>;
@@ -130,18 +131,23 @@ export const paymentColumns = (opts?: {
         const loading = opts?.receiptLoadingId === paymentId;
 
         return (
-          <Button
-            disabled={loading}
-            onClick={(e) => {
-              e.stopPropagation();
-              opts?.onReceipt?.(paymentId);
-            }}
-            isLoading={loading}
-            className="min-w-[120px] h-10"
-          >
-            <IoMdPrint />
-            Print Receipt
-          </Button>
+          <div className="space-x-3">
+            <Button
+              disabled={loading}
+              onClick={(e) => {
+                e.stopPropagation();
+                opts?.onReceipt?.(paymentId);
+              }}
+              isLoading={loading}
+              className="min-w-[120px] h-10"
+            >
+              <IoMdPrint />
+              Print Receipt
+            </Button>
+            <Button className="min-w-[120px] h-10">
+              <FaMailBulk /> Email
+            </Button>
+          </div>
         );
       },
     });

@@ -13,6 +13,8 @@ import { useCreateMutation } from "@/shared/hooks/use-create-mutation";
 /* -----------------------------
  * List invoices (headers only)
  * ------------------------------*/
+// features/invoices/hooks/use-invoices.ts
+
 export function useGetInvoices(
   params: {
     storeId?: string | null;
@@ -23,27 +25,28 @@ export function useGetInvoices(
     offset?: number;
   },
   session: Session | null,
-  axios: AxiosInstance
+  axios: AxiosInstance,
 ) {
-  const storeKey = params.storeId ?? "company-default";
-  const statusKey = params.status ?? "all";
-  const typeKey = params.type ?? "all";
-  const qKey = params.q ?? "";
-
   return useQuery({
     queryKey: [
       "billing",
       "invoices",
       "list",
-      storeKey,
-      statusKey,
-      typeKey,
-      qKey,
+      params.storeId ?? "company-default",
+      params.status ?? "all",
+      params.type ?? "all",
+      params.q ?? "",
       params.limit ?? 50,
       params.offset ?? 0,
     ],
     enabled: !!session?.backendTokens?.accessToken,
-    queryFn: async (): Promise<Invoice[]> => {
+    queryFn: async (): Promise<{
+      // 👈 updated return type
+      rows: Invoice[];
+      count: number;
+      limit: number;
+      offset: number;
+    }> => {
       const res = await axios.get("/api/invoices", { params });
       return res.data.data;
     },
@@ -56,7 +59,7 @@ export function useGetInvoices(
 export function useGetInvoiceWithLines(
   invoiceId: string | undefined,
   session: Session | null,
-  axios: AxiosInstance
+  axios: AxiosInstance,
 ) {
   return useQuery({
     queryKey: ["billing", "invoices", "detail", invoiceId],
@@ -73,7 +76,7 @@ export function useGetInvoiceWithLines(
  * ------------------------------*/
 export function useUpdateInvoiceLine(
   session: Session | null,
-  axios: AxiosInstance
+  axios: AxiosInstance,
 ) {
   const qc = useQueryClient();
 
@@ -85,7 +88,7 @@ export function useUpdateInvoiceLine(
     }) => {
       const res = await axios.patch(
         `/api/invoices/${args.invoiceId}/lines/${args.lineId}`,
-        args.input
+        args.input,
       );
       // assume backend returns { invoice, lines }
       return res.data.data as InvoiceWithLines;
@@ -109,7 +112,7 @@ export function useIssueInvoice(session: Session | null, axios: AxiosInstance) {
     mutationFn: async (args: { invoiceId: string; input: any }) => {
       const res = await axios.post(
         `/api/invoices/${args.invoiceId}/issue`,
-        args.input
+        args.input,
       );
       return res.data.data as Invoice;
     },
@@ -124,7 +127,7 @@ export function useIssueInvoice(session: Session | null, axios: AxiosInstance) {
 
 export function useUpdateInvoiceDraft(
   session: Session | null,
-  axios: AxiosInstance
+  axios: AxiosInstance,
 ) {
   const qc = useQueryClient();
 
@@ -135,7 +138,7 @@ export function useUpdateInvoiceDraft(
     }) => {
       const res = await axios.patch(
         `/api/invoices/${args.invoiceId}`,
-        args.input
+        args.input,
       );
       return res.data.data as Invoice;
     },
@@ -154,7 +157,7 @@ export function useUpdateInvoiceDraft(
 
 export function useGenerateInvoicePdf(
   session: Session | null,
-  axios: AxiosInstance
+  axios: AxiosInstance,
 ) {
   return useMutation({
     mutationFn: async (args: {
@@ -173,7 +176,7 @@ export function useGenerateInvoicePdf(
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       return res.data.data as {
@@ -190,12 +193,12 @@ export function useGenerateInvoicePdf(
  * ------------------------------*/
 export function useGenerateInvoicePublicLink(
   session: Session | null,
-  axios: AxiosInstance
+  axios: AxiosInstance,
 ) {
   return useMutation({
     mutationFn: async (args: { invoiceId: string }) => {
       const res = await axios.post(
-        `/api/invoices/${args.invoiceId}/public-link`
+        `/api/invoices/${args.invoiceId}/public-link`,
       );
 
       // returns invoice_public_links row
@@ -212,7 +215,7 @@ export function useRecordInvoicePayment(
   invoiceId: string,
   form: any,
   setSubmitError: any,
-  onClose: any
+  onClose: any,
 ) {
   // useCreateMutation returns: (data, setError?, resetForm?, onClose?) => Promise<any>
   return useCreateMutation<RecordInvoicePaymentInput>({

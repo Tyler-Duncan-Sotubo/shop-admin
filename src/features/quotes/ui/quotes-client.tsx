@@ -3,6 +3,7 @@
 
 import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import PageHeader from "@/shared/ui/page-header";
 import Loading from "@/shared/ui/loading";
@@ -21,6 +22,18 @@ import { Plus } from "lucide-react";
 import { CreateQuoteModal } from "./create-quote-modal";
 
 type QuoteTab = "all" | "new" | "in_progress" | "converted" | "archived";
+
+const VALID_TABS: QuoteTab[] = [
+  "all",
+  "new",
+  "in_progress",
+  "converted",
+  "archived",
+];
+
+function isValidTab(value: string | null): value is QuoteTab {
+  return VALID_TABS.includes(value as QuoteTab);
+}
 
 const TAB_TO_STATUS: Record<QuoteTab, ListQuotesParams["status"]> = {
   all: undefined,
@@ -58,8 +71,19 @@ export default function QuotesClient() {
   const [open, setOpen] = useState(false);
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [tab, setTab] = useState<QuoteTab>("new");
+  // Read tab from URL, fall back to "new"
+  const statusParam = searchParams.get("status");
+  const tab: QuoteTab = isValidTab(statusParam) ? statusParam : "new";
+
+  // Write tab back to URL
+  const setTab = (value: QuoteTab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("status", value);
+    router.replace(`/sales/rfqs?${params.toString()}`);
+  };
 
   const counts = useQuoteCountsForTabs(session, axios, activeStoreId);
 
@@ -101,11 +125,12 @@ export default function QuotesClient() {
           filterKey="customerEmail"
           filterPlaceholder="Search by email, id..."
           mobileRow={QuotesMobileRow}
+          onRowClick={(quote) => router.push(`/sales/rfqs/${quote.id}`)}
           emptyState={{
             title: empty.title,
             description: empty.description,
             action: (
-              <Button size="sm" onClick={() => setOpen(true)}>
+              <Button onClick={() => setOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 New Quote
               </Button>

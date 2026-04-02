@@ -1,3 +1,4 @@
+// features/admin-nav/ui/admin-top-nav.tsx
 "use client";
 
 import Link from "next/link";
@@ -5,13 +6,12 @@ import Image from "next/image";
 import { Mail } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { UserMenu } from "./user-menu";
 import { FaCog } from "react-icons/fa";
-
+import { UserMenu } from "./user-menu";
+import { StoreSwitcher } from "./store-select";
+import { GlobalSearch } from "./global-search";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { useStores } from "@/features/settings/stores/core/hooks/use-stores";
-import { StoreSwitcher } from "@/features/admin-nav/ui/store-select";
-
 import { useNewContactEmailCount } from "@/features/contact-emails/hooks/use-contact-emails";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 
@@ -19,8 +19,6 @@ export function AdminTopNav() {
   const axios = useAxiosAuth();
   const pathname = usePathname();
   const { data: session } = useSession();
-  const avatar = session?.user?.avatar || "";
-
   const { activeStoreId, setActiveStoreId } = useStoreScope();
   const { stores } = useStores();
 
@@ -32,9 +30,9 @@ export function AdminTopNav() {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 h-14 bg-white border-b flex items-center px-4 sm:px-6 gap-3">
-      {/* Left: logo + (mobile) store switcher */}
+      {/* Left: logo + mobile store switcher */}
       <div className="flex items-center gap-3 min-w-0">
-        <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
+        <Link href="/dashboard" className="shrink-0">
           <Image
             src="/apple-touch-icon.png"
             alt="Logo"
@@ -44,7 +42,6 @@ export function AdminTopNav() {
           />
         </Link>
 
-        {/* ✅ Store selector on mobile only */}
         <div className="md:hidden min-w-0">
           <StoreSwitcher
             stores={stores}
@@ -54,10 +51,13 @@ export function AdminTopNav() {
         </div>
       </div>
 
-      <div className="flex-1" />
+      {/* Centre: global search — always visible */}
+      <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2">
+        <GlobalSearch />
+      </div>
 
       {/* Right actions */}
-      <div className="flex items-center gap-3 sm:gap-4">
+      <div className="flex items-center gap-3 sm:gap-4 ml-auto">
         <Link
           href="/contact-emails"
           className="relative flex items-center justify-center text-gray-600 hover:text-black"
@@ -83,7 +83,7 @@ export function AdminTopNav() {
         <UserMenu
           name={session?.user?.firstName}
           email={session?.user?.email}
-          avatar={avatar}
+          avatar={session?.user?.avatar || ""}
         />
       </div>
     </div>

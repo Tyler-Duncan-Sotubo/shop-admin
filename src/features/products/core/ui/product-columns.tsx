@@ -11,7 +11,7 @@ import Link from "next/link";
 export const productColumns: ColumnDef<ProductListRow>[] = [
   {
     accessorKey: "imageUrl",
-    header: () => <div className="w-10" />,
+    header: () => <div className="w-10 text-center">#</div>,
     cell: ({ row }) => {
       const url = row.original.imageUrl;
       return (

@@ -107,7 +107,7 @@ export function ExtendedSalesCards({
   if (isLoading || !data) {
     return (
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-        {Array.from({ length: 7 }).map((_, i) => (
+        {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
             className="min-h-[110px] rounded-xl border bg-white animate-pulse"

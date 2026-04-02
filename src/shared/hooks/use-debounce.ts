@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
 
 export function useDebounceCallback<T extends (...args: any[]) => void>(
   callback: T,
-  delay: number
+  delay: number,
 ) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -17,7 +17,7 @@ export function useDebounceCallback<T extends (...args: any[]) => void>(
         callback(...args);
       }, delay);
     },
-    [callback, delay]
+    [callback, delay],
   );
 
   const cancel = useCallback(() => {
@@ -27,4 +27,15 @@ export function useDebounceCallback<T extends (...args: any[]) => void>(
   }, []);
 
   return { debounced, cancel };
+}
+
+export function useDebounceValue<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debounced;
 }

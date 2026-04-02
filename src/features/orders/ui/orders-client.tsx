@@ -1,8 +1,9 @@
 // features/orders/components/orders-client.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import PageHeader from "@/shared/ui/page-header";
 import Loading from "@/shared/ui/loading";
@@ -19,12 +20,37 @@ import { orderColumns } from "./order-columns";
 import { OrdersMobileRow } from "./orders-mobile-row";
 import { FilterChip, FilterChips } from "@/shared/ui/filter-chips";
 
+const VALID_TABS: OrderTab[] = [
+  "draft",
+  "on_hold",
+  "lay_buy",
+  "paid",
+  "fulfilled",
+  "cancelled",
+  "all",
+];
+
+function isValidTab(value: string | null): value is OrderTab {
+  return VALID_TABS.includes(value as OrderTab);
+}
+
 export default function OrdersClient() {
   const { data: session, status: authStatus } = useSession();
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [tab, setTab] = useState<OrderTab>("draft");
+  // Read tab from URL, fall back to "draft"
+  const statusParam = searchParams.get("status");
+  const tab: OrderTab = isValidTab(statusParam) ? statusParam : "draft";
+
+  // Write tab back to URL
+  const setTab = (value: OrderTab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("status", value);
+    router.replace(`/sales/orders?${params.toString()}`);
+  };
 
   const counts = useOrderCountsForTabs(session, axios, activeStoreId);
 
@@ -40,7 +66,6 @@ export default function OrdersClient() {
 
   const { data, isLoading } = useGetOrders(session, axios, params);
 
-  // ✅ don’t block the whole UI while switching filters; only block while auth loads
   if (authStatus === "loading") return <Loading />;
 
   const rows = data?.rows ?? [];
@@ -55,7 +80,7 @@ export default function OrdersClient() {
       label: "Lay-buy",
       count: counts.layBuy,
       showZero: false,
-    }, // 👈
+    },
     {
       value: "fulfilled",
       label: "Fulfilled",
@@ -120,9 +145,10 @@ export default function OrdersClient() {
       <Tabs value={tab} onValueChange={(v) => setTab(v as OrderTab)}>
         <DataTable
           columns={orderColumns}
-          data={isLoading ? [] : rows} // rows can be []
+          data={isLoading ? [] : rows}
           filterKey="orderNumber"
           filterPlaceholder="Search by order #, id, address..."
+          onRowClick={(order) => router.push(`/sales/orders/${order.id}`)}
           mobileRow={OrdersMobileRow}
           emptyState={{
             title: empty.title,
@@ -131,7 +157,6 @@ export default function OrdersClient() {
           }}
           toolbarLeft={
             <>
-              {/* Mobile dropdown, desktop scroll tabs (recommended) */}
               <FilterChips<OrderTab>
                 value={tab}
                 onChange={setTab}
@@ -168,7 +193,6 @@ export default function OrdersClient() {
                       showZero={false}
                     />
                   </TabsTrigger>
-
                   <TabsTrigger value="cancelled">
                     <TabLabel
                       label="Cancelled"
@@ -176,7 +200,6 @@ export default function OrdersClient() {
                       showZero={false}
                     />
                   </TabsTrigger>
-
                   <TabsTrigger value="all">
                     <TabLabel label="All" count={counts.all} />
                   </TabsTrigger>
@@ -186,10 +209,9 @@ export default function OrdersClient() {
           }
         />
 
-        {/* Loading state can be shown separately if you want */}
-        {isLoading ? (
+        {isLoading && (
           <div className="mt-3 text-xs text-muted-foreground">Loading…</div>
-        ) : null}
+        )}
       </Tabs>
     </section>
   );

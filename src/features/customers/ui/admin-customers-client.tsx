@@ -10,23 +10,23 @@ import { DataTable } from "@/shared/ui/data-table";
 import { Switch } from "@/shared/ui/switch";
 import { Label } from "@/shared/ui/label";
 import { EmptyState } from "@/shared/ui/empty-state";
-
+import { useRouter } from "next/navigation";
 import { useAdminCustomers } from "../hooks/use-admin-customers";
 import { adminCustomersColumns } from "./admin-customers-columns";
 import { FaUsers } from "react-icons/fa";
 import { CreateCustomerModal } from "./create-customer-modal";
 import { FaPlus } from "react-icons/fa6";
 import { Button } from "@/shared/ui/button";
-import BulkUploadModal from "@/shared/ui/bulk-upload-modal";
 import { LuImport } from "react-icons/lu";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import type { AdminCustomerRow } from "../types/admin-customer.type";
+import { CustomerBulkUploadModal } from "./customer-bulk-upload-modal";
 
 export default function AdminCustomersClient() {
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
   const { data: session, status: authStatus } = useSession();
-
+  const router = useRouter();
   const [includeInactive, setIncludeInactive] = useState(false);
 
   // ✅ NEW: include subscribers toggle
@@ -43,15 +43,15 @@ export default function AdminCustomersClient() {
       includeSubscribers, // ✅ NEW (hook must support it)
       storeId: activeStoreId,
     }),
-    [activeStoreId, includeInactive, includeSubscribers]
+    [activeStoreId, includeInactive, includeSubscribers],
   );
 
-  const { data, isLoading } = useAdminCustomers(query, session, axios);
+  const { data, isLoading, refetch } = useAdminCustomers(query, session, axios);
 
   // ✅ Normalize: support either array response or { rows } response
   const rows: AdminCustomerRow[] = useMemo(() => {
     if (!data) return [];
-    const raw = Array.isArray(data) ? data : (data as any).rows ?? [];
+    const raw = Array.isArray(data) ? data : ((data as any).rows ?? []);
 
     return raw.map((r: any) => ({
       ...r,
@@ -91,15 +91,11 @@ export default function AdminCustomersClient() {
           }}
         />
 
-        <BulkUploadModal
+        <CustomerBulkUploadModal
           isOpen={isBulkOpen}
           onClose={() => setIsBulkOpen(false)}
-          title="Bulk Import Customers"
-          endpoint={`/api/admin/customers/bulk/${activeStoreId}`}
-          refetchKey="customers onboarding"
-          successMessage="Customers added successfully"
-          exampleDownloadHref="https://res.cloudinary.com/dw1ltt9iz/raw/upload/v1757585682/department_ee9hgy.xlsx"
-          exampleDownloadLabel=""
+          endpoint={`/api/admin/customers/bulk/${activeStoreId ?? "null"}`}
+          onSuccess={() => refetch()}
         />
 
         <CreateCustomerModal open={open} onClose={() => setOpen(false)} />
@@ -128,6 +124,7 @@ export default function AdminCustomersClient() {
         <DataTable
           columns={adminCustomersColumns}
           data={rows}
+          onRowClick={(customer) => router.push(`/customers/${customer.id}`)}
           filterKey="search"
           filterPlaceholder="Search by name, email, phone, status…"
           toolbarLeft={
@@ -153,15 +150,11 @@ export default function AdminCustomersClient() {
         />
       </section>
 
-      <BulkUploadModal
+      <CustomerBulkUploadModal
         isOpen={isBulkOpen}
         onClose={() => setIsBulkOpen(false)}
-        title="Bulk Import Customers"
-        endpoint="/api/admin/customers/bulk"
-        refetchKey="admin customers"
-        successMessage="Customers added successfully"
-        exampleDownloadHref="https://res.cloudinary.com/dw1ltt9iz/raw/upload/v1757585682/department_ee9hgy.xlsx"
-        exampleDownloadLabel=""
+        endpoint={`/api/admin/customers/bulk/${activeStoreId ?? "null"}`}
+        onSuccess={() => refetch()}
       />
 
       <CreateCustomerModal open={open} onClose={() => setOpen(false)} />

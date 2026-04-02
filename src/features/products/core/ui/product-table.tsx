@@ -15,7 +15,7 @@ import { useProductCountsForTabs } from "../hooks/use-product-counts";
 import { Button } from "@/shared/ui/button";
 import { FaPlus } from "react-icons/fa6";
 import Link from "next/link";
-
+import { useRouter } from "next/navigation";
 import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
 import { ProductsMobileRow } from "./products-mobile-row";
 import { ExportMenu } from "@/shared/ui/export-menu";
@@ -26,6 +26,7 @@ export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
   const { data: session, status: authStatus } = useSession();
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
+  const router = useRouter();
 
   const [statusTab, setStatusTab] = useState<StatusTab>("active");
 
@@ -95,6 +96,7 @@ export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
         filterKey="name"
         filterPlaceholder="Search by product name..."
         mobileRow={ProductsMobileRow}
+        onRowClick={(product) => router.push(`/products/${product.id}`)}
         toolbarLeft={
           !data.length ? (
             <>

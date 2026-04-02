@@ -7,6 +7,7 @@ import PageHeader from "@/shared/ui/page-header";
 import { useAdminCustomerDetail } from "../hooks/use-admin-customers";
 import { CustomerDetailsCard } from "./customer-details-card";
 import { CustomerAddressesCard } from "./customer-addresses-card";
+import { BackButton } from "@/shared/ui/back-button";
 
 type Props = {
   customerId: string;
@@ -19,7 +20,7 @@ export default function AdminCustomerDetailClient({ customerId }: Props) {
   const { data, isLoading, isError, error } = useAdminCustomerDetail(
     customerId,
     session,
-    axios
+    axios,
   );
 
   if (isLoading || status === "loading") {
@@ -38,6 +39,7 @@ export default function AdminCustomerDetailClient({ customerId }: Props) {
 
   return (
     <section className="space-y-4">
+      <BackButton href="/customers" label="Back to Customers" />
       <PageHeader
         title="Customer"
         description="View and manage this customer."

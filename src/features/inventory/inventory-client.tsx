@@ -19,7 +19,6 @@ export default function InventoryClient() {
     { value: "overview", label: "Overview" },
     { value: "movements", label: "Stock Movements" },
     { value: "transfers", label: "Transfers" },
-    { value: "locations", label: "Locations" },
   ];
 
   return (

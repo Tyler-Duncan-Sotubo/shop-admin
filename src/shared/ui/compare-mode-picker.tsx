@@ -27,7 +27,7 @@ export function CompareModePicker({
   return (
     <div className="flex items-center gap-2">
       <Select value={value} onValueChange={(v) => onChange(v as CompareMode)}>
-        <SelectTrigger className="h-8 w-40 text-xs">
+        <SelectTrigger className="h-6 w-40 text-xs" size="sm">
           <SelectValue placeholder="Compare" />
         </SelectTrigger>
         <SelectContent>
@@ -37,15 +37,6 @@ export function CompareModePicker({
           <SelectItem value="custom">Custom range</SelectItem>
         </SelectContent>
       </Select>
-
-      {value === "custom" && (
-        <DateRangePicker
-          value={customRange}
-          onChange={onCustomRangeChange}
-          placeholder="Comparison range"
-          className="h-8 text-xs"
-        />
-      )}
     </div>
   );
 }

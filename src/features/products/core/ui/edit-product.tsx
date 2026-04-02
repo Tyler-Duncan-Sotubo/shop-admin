@@ -125,24 +125,38 @@ export function EditProduct({ productId }: Props) {
 
     const md = (product as any).metadata ?? {};
 
-    form.reset({
-      name: (product as any).name ?? "",
-      description: (product as any).description ?? "",
-      status: (product as any).status ?? "draft",
-      productType: (product as any).productType ?? "variable",
-      categoryIds: (product as any).categoryIds ?? [],
-      links: (product as any).links ?? emptyLinks,
-      seoTitle: (product as any).seoTitle ?? "",
-      seoDescription: (product as any).seoDescription ?? "",
-      howItFeelsAndLooks: md.how_it_feels_and_looks ?? "",
-      whyYouWillLoveIt: md.why_you_will_love_it ?? "",
-      details: md.details ?? "",
-      images: [],
-      defaultImageIndex: (product as any).defaultImageIndex ?? 0,
-      moq: (product as any).moq ?? "",
-    });
+    form.reset(
+      {
+        name: (product as any).name ?? "",
+        description: (product as any).description ?? "",
+        status: (product as any).status ?? "draft",
+        productType: (product as any).productType ?? "variable",
+        categoryIds: (product as any).categoryIds ?? [],
+        links: (product as any).links ?? emptyLinks,
+        seoTitle: (product as any).seoTitle ?? "",
+        seoDescription: (product as any).seoDescription ?? "",
+        howItFeelsAndLooks: md.how_it_feels_and_looks ?? "",
+        whyYouWillLoveIt: md.why_you_will_love_it ?? "",
+        details: md.details ?? "",
+        images: [],
+        defaultImageIndex: (product as any).defaultImageIndex ?? 0,
+        moq: (product as any).moq ?? "",
 
-    // clear local images when switching product
+        // ✅ simple product fields
+        sku: (product as any).sku ?? "",
+        barcode: (product as any).barcode ?? "",
+        regularPrice: (product as any).regularPrice ?? "",
+        salePrice: (product as any).salePrice ?? "",
+        stockQuantity: (product as any).stockQuantity ?? "",
+        lowStockThreshold: (product as any).lowStockThreshold ?? "",
+        weight: (product as any).weight ?? "",
+        length: (product as any).length ?? "",
+        width: (product as any).width ?? "",
+        height: (product as any).height ?? "",
+      },
+      { keepValues: false }, // 👈 forces useWatch to pick up productType change
+    );
+
     setLocalImages((prev) => {
       prev.forEach((i) => URL.revokeObjectURL(i.previewUrl));
       return [];

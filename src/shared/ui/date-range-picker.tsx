@@ -35,11 +35,10 @@ export function DateRangePicker({
             // match SelectTrigger exactly
             "bg-white dark:bg-white text-foreground",
             "border border-input rounded-md shadow-xs",
-            "flex items-center gap-2 px-4 text-sm whitespace-nowrap",
+            "flex items-center gap-2 px-4 py-4.5 text-sm whitespace-nowrap",
             "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring",
             "disabled:cursor-not-allowed disabled:opacity-50",
             "transition-[color,box-shadow]",
-            "h-10", // matches data-[size=sm]:h-10 from SelectTrigger
             !value && "text-muted-foreground",
             className,
           )}

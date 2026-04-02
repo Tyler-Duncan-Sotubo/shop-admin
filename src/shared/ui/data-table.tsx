@@ -167,7 +167,7 @@ export function DataTable<TData, TValue>({
         </div>
       ) : null}
 
-      <div className="rounded-md border">
+      <div>
         {/* ✅ Mobile view */}
         {MobileRow ? (
           <div className="block sm:hidden">
@@ -184,7 +184,6 @@ export function DataTable<TData, TValue>({
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground p-5">
-                <SlSocialDropbox size={40} />
                 <p className="text-xs font-medium text-foreground">
                   {emptyState?.title ?? "No records found"}
                 </p>
@@ -260,18 +259,19 @@ export function DataTable<TData, TValue>({
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="h-50 text-center"
+                    className="h-30 text-center"
                   >
-                    <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground">
-                      <SlSocialDropbox size={40} />
-                      <p className="text-sm font-medium text-foreground">
-                        {emptyState?.title ?? "No records found"}
-                      </p>
-                      {emptyState?.description && (
-                        <p className="text-xs max-w-lg">
-                          {emptyState.description}
+                    <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground mt-5">
+                          {emptyState?.title ?? "No records found"}
                         </p>
-                      )}
+                        {emptyState?.description && (
+                          <p className="text-xs max-w-lg">
+                            {emptyState.description}
+                          </p>
+                        )}
+                      </div>
                       {emptyState?.action}
                     </div>
                   </TableCell>
