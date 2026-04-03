@@ -19,15 +19,30 @@ import { useRouter } from "next/navigation";
 import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
 import { ProductsMobileRow } from "./products-mobile-row";
 import { ExportMenu } from "@/shared/ui/export-menu";
+import { useProductPermissions } from "../hooks/use-product-permissions";
+import { useAuthPermissions } from "@/lib/auth/use-permissions";
 
 type StatusTab = "active" | "draft" | "archived";
 
 export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
-  const { data: session, status: authStatus } = useSession();
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
   const router = useRouter();
 
+  /* permissions are needed here to determine whether to show the
+   "Add Product" button in the table toolbar, which is only 
+   shown on the main products page  */
+  const { permissions, session, status: authStatus } = useAuthPermissions();
+  const { canCreate, canDelete, canUpdate } =
+    useProductPermissions(permissions);
+
+  // Memoize so columns don't recreate on every render
+  const columns = useMemo(
+    () => productColumns({ canDelete, canUpdate }),
+    [canDelete, canUpdate],
+  );
+
+  // Local state for which status tab is active
   const [statusTab, setStatusTab] = useState<StatusTab>("active");
 
   const query = useMemo(
@@ -68,9 +83,11 @@ export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
   const toolbarRight = !data.length ? (
     <>
       <Link href="/products/new?tab=products">
-        <Button className="w-full">
-          <FaPlus /> Add Product
-        </Button>
+        {canCreate && (
+          <Button className="w-full">
+            <FaPlus /> Add Product
+          </Button>
+        )}
       </Link>
       <ExportMenu
         exportPath="/api/catalog/products/export-products"
@@ -91,12 +108,16 @@ export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
   return (
     <Tabs value={statusTab} onValueChange={(v) => setStatusTab(v as StatusTab)}>
       <DataTable
-        columns={productColumns}
+        columns={columns}
         data={rows}
         filterKey="name"
         filterPlaceholder="Search by product name..."
         mobileRow={ProductsMobileRow}
-        onRowClick={(product) => router.push(`/products/${product.id}`)}
+        onRowClick={
+          canUpdate
+            ? (product) => router.push(`/products/${product.id}`)
+            : undefined
+        }
         toolbarLeft={
           !data.length ? (
             <>

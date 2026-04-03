@@ -30,7 +30,7 @@ export default function ShippingZonesClient() {
   const { data: zones = [], isLoading } = useGetShippingZones(
     session,
     axios,
-    activeStoreId
+    activeStoreId,
   );
 
   if (isLoading) return <Loading />;

@@ -1,6 +1,5 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import Loading from "@/shared/ui/loading";
 import PageHeader from "@/shared/ui/page-header";
@@ -21,6 +20,8 @@ import { AddManualOrderItemsModal } from "./add-manual-order-items-modal";
 import { useManualOrders } from "../hooks/use-manual-orders";
 import { EditOrderCustomerShippingModal } from "./edit-order-customer-shipping-modal";
 import { StockWarning } from "./stock-warning";
+import { useAuthPermissions } from "@/lib/auth/use-permissions";
+import { useOrderPermissions } from "../hooks/use-order-permissions";
 
 function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
   if (status === "paid") return <Badge>Paid</Badge>;
@@ -32,28 +33,41 @@ function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
 }
 
 export default function OrderDetailsClient({ orderId }: { orderId: string }) {
-  const { data: session, status: authStatus } = useSession();
+  const { permissions, session, status: authStatus } = useAuthPermissions();
   const axios = useAxiosAuth();
   const { data, isLoading } = useGetOrder(session, axios, orderId);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [isOpen, setIsOpen] = useState(false);
   const [editCustomerShippingOpen, setEditCustomerShippingOpen] =
     useState(false);
 
+  const { canRead, canUpdate } = useOrderPermissions(permissions);
+
+  // Derive canCheckStock safely — data may still be undefined here,
+  // so we use optional chaining. The hook itself gates on the boolean.
+  const canCheckStock =
+    canRead &&
+    !!data &&
+    data.channel === "manual" &&
+    data.status !== "paid" &&
+    data.status !== "fulfilled" &&
+    data.status !== "cancelled";
+
+  // All hooks must be called unconditionally before any early return
   const { createManualPayment, stockCheck } = useManualOrders(
     orderId,
     data?.status === "pending_payment" ? "Invoice synced" : "Invoice created",
+    canCheckStock,
   );
 
-  const insufficientItems =
-    stockCheck.data?.items.filter((i) => !i.sufficient) ?? [];
-
+  // Early returns after all hooks
   if (authStatus === "loading" || isLoading) return <Loading />;
   if (!data) return null;
 
   const order = data;
   const billingOrShipping = order.billingAddress ?? order.shippingAddress;
+  const insufficientItems =
+    stockCheck.data?.items.filter((i) => !i.sufficient) ?? [];
 
   const handleCreateManualPayment = () => {
     try {
@@ -202,6 +216,7 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
               address={order.shippingAddress}
               editable
               onEdit={() => setEditCustomerShippingOpen(true)}
+              canUpdate={canUpdate}
             />
 
             <OrderAddressCard
@@ -209,6 +224,7 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
               address={billingOrShipping}
               editable
               onEdit={() => setEditCustomerShippingOpen(true)}
+              canUpdate={canUpdate}
             />
           </div>
 
@@ -220,7 +236,12 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
             insufficientItems={insufficientItems}
             fulfillmentModel={stockCheck.data?.fulfillmentModel}
           />
-          <OrderActionsCard order={order} session={session} axios={axios} />
+          <OrderActionsCard
+            order={order}
+            session={session}
+            axios={axios}
+            canUpdate={canUpdate}
+          />
           <OrderAuditCard events={order.events ?? []} />
         </div>
       </div>

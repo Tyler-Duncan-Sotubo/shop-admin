@@ -14,6 +14,7 @@ import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { useStores } from "@/features/settings/stores/core/hooks/use-stores";
 import { useNewContactEmailCount } from "@/features/contact-emails/hooks/use-contact-emails";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
+import { getAllowedSearchScopes } from "../libs/get-allowed-search-scopes";
 
 export function AdminTopNav() {
   const axios = useAxiosAuth();
@@ -22,12 +23,19 @@ export function AdminTopNav() {
   const { activeStoreId, setActiveStoreId } = useStoreScope();
   const { stores } = useStores();
 
+  const permissions = session?.permissions ?? [];
+  const canReadContactEmails = permissions.includes("mail.messages.read");
+
+  const role = session?.user?.role ?? null;
+
+  const canUseGlobalSearch = role === "owner" || role === "manager";
+
   const { data: unreadCount = 0 } = useNewContactEmailCount(
     session,
     axios,
     activeStoreId,
+    canReadContactEmails,
   );
-
   return (
     <div className="fixed top-0 left-0 right-0 z-50 h-14 bg-white border-b flex items-center px-4 sm:px-6 gap-3">
       {/* Left: logo + mobile store switcher */}
@@ -53,23 +61,25 @@ export function AdminTopNav() {
 
       {/* Centre: global search — always visible */}
       <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2">
-        <GlobalSearch />
+        {canUseGlobalSearch ? <GlobalSearch /> : null}
       </div>
 
       {/* Right actions */}
       <div className="flex items-center gap-3 sm:gap-4 ml-auto">
-        <Link
-          href="/contact-emails"
-          className="relative flex items-center justify-center text-gray-600 hover:text-black"
-          aria-label="Contact emails"
-        >
-          <Mail size={20} />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          )}
-        </Link>
+        {canReadContactEmails && (
+          <Link
+            href="/contact-emails"
+            className="relative flex items-center justify-center text-gray-600 hover:text-black"
+            aria-label="Contact emails"
+          >
+            <Mail size={20} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Link>
+        )}
 
         <Link href="/settings" aria-label="Settings">
           <FaCog

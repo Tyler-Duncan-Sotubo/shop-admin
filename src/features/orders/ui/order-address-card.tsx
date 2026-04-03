@@ -67,19 +67,21 @@ export function OrderAddressCard({
   emptyText = "No address available.",
   editable = false,
   onEdit,
+  canUpdate = false,
 }: {
   title: string;
   address: Address | null | undefined;
   emptyText?: string;
   editable?: boolean;
   onEdit?: () => void;
+  canUpdate?: boolean;
 }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-4">
         <CardTitle className="text-lg">{title}</CardTitle>
 
-        {editable ? (
+        {editable && canUpdate ? (
           <Button type="button" variant="ghost" size="sm" onClick={onEdit}>
             <FaRegEdit className="mr-2 h-4 w-4" />
             Edit

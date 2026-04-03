@@ -121,6 +121,26 @@ export function filterMenu(
   return cleaned;
 }
 
+/** Flatten single-child submenus into direct nav items */
+export function flattenSingleSubMenus(menu: MenuItem[]): MenuItem[] {
+  return menu.map((item) => {
+    if (isDivider(item)) return item;
+
+    const subs = item.subItems;
+    if (subs && subs.length === 1 && !isDivider(subs[0])) {
+      const onlyChild = subs[0] as BaseItem;
+      // Promote the child, but keep the parent's icon
+      return {
+        ...onlyChild,
+        icon: item.icon ?? onlyChild.icon,
+        subItems: undefined,
+      } satisfies MenuItem;
+    }
+
+    return item;
+  });
+}
+
 /** -----------------------------
  * Commerce Admin Menu
  * ------------------------------*/
@@ -135,12 +155,7 @@ export const main: readonly MenuItem[] = [
   {
     title: "Sales",
     icon: <MdShoppingCart size={18} />,
-    permissions: [
-      "billing.invoices.read",
-      "billing.payments.read",
-      "billing.taxes.read",
-      "billing.invoiceTemplates.read",
-    ],
+
     subItems: [
       {
         title: "Orders",
@@ -174,12 +189,7 @@ export const main: readonly MenuItem[] = [
     title: "Products",
     icon: <BsFillBoxSeamFill size={18} />,
     link: "/products",
-    permissions: [
-      "products.read",
-      "products.create",
-      "categories.read",
-      "reviews.read",
-    ],
+    permissions: ["products.read", "categories.read", "attributes.read"],
   },
 
   {

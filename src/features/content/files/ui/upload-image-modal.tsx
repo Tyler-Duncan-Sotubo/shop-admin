@@ -100,7 +100,7 @@ export function UploadImageModal({
         return blobUrl;
       });
     },
-    [fileName]
+    [fileName],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -143,7 +143,7 @@ export function UploadImageModal({
           className={cn(
             "border rounded-xl w-full flex flex-col items-center justify-center p-6",
             "border-dashed cursor-pointer hover:border-primary transition-colors",
-            isDragActive && "border-primary"
+            isDragActive && "border-primary",
           )}
         >
           <input {...getInputProps()} />

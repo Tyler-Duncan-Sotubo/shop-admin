@@ -6,11 +6,13 @@ import type { AxiosInstance } from "axios";
 export function useOrdersTotalCount(
   session: Session | null,
   axios: AxiosInstance,
-  storeId: string | null = null
+  storeId: string | null = null,
+  enabledOverride = true,
 ) {
   return useQuery({
     queryKey: ["orders", "count", "total", storeId],
-    enabled: !!session?.backendTokens?.accessToken && !!storeId,
+    enabled:
+      !!session?.backendTokens?.accessToken && !!storeId && enabledOverride,
     queryFn: async (): Promise<number> => {
       const res = await axios.get("/api/orders", {
         params: { limit: 1, offset: 0, status: "pending_payment", storeId },

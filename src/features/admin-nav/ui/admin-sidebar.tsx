@@ -7,7 +7,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { FiChevronDown } from "react-icons/fi";
-import { filterMenu, main, type MenuItem } from "../config/admin-nav.config";
+import {
+  filterMenu,
+  flattenSingleSubMenus,
+  main,
+  type MenuItem,
+} from "../config/admin-nav.config";
 
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { Badge } from "@/shared/ui/badge";
@@ -39,30 +44,30 @@ export default function AdminSidebar() {
   const axios = useAxiosAuth();
   const pathname = usePathname();
 
+  const userPermissions = useMemo(() => session?.permissions ?? [], [session]);
+
+  const canReadOrders = userPermissions.includes("orders.read");
+  const canReadQuotes = userPermissions.includes("quotes.read");
+
   const { data: ordersCount = 0 } = useOrdersTotalCount(
     session,
     axios,
     activeStoreId,
+    canReadOrders,
   );
 
   const { data: quotesCount = 0 } = useQuotesTotalCount(
     session,
     axios,
     activeStoreId,
+    canReadQuotes,
   );
 
-  const salesTotalCount = ordersCount + quotesCount;
-
-  const userPermissions = useMemo(
-    () =>
-      (session as any)?.user?.permissions ??
-      (session as any)?.permissions ??
-      [],
-    [session],
-  );
+  const salesTotalCount =
+    (canReadOrders ? ordersCount : 0) + (canReadQuotes ? quotesCount : 0);
 
   const filteredMenu = useMemo(
-    () => filterMenu(main, userPermissions),
+    () => flattenSingleSubMenus(filterMenu(main, userPermissions)),
     [userPermissions],
   );
 
@@ -113,8 +118,13 @@ export default function AdminSidebar() {
   const getSubBadge = (link?: string | null) => {
     if (!link) return null;
 
-    if (SALES_ORDERS_LINKS.has(link) && ordersCount > 0) return ordersCount;
-    if (SALES_QUOTES_LINKS.has(link) && quotesCount > 0) return quotesCount;
+    if (SALES_ORDERS_LINKS.has(link) && canReadOrders && ordersCount > 0) {
+      return ordersCount;
+    }
+
+    if (SALES_QUOTES_LINKS.has(link) && canReadQuotes && quotesCount > 0) {
+      return quotesCount;
+    }
 
     return null;
   };

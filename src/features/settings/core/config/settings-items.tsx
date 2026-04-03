@@ -11,8 +11,18 @@ import {
   FaMapMarkedAlt,
   FaUser,
 } from "react-icons/fa";
+import type { ReactNode } from "react";
 
-export const settingsItems = [
+export type SettingsItem = {
+  category: string;
+  title: string;
+  description: string;
+  link: string;
+  icon: ReactNode;
+  permissions?: readonly string[];
+};
+
+export const settingsItems: readonly SettingsItem[] = [
   // -----------------
   // Personal
   // -----------------
@@ -22,6 +32,7 @@ export const settingsItems = [
     description: "Update your name, avatar, and personal preferences.",
     link: "/settings/profile",
     icon: <FaUser size={20} />,
+    // usually always visible to signed-in users
   },
 
   // -----------------
@@ -34,6 +45,7 @@ export const settingsItems = [
       "Configure your business name, timezone, and company-wide defaults.",
     link: "/settings/account",
     icon: <FaBuilding size={20} />,
+    permissions: ["settings.read", "settings.manage_general"],
   },
   {
     category: "Organization",
@@ -41,6 +53,7 @@ export const settingsItems = [
     description: "Manage your stores, domains, and storefront settings.",
     link: "/settings/stores",
     icon: <FaStore size={20} />,
+    permissions: ["stores.read"],
   },
   {
     category: "Organization",
@@ -49,6 +62,7 @@ export const settingsItems = [
       "Manage team members, roles, permissions, and security policies.",
     link: "/settings/access-control",
     icon: <FaUsersCog size={20} />,
+    permissions: ["users.read", "roles.read", "permissions.read"],
   },
   {
     category: "Organization",
@@ -57,6 +71,7 @@ export const settingsItems = [
       "Track important actions and configuration changes across your account.",
     link: "/settings/audit-logs",
     icon: <FaClipboardCheck size={20} />,
+    permissions: ["audit.logs.read"],
   },
 
   // -----------------
@@ -69,6 +84,7 @@ export const settingsItems = [
       "Manage warehouses and store locations where stock is held and tracked.",
     link: "/settings/inventory/locations",
     icon: <FaMapMarkedAlt size={20} />,
+    permissions: ["locations.read"],
   },
 
   // -----------------
@@ -81,6 +97,9 @@ export const settingsItems = [
       "Enable and configure payment options including cards, bank transfers, and providers.",
     link: "/settings/payment-methods",
     icon: <FaCreditCard size={20} />,
+    permissions: ["payments.read"],
+    // if this page is true provider config only, use:
+    // permissions: ["payments.manage_providers"]
   },
 
   // -----------------
@@ -93,6 +112,10 @@ export const settingsItems = [
       "Customise your invoice layout, branding, and displayed business information.",
     link: "/settings/invoice-template",
     icon: <FaFileInvoiceDollar size={20} />,
+    permissions: [
+      "billing.invoiceTemplates.read",
+      "billing.invoiceBranding.read",
+    ],
   },
   {
     category: "Billing & Taxes",
@@ -101,19 +124,21 @@ export const settingsItems = [
       "Set up tax rates, rules, and regions for accurate calculations at checkout.",
     link: "/settings/tax-settings",
     icon: <FaPercentage size={20} />,
+    permissions: ["billing.taxes.read", "settings.manage_tax"],
   },
 
   // -----------------
   // Developer
   // -----------------
-  {
-    category: "Developer",
-    title: "API & Webhooks",
-    description:
-      "Generate API keys and configure webhooks for external integrations.",
-    link: "/settings/developers",
-    icon: <FaCode size={20} />,
-  },
+  // {
+  //   category: "Developer",
+  //   title: "API & Webhooks",
+  //   description:
+  //     "Generate API keys and configure webhooks for external integrations.",
+  //   link: "/settings/developers",
+  //   icon: <FaCode size={20} />,
+  //   permissions: ["apikeys.read"],
+  // },
   {
     category: "Developer",
     title: "Integrations",
@@ -121,5 +146,6 @@ export const settingsItems = [
       "Connect third-party services including payment providers, shipping, and other tools.",
     link: "/settings/integrations",
     icon: <FaPlug size={20} />,
+    permissions: ["integrations.analytics.read", "integrations.zoho.read"],
   },
 ];

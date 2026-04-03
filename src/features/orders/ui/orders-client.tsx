@@ -2,7 +2,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import PageHeader from "@/shared/ui/page-header";
@@ -19,6 +18,8 @@ import { DataTable } from "@/shared/ui/data-table";
 import { orderColumns } from "./order-columns";
 import { OrdersMobileRow } from "./orders-mobile-row";
 import { FilterChip, FilterChips } from "@/shared/ui/filter-chips";
+import { useAuthPermissions } from "@/lib/auth/use-permissions";
+import { useOrderPermissions } from "../hooks/use-order-permissions";
 
 const VALID_TABS: OrderTab[] = [
   "draft",
@@ -35,11 +36,12 @@ function isValidTab(value: string | null): value is OrderTab {
 }
 
 export default function OrdersClient() {
-  const { data: session, status: authStatus } = useSession();
+  const { permissions, session, status: authStatus } = useAuthPermissions();
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { canCreateManual } = useOrderPermissions(permissions);
 
   // Read tab from URL, fall back to "draft"
   const statusParam = searchParams.get("status");
@@ -139,7 +141,7 @@ export default function OrdersClient() {
         description="View and manage customer orders."
         tooltip="On hold = unpaid orders. Paid = payment received. Fulfilled = shipped/delivered."
       >
-        <CreateManualOrderButton />
+        {canCreateManual && <CreateManualOrderButton />}
       </PageHeader>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as OrderTab)}>
@@ -153,7 +155,7 @@ export default function OrdersClient() {
           emptyState={{
             title: empty.title,
             description: empty.description,
-            action: <CreateManualOrderButton />,
+            action: canCreateManual ? <CreateManualOrderButton /> : undefined,
           }}
           toolbarLeft={
             <>

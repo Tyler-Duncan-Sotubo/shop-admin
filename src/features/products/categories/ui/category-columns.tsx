@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, Row } from "@tanstack/react-table";
 import { Category } from "../types/category.type";
 import { SortableHeader } from "@/shared/ui/sortable-header";
 import { Badge } from "@/shared/ui/badge";
@@ -10,11 +10,13 @@ import Image from "next/image";
 type Props = {
   onEdit: (row: Category) => void;
   getParentName?: (parentId: string | null) => string;
+  canDelete: boolean;
 };
 
 export function categoryColumns({
   onEdit,
   getParentName,
+  canDelete,
 }: Props): ColumnDef<Category>[] {
   return [
     {
@@ -69,17 +71,21 @@ export function categoryColumns({
         );
       },
     },
-    {
-      id: "actions",
-      header: () => <div className="text-right">Actions</div>,
-      cell: ({ row }) => (
-        <RowActions
-          row={row.original}
-          onEdit={onEdit}
-          deleteEndpoint={`/api/catalog/categories/${row.original.id}`}
-          refetchKey="categories"
-        />
-      ),
-    },
+    ...(canDelete
+      ? [
+          {
+            id: "actions",
+            header: () => <div className="text-right">Actions</div>,
+            cell: ({ row }: { row: Row<Category> }) => (
+              <RowActions
+                row={row.original}
+                onEdit={onEdit}
+                deleteEndpoint={`/api/catalog/categories/${row.original.id}`}
+                refetchKey="categories"
+              />
+            ),
+          } satisfies ColumnDef<Category>,
+        ]
+      : []),
   ];
 }

@@ -5,11 +5,13 @@ import type { AxiosInstance } from "axios";
 export function useQuotesTotalCount(
   session: Session | null,
   axios: AxiosInstance,
-  storeId: string | null = null
+  storeId: string | null = null,
+  enabledOverride = true,
 ) {
   return useQuery({
     queryKey: ["quotes", "count", "total", storeId],
-    enabled: !!session?.backendTokens?.accessToken && !!storeId,
+    enabled:
+      !!session?.backendTokens?.accessToken && !!storeId && enabledOverride,
     queryFn: async (): Promise<number> => {
       const res = await axios.get("/api/quotes", {
         params: {
@@ -25,5 +27,6 @@ export function useQuotesTotalCount(
     },
     staleTime: 30_000, // keeps sidebar stable
     refetchOnWindowFocus: false,
+    retry: false,
   });
 }

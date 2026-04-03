@@ -19,10 +19,12 @@ export function OrderActionsCard({
   order,
   session,
   axios,
+  canUpdate = false, // Default to false if not provided
 }: {
   order: OrderWithItems;
   session: Session | null;
   axios: AxiosInstance;
+  canUpdate?: boolean; // Optional prop to control update permissions
 }) {
   const payMut = usePayOrder(session, axios);
   const cancelMut = useCancelOrder(session, axios);
@@ -61,7 +63,7 @@ export function OrderActionsCard({
         <Button
           className="w-full"
           variant="secondary"
-          disabled={!canFulfill || isMutating}
+          disabled={!canFulfill || !canUpdate || isMutating}
           onClick={() => setOpenFulfill(true)}
         >
           Fulfill order
@@ -71,7 +73,7 @@ export function OrderActionsCard({
           <Button
             className="w-full"
             variant="outline"
-            disabled={isMutating}
+            disabled={!canUpdate || isMutating}
             onClick={() => setOpenLayBuy(true)}
           >
             Convert to lay-buy
@@ -81,7 +83,7 @@ export function OrderActionsCard({
         <Button
           className="w-full"
           variant="destructive"
-          disabled={!canCancel || isMutating}
+          disabled={!canCancel || !canUpdate || isMutating}
           onClick={() => setOpenCancel(true)}
         >
           Cancel order

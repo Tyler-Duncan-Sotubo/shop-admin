@@ -7,7 +7,11 @@ import { useQuery } from "@tanstack/react-query";
 import { CreateManualOrderPayload } from "../types/manual-order.type";
 import { useUpdateMutation } from "@/shared/hooks/use-update-mutation";
 
-export function useManualOrders(orderId?: string, message?: string) {
+export function useManualOrders(
+  orderId?: string,
+  message?: string,
+  canReadOrders?: boolean,
+) {
   const { data: session, status } = useSession();
   const axiosInstance = useAxiosAuth();
 
@@ -43,7 +47,7 @@ export function useManualOrders(orderId?: string, message?: string) {
         }[];
       };
     },
-    enabled: !!orderId && status === "authenticated",
+    enabled: !!orderId && status === "authenticated" && canReadOrders,
     staleTime: 30_000, // re-fetch after 30s — stock changes frequently
   });
 

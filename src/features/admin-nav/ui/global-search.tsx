@@ -4,7 +4,7 @@
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, Loader2, ChevronRight } from "lucide-react";
-import { useGlobalSearch } from "../hooks/use-global-search";
+import { useGlobalSearch, type SearchScope } from "../hooks/use-global-search";
 import { useOnClickOutside } from "@/shared/hooks/use-on-click-outside";
 import { QUICK_FILTERS } from "../config/quick-filters";
 
@@ -24,9 +24,24 @@ const SECTION_META = {
     href: (id: string) => `/sales/rfqs/${id}`,
     listHref: "/sales/rfqs",
   },
+  customers: {
+    label: "Customers",
+    href: (id: string) => `/customers/${id}`,
+    listHref: "/customers",
+  },
 } as const;
 
 type Section = keyof typeof SECTION_META;
+
+const SEARCH_SCOPES: { value: SearchScope; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "customers", label: "Customers" },
+  { value: "orders", label: "Orders" },
+  { value: "invoices", label: "Invoices" },
+  { value: "quotes", label: "Quotes" },
+];
+
+const SECTIONS: Section[] = ["orders", "invoices", "quotes", "customers"];
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-600",
@@ -52,6 +67,8 @@ export function GlobalSearch() {
   const {
     query,
     setQuery,
+    scope,
+    setScope,
     results,
     isLoading,
     isOpen,
@@ -67,6 +84,13 @@ export function GlobalSearch() {
   const showNoResults =
     isOpen && !!query.trim() && !isLoading && totalResults === 0;
 
+  const activeSections = scope === "all" ? SECTIONS : ([scope] as Section[]);
+
+  const placeholder =
+    scope === "all"
+      ? "Search customers, orders, invoices, quotes..."
+      : `Search ${SEARCH_SCOPES.find((s) => s.value === scope)?.label.toLowerCase()}...`;
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
       setIsOpen(false);
@@ -75,10 +99,21 @@ export function GlobalSearch() {
     }
 
     if (e.key === "Enter" && query.trim()) {
-      const topSection = (["orders", "invoices", "quotes"] as Section[]).reduce(
-        (best, s) => (results[s].length >= results[best].length ? s : best),
+      if (scope !== "all") {
+        const meta = SECTION_META[scope as Section];
+        router.push(
+          `${meta.listHref}?search=${encodeURIComponent(query.trim())}`,
+        );
+        clear();
+        return;
+      }
+
+      const topSection = SECTIONS.reduce(
+        (best, section) =>
+          results[section].length >= results[best].length ? section : best,
         "orders" as Section,
       );
+
       router.push(
         `${SECTION_META[topSection].listHref}?search=${encodeURIComponent(query.trim())}`,
       );
@@ -87,7 +122,7 @@ export function GlobalSearch() {
   };
 
   return (
-    <div ref={containerRef} className="relative w-120">
+    <div ref={containerRef} className="relative w-160">
       {/* Input */}
       <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2.5 focus-within:ring-2 focus-within:ring-primary/30 transition-all">
         {isLoading ? (
@@ -95,15 +130,17 @@ export function GlobalSearch() {
         ) : (
           <Search size={14} className="text-gray-400 shrink-0" />
         )}
+
         <input
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Search orders, invoices, quotes..."
+          placeholder={placeholder}
           className="flex-1 bg-transparent text-sm outline-none placeholder:text-gray-400"
         />
+
         {query && (
           <button onClick={clear} type="button">
             <X size={13} className="text-gray-400 hover:text-gray-600" />
@@ -112,9 +149,38 @@ export function GlobalSearch() {
       </div>
 
       {/* Dropdown */}
-      {(showQuickFilters || showResults || showNoResults) && (
+      {isOpen && (
         <div className="absolute top-full mt-1.5 left-0 right-0 bg-white rounded-lg border shadow-lg z-50 overflow-hidden">
-          {/* Quick filters — shown when input is focused but empty */}
+          {/* Scope filters */}
+          <div className="px-3 py-2 border-b bg-white">
+            <div className="flex flex-wrap gap-1.5">
+              {SEARCH_SCOPES.map((item) => {
+                const active = scope === item.value;
+
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => {
+                      setScope(item.value);
+                      setIsOpen(true);
+                      inputRef.current?.focus();
+                    }}
+                    className={[
+                      "px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors",
+                      active
+                        ? "bg-primary/10 text-primary"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200",
+                    ].join(" ")}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Quick filters */}
           {showQuickFilters && (
             <>
               <div className="px-3 py-2 border-b">
@@ -122,6 +188,7 @@ export function GlobalSearch() {
                   Quick Filters
                 </span>
               </div>
+
               {QUICK_FILTERS.map((filter) => (
                 <button
                   key={filter.href}
@@ -142,6 +209,7 @@ export function GlobalSearch() {
                       </p>
                     </div>
                   </div>
+
                   <ChevronRight
                     size={14}
                     className="text-gray-300 group-hover:text-gray-500 shrink-0 ml-2 transition-colors"
@@ -151,36 +219,48 @@ export function GlobalSearch() {
             </>
           )}
 
-          {/* Search results — shown when typing */}
+          {/* Results */}
           {showResults && (
             <>
-              {(["orders", "invoices", "quotes"] as Section[]).map(
-                (section) => {
-                  const rows = results[section];
-                  if (!rows.length) return null;
-                  const meta = SECTION_META[section];
+              {activeSections.map((section) => {
+                const rows = results[section];
+                if (!rows.length) return null;
 
-                  return (
-                    <div key={section}>
-                      <div className="flex items-center justify-between px-3 py-1.5 bg-gray-50 border-b">
-                        <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
-                          {meta.label}
-                        </span>
-                        <button
-                          onClick={() => {
-                            router.push(
-                              `${meta.listHref}?search=${encodeURIComponent(query)}`,
-                            );
-                            clear();
-                          }}
-                          className="flex items-center gap-0.5 text-[11px] text-primary hover:underline"
-                        >
-                          See all
-                          <ChevronRight size={11} />
-                        </button>
-                      </div>
+                const meta = SECTION_META[section];
 
-                      {rows.map((row) => (
+                return (
+                  <div key={section}>
+                    <div className="flex items-center justify-between px-3 py-1.5 bg-gray-50 border-b">
+                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                        {meta.label}
+                      </span>
+
+                      <button
+                        onClick={() => {
+                          router.push(
+                            `${meta.listHref}?search=${encodeURIComponent(query.trim())}`,
+                          );
+                          clear();
+                        }}
+                        className="flex items-center gap-0.5 text-[11px] text-primary hover:underline"
+                      >
+                        See all
+                        <ChevronRight size={11} />
+                      </button>
+                    </div>
+
+                    {rows.map((row) => {
+                      const title =
+                        section === "customers"
+                          ? row.customer || row.email || "Unnamed customer"
+                          : row.number || "Untitled";
+
+                      const subtitle =
+                        section === "customers"
+                          ? row.email || null
+                          : row.customer || null;
+
+                      return (
                         <button
                           key={row.id}
                           onClick={() => {
@@ -191,28 +271,32 @@ export function GlobalSearch() {
                         >
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-gray-800 truncate">
-                              {row.number}
+                              {title}
                             </p>
-                            {row.customer && (
+
+                            {subtitle && (
                               <p className="text-xs text-gray-400 truncate">
-                                {row.customer}
+                                {subtitle}
                               </p>
                             )}
                           </div>
-                          <span
-                            className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ml-2 shrink-0 capitalize ${
-                              STATUS_COLORS[row.status] ??
-                              "bg-gray-100 text-gray-500"
-                            }`}
-                          >
-                            {row.status.replace(/_/g, " ")}
-                          </span>
+
+                          {row.status ? (
+                            <span
+                              className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ml-2 shrink-0 capitalize ${
+                                STATUS_COLORS[row.status] ??
+                                "bg-gray-100 text-gray-500"
+                              }`}
+                            >
+                              {row.status.replace(/_/g, " ")}
+                            </span>
+                          ) : null}
                         </button>
-                      ))}
-                    </div>
-                  );
-                },
-              )}
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </>
           )}
 
@@ -224,7 +308,8 @@ export function GlobalSearch() {
                 <span className="font-medium">&quot;{query}&quot;</span>
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                Try an order number, invoice number or customer name
+                Try a customer name, email, order number, invoice number or
+                quote number
               </p>
             </div>
           )}

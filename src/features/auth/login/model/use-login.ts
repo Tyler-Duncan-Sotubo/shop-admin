@@ -25,7 +25,7 @@ export const useLogin = () => {
       // 2) 2FA branch
       if ("tempToken" in data && data.tempToken) {
         router.push(
-          `/2fa?token=${data.tempToken}&email=${encodeURIComponent(email)}`
+          `/2fa?token=${data.tempToken}&email=${encodeURIComponent(email)}`,
         );
         return;
       }
@@ -45,7 +45,7 @@ export const useLogin = () => {
         };
       }
 
-      if (!data.onboardingCompleted) {
+      if (!data.onboardingCompleted && data.user.role === "owner") {
         router.push("/setup");
       } else {
         router.push("/dashboard");

@@ -46,7 +46,7 @@ export const inventoryColumns = (
             ) : (
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             )}
-            <div className="font-medium text-xs">{r.productName}</div>
+            <div className="font-medium text-sm">{r.productName}</div>
             <span className="text-xs text-muted-foreground">
               ({r.children.length} variants)
             </span>

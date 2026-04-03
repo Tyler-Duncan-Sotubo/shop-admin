@@ -27,7 +27,7 @@ type ListResult = {
 
 function normalizeListResult(
   payload: any,
-  params: ListContactEmailsParams
+  params: ListContactEmailsParams,
 ): ListResult {
   const d = payload?.data ?? payload; // support { data: ... } or raw
   const rows = (d?.rows ?? d?.data ?? []) as ContactEmailRow[];
@@ -45,7 +45,7 @@ function normalizeListResult(
 export function useGetContactEmails(
   session: Session | null,
   axios: AxiosInstance,
-  params: ListContactEmailsParams
+  params: ListContactEmailsParams,
 ) {
   return useQuery({
     queryKey: ["contact-emails", params],
@@ -62,7 +62,7 @@ export function useGetContactEmails(
 export function useGetContactEmail(
   session: Session | null,
   axios: AxiosInstance,
-  id?: string
+  id?: string,
 ) {
   return useQuery({
     queryKey: ["contact-email", id],
@@ -96,7 +96,7 @@ export function useUpdateContactEmailStatus(axios: AxiosInstance, id?: string) {
 
 async function fetchNewCount(
   axios: AxiosInstance,
-  storeId: string | null
+  storeId: string | null,
 ): Promise<number> {
   const params: Record<string, any> = {
     limit: 1,
@@ -115,14 +115,15 @@ async function fetchNewCount(
 export function useNewContactEmailCount(
   session: Session | null,
   axios: AxiosInstance,
-  storeId: string | null
+  storeId: string | null,
+  enabledOverride = true,
 ) {
-  const enabled = !!session?.backendTokens?.accessToken;
+  const enabled = !!session?.backendTokens?.accessToken && enabledOverride;
 
   return useQuery({
     queryKey: ["contact-emails", "count", "new", storeId],
     enabled,
-    staleTime: 30_000, // 30s is perfect for a badge
+    staleTime: 30_000,
     refetchOnWindowFocus: true,
     queryFn: () => fetchNewCount(axios, storeId),
   });
