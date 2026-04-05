@@ -13,15 +13,12 @@ import {
   main,
   type MenuItem,
 } from "../config/admin-nav.config";
-
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { Badge } from "@/shared/ui/badge";
 import { useOrdersTotalCount } from "@/features/orders/hooks/use-orders-total-count";
 import { useQuotesTotalCount } from "@/features/quotes/hooks/use-quotes-total-count";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
-
 import { useStores } from "@/features/settings/stores/core/hooks/use-stores";
-import { StoreSwitcher } from "./store-select";
 
 const TOPBAR_HEIGHT = "3.5rem";
 
@@ -142,14 +139,6 @@ export default function AdminSidebar() {
         overscrollBehavior: "contain",
       }}
     >
-      <div className="py-1">
-        <StoreSwitcher
-          stores={stores}
-          value={activeStoreId}
-          onChange={setActiveStoreId}
-        />
-      </div>
-
       <nav className="space-y-2 mt-2 flex-1">
         {filteredMenu.map((item) => {
           if (isDivider(item)) {

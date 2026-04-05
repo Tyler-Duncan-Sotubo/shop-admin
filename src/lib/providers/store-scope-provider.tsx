@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -10,11 +10,14 @@ import React, {
   useState,
 } from "react";
 import { useSession } from "next-auth/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useStores } from "@/features/settings/stores/core/hooks/use-stores";
 
 type StoreScope = {
   activeStoreId: string | null;
   setActiveStoreId: (id: string | null) => void;
+  switching: boolean;
 };
 
 const StoreScopeContext = createContext<StoreScope | null>(null);
@@ -23,9 +26,8 @@ function buildStorageKey(userKey: string) {
   return `activeStoreId:${userKey}`;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getUserKey(session: any) {
-  // pick something stable + unique for the user
-  // prefer id if you have it, else email
   return session?.user?.id ?? session?.user?.email ?? null;
 }
 
@@ -36,18 +38,19 @@ export function StoreScopeProvider({
 }) {
   const { data: session, status } = useSession();
   const { stores } = useStores();
+  const queryClient = useQueryClient();
+  const router = useRouter();
 
-  const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
+  const [activeStoreId, setActiveStoreIdRaw] = useState<string | null>(null);
+  const [switching, setSwitching] = useState(false);
 
   const lastUserKeyRef = useRef<string | null>(null);
 
-  // Bootstrap active store when login starts / session becomes available
+  // Bootstrap active store when session becomes available or stores change
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // not logged in yet
     if (status !== "authenticated") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveStoreId(null);
       lastUserKeyRef.current = null;
       return;
@@ -56,7 +59,6 @@ export function StoreScopeProvider({
     const userKey = getUserKey(session);
     if (!userKey) return;
 
-    // Avoid re-running bootstrap for the same user unless stores changed
     const userChanged = lastUserKeyRef.current !== userKey;
     if (userChanged) {
       lastUserKeyRef.current = userKey;
@@ -64,22 +66,20 @@ export function StoreScopeProvider({
 
     const storageKey = buildStorageKey(userKey);
     const stored = window.localStorage.getItem(storageKey);
-
-    // Determine the best initial store id
     const storeIds = new Set(stores.map((s) => s.id));
     const storedIsValid = stored && storeIds.has(stored);
 
     const nextId = storedIsValid
       ? stored!
       : stores.length > 0
-      ? stores[0].id
-      : null;
+        ? stores[0].id
+        : null;
 
-    // Only update if different to avoid loops
-    setActiveStoreId((prev) => (prev === nextId ? prev : nextId));
+    setActiveStoreIdRaw((prev) => (prev === nextId ? prev : nextId));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, status, stores]);
 
-  // Persist per-user
+  // Persist active store per user
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (status !== "authenticated") return;
@@ -89,13 +89,34 @@ export function StoreScopeProvider({
 
     const storageKey = buildStorageKey(userKey);
 
-    if (activeStoreId) window.localStorage.setItem(storageKey, activeStoreId);
-    else window.localStorage.removeItem(storageKey);
+    if (activeStoreId) {
+      window.localStorage.setItem(storageKey, activeStoreId);
+    } else {
+      window.localStorage.removeItem(storageKey);
+    }
   }, [activeStoreId, session, status]);
 
+  const setActiveStoreId = useCallback(
+    async (id: string | null) => {
+      if (id === activeStoreId) return;
+
+      setSwitching(true);
+      setActiveStoreIdRaw(id);
+
+      // invalidate all cached queries so everything refetches for new store
+      await queryClient.invalidateQueries();
+
+      // refresh server components
+      router.refresh();
+
+      setSwitching(false);
+    },
+    [activeStoreId, queryClient, router],
+  );
+
   const value = useMemo(
-    () => ({ activeStoreId, setActiveStoreId }),
-    [activeStoreId]
+    () => ({ activeStoreId, setActiveStoreId, switching }),
+    [activeStoreId, setActiveStoreId, switching],
   );
 
   return (

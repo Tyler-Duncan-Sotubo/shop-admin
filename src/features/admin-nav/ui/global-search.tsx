@@ -122,7 +122,7 @@ export function GlobalSearch() {
   };
 
   return (
-    <div ref={containerRef} className="relative w-160">
+    <div ref={containerRef} className="relative w-140">
       {/* Input */}
       <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2.5 focus-within:ring-2 focus-within:ring-primary/30 transition-all">
         {isLoading ? (

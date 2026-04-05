@@ -40,7 +40,10 @@ export function StoreSwitcher({
     <div className={cn("flex items-center gap-2", className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button type="button" className="h-10 w-full justify-between px-3 ">
+          <Button
+            type="button"
+            className="h-10 w-full justify-between px-3 bg-primary/20 text-black hover:bg-primary hover:text-white"
+          >
             <div className="flex items-center gap-3 min-w-0">
               {active?.imageUrl ? (
                 <Image

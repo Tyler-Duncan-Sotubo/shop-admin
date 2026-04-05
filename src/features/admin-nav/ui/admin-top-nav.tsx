@@ -14,7 +14,6 @@ import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { useStores } from "@/features/settings/stores/core/hooks/use-stores";
 import { useNewContactEmailCount } from "@/features/contact-emails/hooks/use-contact-emails";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
-import { getAllowedSearchScopes } from "../libs/get-allowed-search-scopes";
 
 export function AdminTopNav() {
   const axios = useAxiosAuth();
@@ -27,7 +26,6 @@ export function AdminTopNav() {
   const canReadContactEmails = permissions.includes("mail.messages.read");
 
   const role = session?.user?.role ?? null;
-
   const canUseGlobalSearch = role === "owner" || role === "manager";
 
   const { data: unreadCount = 0 } = useNewContactEmailCount(
@@ -36,9 +34,10 @@ export function AdminTopNav() {
     activeStoreId,
     canReadContactEmails,
   );
+
   return (
     <div className="fixed top-0 left-0 right-0 z-50 h-14 bg-white border-b flex items-center px-4 sm:px-6 gap-3">
-      {/* Left: logo + mobile store switcher */}
+      {/* Left: logo + store switcher */}
       <div className="flex items-center gap-3 min-w-0">
         <Link href="/dashboard" className="shrink-0">
           <Image
@@ -50,16 +49,18 @@ export function AdminTopNav() {
           />
         </Link>
 
-        <div className="md:hidden min-w-0">
+        {/* Store switcher — desktop next to logo, mobile also here */}
+        <div className="min-w-0 ml-3">
           <StoreSwitcher
             stores={stores}
             value={activeStoreId}
             onChange={setActiveStoreId}
+            className="w-40 sm:w-[200px]"
           />
         </div>
       </div>
 
-      {/* Centre: global search — always visible */}
+      {/* Centre: global search */}
       <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2">
         {canUseGlobalSearch ? <GlobalSearch /> : null}
       </div>
