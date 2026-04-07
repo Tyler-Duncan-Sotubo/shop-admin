@@ -3,11 +3,13 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { InventoryAdjustAction } from "./inventory-adjust-action";
+import { InventoryProductExportAction } from "./inventory-product-export-action";
 import { cn } from "@/lib/utils";
 import type { InventoryOverviewRow } from "../types/inventory.type";
 
 export type InventoryGroupRow = {
   productName: string;
+  productId: string;
   inStock: number;
   committed: number;
   onHand: number;
@@ -23,8 +25,9 @@ function isGroupRow(r: RowType): r is InventoryGroupRow {
 
 export const inventoryColumns = (
   locationId: string,
+  storeId: string | undefined,
   expanded: Record<string, boolean>,
-  toggleExpanded: (productName: string) => void,
+  toggleExpanded: (productId: string) => void,
 ): ColumnDef<RowType>[] => [
   {
     accessorKey: "productName",
@@ -34,11 +37,12 @@ export const inventoryColumns = (
 
       // Group row
       if (isGroupRow(r)) {
-        const open = !!expanded[r.productName];
+        const open = !!expanded[r.productId];
+
         return (
           <button
             type="button"
-            onClick={() => toggleExpanded(r.productName)}
+            onClick={() => toggleExpanded(r.productId)}
             className="flex items-center gap-2 text-left"
           >
             {open ? (
@@ -57,7 +61,7 @@ export const inventoryColumns = (
       // Variant row (indent)
       return (
         <div className="pl-6 space-y-0.5">
-          <div className="text-xs ">{r.variantTitle ?? "Default"}</div>
+          <div className="text-xs">{r.variantTitle ?? "Default"}</div>
           <div className="text-xs text-muted-foreground">
             {r.sku ? `SKU: ${r.sku}` : ""}
           </div>
@@ -68,19 +72,19 @@ export const inventoryColumns = (
   {
     accessorKey: "inStock",
     header: "In Stock",
-    cell: ({ row }) => <span className="text-xs ">{row.original.inStock}</span>,
+    cell: ({ row }) => <span className="text-xs">{row.original.inStock}</span>,
   },
   {
     accessorKey: "committed",
     header: "Committed",
     cell: ({ row }) => (
-      <span className="text-xs ">{row.original.committed}</span>
+      <span className="text-xs">{row.original.committed}</span>
     ),
   },
   {
     accessorKey: "onHand",
     header: "On hand",
-    cell: ({ row }) => <span className="text-xs ">{row.original.onHand}</span>,
+    cell: ({ row }) => <span className="text-xs">{row.original.onHand}</span>,
   },
   {
     accessorKey: "lowStock",
@@ -91,8 +95,8 @@ export const inventoryColumns = (
         <span
           className={cn(
             r.lowStock
-              ? "text-amber-600 text-xs "
-              : "text-muted-foreground text-xs ",
+              ? "text-amber-600 text-xs"
+              : "text-muted-foreground text-xs",
           )}
         >
           {r.lowStock ? "Low stock" : "OK"}
@@ -105,8 +109,18 @@ export const inventoryColumns = (
     header: "",
     cell: ({ row }) => {
       const r = row.original;
-      // Only allow adjust action on variant rows (not group row)
-      if (isGroupRow(r)) return null;
+
+      if (isGroupRow(r)) {
+        return (
+          <div className="flex justify-end">
+            <InventoryProductExportAction
+              productId={r.productId}
+              storeId={storeId}
+              locationId={locationId}
+            />
+          </div>
+        );
+      }
 
       return (
         <div className="flex justify-end">

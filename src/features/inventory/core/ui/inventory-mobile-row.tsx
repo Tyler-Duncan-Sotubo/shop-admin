@@ -1,4 +1,3 @@
-// features/inventory/ui/inventory-mobile-row.tsx
 "use client";
 
 import * as React from "react";
@@ -8,6 +7,7 @@ import { cn } from "@/lib/utils";
 import type { InventoryOverviewRow } from "../types/inventory.type";
 import type { InventoryGroupRow } from "./inventory-columns";
 import { InventoryAdjustAction } from "./inventory-adjust-action";
+import { InventoryProductExportAction } from "./inventory-product-export-action";
 
 type RowType = InventoryGroupRow | InventoryOverviewRow;
 
@@ -23,21 +23,23 @@ export function InventoryMobileRow({
 
   const meta = (table.options.meta ?? {}) as {
     locationId: string;
+    storeId?: string;
     expanded: Record<string, boolean>;
-    toggleExpanded: (productName: string) => void;
+    toggleExpanded: (productId: string) => void;
   };
 
   // Variant row
   if (!isGroupRow(r)) {
     return (
-      <div className="px-4 py-3 bg-muted/20">
+      <div className="bg-muted/20 px-4 py-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="text-sm font-medium">
               {r.variantTitle ?? "Default"}
             </div>
+
             {r.sku ? (
-              <div className="mt-1 text-xs text-muted-foreground truncate">
+              <div className="mt-1 truncate text-xs text-muted-foreground">
                 SKU: {r.sku}
               </div>
             ) : null}
@@ -82,14 +84,14 @@ export function InventoryMobileRow({
   }
 
   // Group row
-  const open = !!meta.expanded[r.productName];
+  const open = !!meta.expanded[r.productId];
 
   return (
     <div className="p-4">
       <button
         type="button"
         className="w-full text-left"
-        onClick={() => meta.toggleExpanded(r.productName)}
+        onClick={() => meta.toggleExpanded(r.productId)}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -99,7 +101,7 @@ export function InventoryMobileRow({
               ) : (
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               )}
-              <div className="font-semibold truncate text-sm ">
+              <div className="truncate text-sm font-semibold">
                 {r.productName}
               </div>
             </div>
@@ -119,7 +121,7 @@ export function InventoryMobileRow({
           </div>
         </div>
 
-        <div className="mt-3 grid grid-cols-3 gap-2 text-xs w-[60%]">
+        <div className="mt-3 grid w-[80%] grid-cols-4 items-center gap-2 text-xs">
           <div className="flex flex-col">
             <span className="text-muted-foreground">In stock</span>
             <span className="font-medium tabular-nums">{r.inStock}</span>
@@ -131,6 +133,19 @@ export function InventoryMobileRow({
           <div className="flex flex-col">
             <span className="text-muted-foreground">On hand</span>
             <span className="font-medium tabular-nums">{r.onHand}</span>
+          </div>
+          <div
+            className="mt-3"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <InventoryProductExportAction
+              productId={r.productId}
+              storeId={meta.storeId}
+              locationId={meta.locationId}
+            />
           </div>
         </div>
       </button>

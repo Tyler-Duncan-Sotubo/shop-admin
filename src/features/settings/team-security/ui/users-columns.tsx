@@ -56,18 +56,16 @@ export const usersColumns = ({
     accessorKey: "role",
     header: ({ column }) => <SortableHeader column={column} title="Role" />,
     cell: ({ row }) => {
-      const role = row.original.role;
+      const roleLabels: Record<string, string> = {
+        owner: "Owner",
+        manager: "Manager",
+        staff: "Staff",
+        support: "Support",
+        inventory_manager: "Inventory Manager",
+        warehouse_staff: "Warehouse Staff",
+      };
 
-      const label =
-        role === "owner"
-          ? "Owner"
-          : role === "manager"
-          ? "Manager"
-          : role === "staff"
-          ? "Staff"
-          : role === "support"
-          ? "Support"
-          : "Unknown";
+      const label = roleLabels[row.original.role] ?? "Unknown";
 
       return <Badge variant="outline">{label}</Badge>;
     },

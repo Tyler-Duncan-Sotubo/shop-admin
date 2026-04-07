@@ -40,6 +40,7 @@ export type StoreLocationRow = {
 
 export type InventoryGroupRow = {
   productName: string;
+  productId: string;
   inStock: number;
   committed: number;
   onHand: number;

@@ -27,6 +27,7 @@ import { FaStore, FaWarehouse } from "react-icons/fa";
 
 import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
 import { InventoryMobileRow } from "./inventory-mobile-row";
+import { InventoryOverviewExportMenu } from "./invertory-overview-export-menu";
 
 export function InventoryOverview() {
   const { data: session, status: authStatus } = useSession();
@@ -99,7 +100,8 @@ export function InventoryOverview() {
     for (const r of rows) {
       const key = r.productName ?? "Unknown product";
 
-      const g = map.get(key) ?? {
+      const g: InventoryGroupRow = map.get(key) ?? {
+        productId: r.productId,
         productName: key,
         inStock: 0,
         committed: 0,
@@ -128,15 +130,14 @@ export function InventoryOverview() {
     );
   }, [rows]);
 
-  const toggleExpanded = (productName: string) => {
-    setExpanded((prev) => ({ ...prev, [productName]: !prev[productName] }));
+  const toggleExpanded = (productId: string) => {
+    setExpanded((prev) => ({ ...prev, [productId]: !prev[productId] }));
   };
-
   const tableRows = useMemo(() => {
     const out: Array<any> = [];
     for (const g of groupedRows) {
       out.push(g);
-      if (expanded[g.productName]) out.push(...g.children);
+      if (expanded[g.productId]) out.push(...g.children);
     }
     return out;
   }, [groupedRows, expanded]);
@@ -201,13 +202,19 @@ export function InventoryOverview() {
     <section className="space-y-4">
       <Tabs value={tabsValue} onValueChange={setLocationId}>
         <DataTable
-          columns={inventoryColumns(tabsValue, expanded, toggleExpanded)}
+          columns={inventoryColumns(
+            tabsValue,
+            activeStoreId || undefined,
+            expanded,
+            toggleExpanded,
+          )}
           data={tableRows}
           filterKey="productName"
           filterPlaceholder="Search by product name or SKU..."
           mobileRow={InventoryMobileRow}
           tableMeta={{
             locationId: tabsValue,
+            storeId: activeStoreId || undefined,
             expanded,
             toggleExpanded,
           }}
@@ -235,10 +242,20 @@ export function InventoryOverview() {
             </>
           }
           toolbarRight={
-            <Button onClick={() => setOpenTransfer(true)} disabled={!tabsValue}>
-              <ArrowRightLeft className="mr-2" size={16} />
-              Transfer
-            </Button>
+            <>
+              <InventoryOverviewExportMenu
+                storeId={activeStoreId || undefined}
+                locationId={tabsValue || undefined}
+              />
+
+              <Button
+                onClick={() => setOpenTransfer(true)}
+                disabled={!tabsValue}
+              >
+                <ArrowRightLeft className="mr-2" size={16} />
+                Transfer
+              </Button>
+            </>
           }
         />
       </Tabs>
