@@ -263,6 +263,7 @@ export function InventoryOverview() {
       <CreateTransferModal
         open={openTransfer}
         onClose={() => setOpenTransfer(false)}
+        activeStoreId={activeStoreId as string}
         fromLocationId={tabsValue}
         fromLocationName={currentLocationName}
         locations={locationTabs}

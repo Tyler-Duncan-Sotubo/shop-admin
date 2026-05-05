@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { AxiosInstance, AxiosError } from "axios";
 import type { Session } from "next-auth";
+import { toast } from "sonner";
 
 type ApiError = {
   status: "error";
@@ -66,6 +67,7 @@ export function useUpdateOrderCustomerShipping(
     },
 
     onError: (err) => {
+      toast.error(getErrorMessage(err));
       throw new Error(getErrorMessage(err));
     },
   });

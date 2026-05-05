@@ -60,7 +60,7 @@ export function PickupLocationMobileRow({
               <RowActions
                 row={p}
                 onEdit={() => meta.onEdit?.(p)}
-                deleteEndpoint={`/api/pickup-locations/${p.id}/deactivate`}
+                deleteEndpoint={`/api/pickup/admin/${p.id}`}
                 refetchKey="pickup locations"
               />
             </div>

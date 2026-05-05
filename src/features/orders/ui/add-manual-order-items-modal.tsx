@@ -21,7 +21,7 @@ type Props = {
 
 type Line = {
   variantId: string;
-  quantity: number;
+  quantity: string;
 };
 
 type AddManualOrderItemPayload = {
@@ -40,7 +40,9 @@ export function AddManualOrderItemsModal({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const { activeStoreId } = useStoreScope();
 
-  const [lines, setLines] = useState<Line[]>([{ variantId: "", quantity: 1 }]);
+  const [lines, setLines] = useState<Line[]>([
+    { variantId: "", quantity: "1" },
+  ]);
 
   const addItem = useCreateMutation<AddManualOrderItemPayload>({
     endpoint: "/api/orders/manual/items",
@@ -49,7 +51,7 @@ export function AddManualOrderItemsModal({
     onSuccess: () => {
       setSubmitError(null);
       setIsSubmitting(false);
-      setLines([{ variantId: "", quantity: 1 }]);
+      setLines([{ variantId: "", quantity: "1" }]);
       onClose();
     },
     onError: () => setIsSubmitting(false),
@@ -62,7 +64,7 @@ export function AddManualOrderItemsModal({
   };
 
   const addLine = () =>
-    setLines((prev) => [...prev, { variantId: "", quantity: 1 }]);
+    setLines((prev) => [...prev, { variantId: "", quantity: "1" }]);
 
   const removeLine = (idx: number) =>
     setLines((prev) => prev.filter((_, i) => i !== idx));
@@ -88,7 +90,7 @@ export function AddManualOrderItemsModal({
       }
       setIsSubmitting(false);
       setSubmitError(null);
-      setLines([{ variantId: "", quantity: 1 }]);
+      setLines([{ variantId: "", quantity: "1" }]);
       onClose();
     } catch {
       setIsSubmitting(false);
@@ -141,11 +143,8 @@ export function AddManualOrderItemsModal({
                   type="number"
                   min={1}
                   value={line.quantity}
-                  onChange={(e) =>
-                    setLine(idx, { quantity: Number(e.target.value) })
-                  }
-                  className="h-9 text-sm"
-                  placeholder="Qty"
+                  onChange={(e) => setLine(idx, { quantity: e.target.value })}
+                  className="w-16"
                 />
               </div>
 

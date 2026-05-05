@@ -48,7 +48,7 @@ export function AdminCustomerCombobox({
       includeInactive: false,
     },
     session,
-    axios
+    axios,
   );
 
   const options = React.useMemo(() => {
@@ -62,7 +62,7 @@ export function AdminCustomerCombobox({
 
   const selected = React.useMemo(
     () => options.find((o) => o.id === value),
-    [options, value]
+    [options, value],
   );
 
   return (
@@ -76,7 +76,7 @@ export function AdminCustomerCombobox({
           className="w-full justify-between"
           disabled={disabled}
         >
-          <span className="truncate text-xs">
+          <span className="truncate text-sm">
             {selected?.label ?? placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -84,7 +84,7 @@ export function AdminCustomerCombobox({
       </PopoverTrigger>
 
       <PopoverContent
-        className="w-[--radix-popover-trigger-width] p-0"
+        className="min-w-(--radix-popover-trigger-width) w-full p-0"
         align="start"
       >
         <Command>
@@ -110,7 +110,7 @@ export function AdminCustomerCombobox({
               <Check
                 className={cn(
                   "mr-2 h-4 w-4",
-                  value === "" ? "opacity-100" : "opacity-0"
+                  value === "" ? "opacity-100" : "opacity-0",
                 )}
               />
               <span className="truncate text-xs">No customer</span>
@@ -128,10 +128,10 @@ export function AdminCustomerCombobox({
                 <Check
                   className={cn(
                     "mr-2 h-4 w-4",
-                    value === opt.id ? "opacity-100" : "opacity-0"
+                    value === opt.id ? "opacity-100" : "opacity-0",
                   )}
                 />
-                <span className="truncate text-xs">{opt.label}</span>
+                <span className="truncate text-sm">{opt.label}</span>
               </CommandItem>
             ))}
           </CommandGroup>

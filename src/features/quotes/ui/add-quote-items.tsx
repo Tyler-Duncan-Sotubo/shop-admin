@@ -18,7 +18,7 @@ type Props = {
 
 type Line = {
   variantId: string;
-  quantity: number;
+  quantity: string;
 };
 
 type AddQuoteItemPayload = {
@@ -32,7 +32,9 @@ type AddQuoteItemPayload = {
 export function AddQuoteItemsModal({ open, onClose, quoteId }: Props) {
   const { activeStoreId } = useStoreScope();
 
-  const [lines, setLines] = useState<Line[]>([{ variantId: "", quantity: 1 }]);
+  const [lines, setLines] = useState<Line[]>([
+    { variantId: "", quantity: "1" },
+  ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -43,7 +45,7 @@ export function AddQuoteItemsModal({ open, onClose, quoteId }: Props) {
     onSuccess: () => {
       setSubmitError(null);
       setIsSubmitting(false);
-      setLines([{ variantId: "", quantity: 1 }]);
+      setLines([{ variantId: "", quantity: "1" }]);
       onClose();
     },
     onError: () => setIsSubmitting(false),
@@ -56,7 +58,7 @@ export function AddQuoteItemsModal({ open, onClose, quoteId }: Props) {
   };
 
   const addLine = () =>
-    setLines((prev) => [...prev, { variantId: "", quantity: 1 }]);
+    setLines((prev) => [...prev, { variantId: "", quantity: "1" }]);
 
   const removeLine = (idx: number) =>
     setLines((prev) => prev.filter((_, i) => i !== idx));
@@ -79,7 +81,7 @@ export function AddQuoteItemsModal({ open, onClose, quoteId }: Props) {
       await addItem({ quoteId, items: cleaned }, setSubmitError);
       setIsSubmitting(false);
       setSubmitError(null);
-      setLines([{ variantId: "", quantity: 1 }]);
+      setLines([{ variantId: "", quantity: "1" }]);
       onClose();
     } catch {
       setIsSubmitting(false);
@@ -128,11 +130,8 @@ export function AddQuoteItemsModal({ open, onClose, quoteId }: Props) {
                   type="number"
                   min={1}
                   value={line.quantity}
-                  onChange={(e) =>
-                    setLine(idx, { quantity: Number(e.target.value) })
-                  }
-                  className="h-9 text-sm"
-                  placeholder="Qty"
+                  onChange={(e) => setLine(idx, { quantity: e.target.value })}
+                  className="w-16"
                 />
               </div>
 

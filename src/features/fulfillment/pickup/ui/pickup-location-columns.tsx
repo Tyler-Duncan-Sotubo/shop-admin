@@ -40,7 +40,7 @@ export const pickupLocationColumns = ({
         row={row.original}
         onEdit={() => onEdit(row.original)}
         // use your backend: PATCH /:id/deactivate (RowActions might assume DELETE; if so, use a custom action button instead)
-        deleteEndpoint={`/api/pickup-locations/${row.original.id}/deactivate`}
+        deleteEndpoint={`/api/pickup/admin/${row.original.id}`}
         refetchKey="pickup locations"
       />
     ),

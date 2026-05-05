@@ -13,8 +13,8 @@ import {
 } from "@/shared/ui/select";
 import type { CreateTransferPayload } from "../hooks/use-transfers";
 import { InventoryOverviewRow } from "../../core/types/inventory.type";
-import { VariantCombobox } from "../../core/ui/variant-combo-box";
 import { useCreateMutation } from "@/shared/hooks/use-create-mutation";
+import { StoreVariantCombobox } from "@/shared/ui/store-variant-combobox";
 
 type LocationOption = {
   locationId: string;
@@ -27,6 +27,7 @@ type LocationOption = {
 type Props = {
   open: boolean;
   onClose: () => void;
+  activeStoreId: string;
 
   fromLocationId: string;
   fromLocationName?: string;
@@ -38,7 +39,7 @@ type Props = {
   rows: InventoryOverviewRow[];
 };
 
-type Line = { productVariantId: string; quantity: number };
+type Line = { productVariantId: string; quantity: string };
 
 export function CreateTransferModal({
   open,
@@ -47,6 +48,7 @@ export function CreateTransferModal({
   fromLocationName,
   locations,
   rows,
+  activeStoreId,
 }: Props) {
   const [toLocationId, setToLocationId] = useState<string>("");
   const [reference, setReference] = useState("");
@@ -64,7 +66,7 @@ export function CreateTransferModal({
       setToLocationId("");
       setReference("");
       setNotes("");
-      setLines([{ productVariantId: "", quantity: 1 }]);
+      setLines([{ productVariantId: "", quantity: "1" }]);
       onClose();
     },
     onError: () => {
@@ -73,32 +75,23 @@ export function CreateTransferModal({
   });
 
   const [lines, setLines] = useState<Line[]>([
-    { productVariantId: "", quantity: 1 },
+    { productVariantId: "", quantity: "1" },
   ]);
 
   const toLocationOptions = useMemo(
     () =>
       locations.filter((l) => l.isActive && l.locationId !== fromLocationId),
-    [locations, fromLocationId]
+    [locations, fromLocationId],
   );
-
-  const variantOptions = useMemo(() => {
-    // Only show variants that exist in the overview rows
-    // label = Product • Variant • SKU
-    return rows.map((r) => ({
-      id: r.variantId,
-      label: `${r.productName} • ${r.variantTitle ?? "Default"}`,
-    }));
-  }, [rows]);
 
   const setLine = (idx: number, patch: Partial<Line>) => {
     setLines((prev) =>
-      prev.map((l, i) => (i === idx ? { ...l, ...patch } : l))
+      prev.map((l, i) => (i === idx ? { ...l, ...patch } : l)),
     );
   };
 
   const addLine = () =>
-    setLines((prev) => [...prev, { productVariantId: "", quantity: 1 }]);
+    setLines((prev) => [...prev, { productVariantId: "", quantity: "1" }]);
 
   const removeLine = (idx: number) =>
     setLines((prev) => prev.filter((_, i) => i !== idx));
@@ -127,7 +120,7 @@ export function CreateTransferModal({
         items: cleaned,
       },
       setSubmitError,
-      onClose
+      onClose,
     );
   };
 
@@ -202,10 +195,13 @@ export function CreateTransferModal({
             >
               <div className="md:col-span-8 space-y-2">
                 <div className="text-xs text-muted-foreground">Variant</div>
-                <VariantCombobox
+                <StoreVariantCombobox
+                  storeId={activeStoreId}
                   value={line.productVariantId}
-                  onChange={(v) => setLine(idx, { productVariantId: v })}
-                  options={variantOptions}
+                  onChange={(variantId) =>
+                    setLine(idx, { productVariantId: variantId })
+                  }
+                  requireStock={false}
                 />
               </div>
 
@@ -215,9 +211,7 @@ export function CreateTransferModal({
                   type="number"
                   min={1}
                   value={line.quantity}
-                  onChange={(e) =>
-                    setLine(idx, { quantity: Number(e.target.value) })
-                  }
+                  onChange={(e) => setLine(idx, { quantity: e.target.value })}
                   className="w-16"
                 />
               </div>

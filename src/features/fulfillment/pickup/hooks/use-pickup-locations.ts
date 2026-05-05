@@ -14,7 +14,7 @@ import type {
 export function useGetPickupLocations(
   session: Session | null,
   axios: AxiosInstance,
-  storeId: string | null
+  storeId: string | null,
 ) {
   return useQuery({
     queryKey: ["pickup", "locations", storeId],
@@ -33,7 +33,7 @@ export function useGetPickupLocations(
  * ------------------------------*/
 export function useCreatePickupLocation(
   session: Session | null,
-  axios: AxiosInstance
+  axios: AxiosInstance,
 ) {
   const qc = useQueryClient();
 
@@ -53,7 +53,7 @@ export function useCreatePickupLocation(
  * ------------------------------*/
 export function useUpdatePickupLocation(
   session: Session | null,
-  axios: AxiosInstance
+  axios: AxiosInstance,
 ) {
   const qc = useQueryClient();
 
@@ -79,13 +79,13 @@ export function useUpdatePickupLocation(
  * ------------------------------*/
 export function useDeactivatePickupLocation(
   session: Session | null,
-  axios: AxiosInstance
+  axios: AxiosInstance,
 ) {
   const qc = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await axios.patch(`/api/pickup-locations/${id}/deactivate`);
+      const res = await axios.patch(`/api/pickup/admin/${id}`);
       return res.data.data;
     },
     onSuccess: () => {
