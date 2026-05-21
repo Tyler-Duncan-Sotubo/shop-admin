@@ -46,6 +46,7 @@ import {
   sanitizeFileName,
   uploadToS3Put,
 } from "@/lib/s3-upload";
+import { toWebP } from "@/lib/to-webp";
 
 type AddProductPageProps = {
   afterCreatePath?: (productId: string) => string;
@@ -147,9 +148,13 @@ export function AddProduct({ afterCreatePath }: AddProductPageProps) {
       if (remaining <= 0) return;
 
       const nextFiles = acceptedFiles.slice(0, remaining);
-      const newOnes = nextFiles.map((file) => ({
+
+      // ✅ Convert all to WebP before storing
+      const converted = await Promise.all(nextFiles.map((f) => toWebP(f)));
+
+      const newOnes = converted.map((file) => ({
         file,
-        previewUrl: URL.createObjectURL(file),
+        previewUrl: URL.createObjectURL(file), // preview uses WebP too
       }));
 
       setLocalImages((prev) => [...prev, ...newOnes].slice(0, maxImages));
