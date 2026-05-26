@@ -5,6 +5,7 @@ import type { DataTableMobileRowProps } from "@/shared/ui/data-table";
 import { Badge } from "@/shared/ui/badge";
 import type { DispatchListItem, DispatchStatus } from "../hooks/use-dispatches";
 import { DispatchRowActions } from "./dispatch-row-actions";
+import { formatMoneyNGN } from "@/shared/utils/format-to-naira";
 
 function StatusBadge({ status }: { status: DispatchStatus }) {
   if (status === "pending") return <Badge variant="pending">Pending</Badge>;
@@ -65,7 +66,7 @@ export function DispatchMobileRow({
           <div className="flex items-center justify-between gap-3">
             <span className="text-xs text-muted-foreground">Total</span>
             <span className="text-sm font-medium tabular-nums">
-              {d.currency} {Number(d.total).toLocaleString()}
+              {formatMoneyNGN(d.total, d.currency ?? "NGN")}
             </span>
           </div>
         ) : null}

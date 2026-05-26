@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/shared/ui/badge";
 import type { DispatchListItem, DispatchStatus } from "../hooks/use-dispatches";
 import { DispatchRowActions } from "./dispatch-row-actions";
+import { formatMoneyNGN } from "@/shared/utils/format-to-naira";
 
 function StatusBadge({ status }: { status: DispatchStatus }) {
   if (status === "pending") return <Badge variant="pending">Pending</Badge>;
@@ -53,7 +54,7 @@ export const dispatchesColumns: ColumnDef<DispatchListItem>[] = [
       if (!d.total) return <span className="text-muted-foreground">—</span>;
       return (
         <span className="tabular-nums font-medium">
-          {d.currency} {Number(d.total).toLocaleString()}
+          {formatMoneyNGN(d.total, d.currency ?? "NGN")}
         </span>
       );
     },
