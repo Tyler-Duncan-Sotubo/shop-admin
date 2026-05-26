@@ -22,9 +22,12 @@ import { EditOrderCustomerShippingModal } from "./edit-order-customer-shipping-m
 import { StockWarning } from "./stock-warning";
 import { useAuthPermissions } from "@/lib/auth/use-permissions";
 import { useOrderPermissions } from "../hooks/use-order-permissions";
+import { useStoreScope } from "@/lib/providers/store-scope-provider";
 
 function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
   if (status === "paid") return <Badge>Paid</Badge>;
+  if (status === "awaiting_dispatch")
+    return <Badge variant="pending">Awaiting Dispatch</Badge>;
   if (status === "fulfilled") return <Badge>Fulfilled</Badge>;
   if (status === "lay_buy") return <Badge variant="pending">Lay-buy</Badge>;
   if (status === "cancelled")
@@ -35,6 +38,8 @@ function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
 export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   const { permissions, session, status: authStatus } = useAuthPermissions();
   const axios = useAxiosAuth();
+  const { activeStoreId } = useStoreScope();
+
   const { data, isLoading } = useGetOrder(session, axios, orderId);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -241,6 +246,7 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
             session={session}
             axios={axios}
             canUpdate={canUpdate}
+            storeId={activeStoreId as string}
           />
           <OrderAuditCard events={order.events ?? []} />
         </div>

@@ -9,8 +9,10 @@ import { InventoryOverview } from "./core/ui/inventory-overview";
 import LedgerClient from "./movements/ui/ledger-client";
 import InventoryTransferClient from "./transfer/ui/invertory-transfer-client";
 import { FilterChip, FilterChips } from "@/shared/ui/filter-chips";
+import { DispatchesClient } from "./dispatches/ui/dispatches-client";
+import { FaExchangeAlt } from "react-icons/fa";
 
-type InventoryTabKey = "overview" | "movements" | "transfers" | "locations";
+type InventoryTabKey = "overview" | "movements" | "transfers" | "dispatches";
 
 export default function InventoryClient() {
   const [tab, setTab] = useState<InventoryTabKey>("overview");
@@ -19,6 +21,7 @@ export default function InventoryClient() {
     { value: "overview", label: "Overview" },
     { value: "movements", label: "Stock Movements" },
     { value: "transfers", label: "Transfers" },
+    { value: "dispatches", label: "Dispatches" },
   ];
 
   return (
@@ -50,13 +53,18 @@ export default function InventoryClient() {
             </TabsTrigger>
 
             <TabsTrigger value="transfers" className="text-base">
-              <BsFillBoxSeamFill className="mr-2" />
+              <FaExchangeAlt className="mr-2" />
               Transfers
             </TabsTrigger>
 
             <TabsTrigger value="movements" className="text-base">
               <MdOutlineInventory2 className="mr-2" />
               Stock Movements
+            </TabsTrigger>
+
+            <TabsTrigger value="dispatches" className="text-base">
+              <BsFillBoxSeamFill className="mr-2" />
+              Dispatches
             </TabsTrigger>
           </TabsList>
         </div>
@@ -71,6 +79,10 @@ export default function InventoryClient() {
 
         <TabsContent value="transfers" className="mt-10">
           <InventoryTransferClient />
+        </TabsContent>
+
+        <TabsContent value="dispatches" className="mt-4">
+          <DispatchesClient />
         </TabsContent>
       </Tabs>
     </>

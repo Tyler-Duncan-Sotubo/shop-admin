@@ -17,8 +17,8 @@ import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { Badge } from "@/shared/ui/badge";
 import { useOrdersTotalCount } from "@/features/orders/hooks/use-orders-total-count";
 import { useQuotesTotalCount } from "@/features/quotes/hooks/use-quotes-total-count";
+import { useDispatchesCount } from "@/features/inventory/dispatches/hooks/use-dispatches-count";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
-import { useStores } from "@/features/settings/stores/core/hooks/use-stores";
 
 const TOPBAR_HEIGHT = "3.5rem";
 
@@ -32,11 +32,11 @@ const isLinkOrDescendant = (pathname: string, link?: string | null) =>
 
 const SALES_ORDERS_LINKS = new Set(["/sales/orders"]);
 const SALES_QUOTES_LINKS = new Set(["/sales/rfqs"]);
+const INVENTORY_LINKS = new Set(["/inventory"]);
 
 export default function AdminSidebar() {
   const { data: session } = useSession();
-  const { activeStoreId, setActiveStoreId } = useStoreScope();
-  const { stores } = useStores();
+  const { activeStoreId } = useStoreScope();
 
   const axios = useAxiosAuth();
   const pathname = usePathname();
@@ -45,6 +45,16 @@ export default function AdminSidebar() {
 
   const canReadOrders = userPermissions.includes("orders.read");
   const canReadQuotes = userPermissions.includes("quotes.read");
+
+  const canReadInventory = userPermissions.includes("inventory.read");
+
+  // count
+  const { data: dispatchesCount = 0 } = useDispatchesCount(
+    session,
+    axios,
+    activeStoreId,
+    canReadInventory,
+  );
 
   const { data: ordersCount = 0 } = useOrdersTotalCount(
     session,
@@ -123,6 +133,10 @@ export default function AdminSidebar() {
       return quotesCount;
     }
 
+    if (INVENTORY_LINKS.has(link) && canReadInventory && dispatchesCount > 0) {
+      return dispatchesCount;
+    }
+
     return null;
   };
 
@@ -168,9 +182,15 @@ export default function AdminSidebar() {
           const showTopBadge =
             item.title === "Sales"
               ? salesParentBadgeVisible(isSectionOpen)
-              : false;
+              : item.title === "Inventory"
+                ? dispatchesCount > 0 && !isSectionOpen // ← remove the pathname check
+                : false;
 
-          const topBadge = showTopBadge ? salesTotalCount : null;
+          const topBadge = showTopBadge
+            ? item.title === "Sales"
+              ? salesTotalCount
+              : dispatchesCount
+            : null;
 
           const topLevelClassName = `flex items-center gap-2 px-2 py-1.5 rounded transition-colors cursor-pointer ${
             isActiveTopLevel || isActiveParent

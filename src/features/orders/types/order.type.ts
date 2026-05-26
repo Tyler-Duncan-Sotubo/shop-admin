@@ -6,7 +6,8 @@ export type OrderStatus =
   | "cancelled"
   | "fulfilled"
   | "draft"
-  | "lay_buy";
+  | "lay_buy"
+  | "awaiting_dispatch"; // ← new status for warehouse manager flow
 
 export type OrderChannel = "online" | "pos" | string;
 

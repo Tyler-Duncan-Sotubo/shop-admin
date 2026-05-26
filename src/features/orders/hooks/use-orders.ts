@@ -158,3 +158,102 @@ export function useConvertToLayBuy(
     },
   });
 }
+
+export function useRequestDispatch(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      storeId,
+      note,
+    }: {
+      id: string;
+      storeId: string;
+      note?: string;
+    }) => {
+      try {
+        const res = await axios.post(`/api/orders/${id}/request-dispatch`, {
+          storeId,
+          note,
+        });
+        return res.data.data;
+      } catch (err) {
+        const e = err as AxiosError<any>;
+        const msg =
+          e.response?.data?.error?.message ??
+          e.response?.data?.message ??
+          e.message;
+        throw new Error(msg);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useConfirmDispatch(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      storeId,
+      note,
+    }: {
+      id: string;
+      storeId: string;
+      note?: string;
+    }) => {
+      try {
+        const res = await axios.post(`/api/orders/${id}/confirm-dispatch`, {
+          storeId,
+          note,
+        });
+        return res.data.data;
+      } catch (err) {
+        const e = err as AxiosError<any>;
+        const msg =
+          e.response?.data?.error?.message ??
+          e.response?.data?.message ??
+          e.message;
+        throw new Error(msg);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useCancelDispatch(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, note }: { id: string; note?: string }) => {
+      try {
+        const res = await axios.post(`/api/orders/${id}/cancel-dispatch`, {
+          note,
+        });
+        return res.data.data;
+      } catch (err) {
+        const e = err as AxiosError<any>;
+        const msg =
+          e.response?.data?.error?.message ??
+          e.response?.data?.message ??
+          e.message;
+        throw new Error(msg);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}

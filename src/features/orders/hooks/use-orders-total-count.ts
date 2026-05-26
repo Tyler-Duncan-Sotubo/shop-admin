@@ -14,11 +14,25 @@ export function useOrdersTotalCount(
     enabled:
       !!session?.backendTokens?.accessToken && !!storeId && enabledOverride,
     queryFn: async (): Promise<number> => {
-      const res = await axios.get("/api/orders", {
-        params: { limit: 1, offset: 0, status: "pending_payment", storeId },
-      });
-      return Number(res.data.data.count ?? 0);
+      const statuses = [
+        "pending_payment",
+        "paid",
+        "lay_buy",
+        "awaiting_dispatch",
+      ];
+
+      const results = await Promise.all(
+        statuses.map((status) =>
+          axios
+            .get("/api/orders", {
+              params: { limit: 1, offset: 0, status, storeId },
+            })
+            .then((res) => Number(res.data.data.count ?? 0)),
+        ),
+      );
+
+      return results.reduce((sum, count) => sum + count, 0);
     },
-    staleTime: 30_000, // optional: reduce spam
+    staleTime: 30_000,
   });
 }
