@@ -259,3 +259,18 @@ export function useDeleteQuote(session: Session | null, axios: AxiosInstance) {
     },
   });
 }
+
+export function useDownloadQuotePdf(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  return useMutation({
+    mutationFn: async (args: { quoteId: string }) => {
+      const res = await axios.post(`/api/quotes/${args.quoteId}/pdf`);
+      return res.data.data as { pdfUrl: string; fileName: string };
+    },
+    onSuccess: (data) => {
+      window.open(data.pdfUrl, "_blank");
+    },
+  });
+}

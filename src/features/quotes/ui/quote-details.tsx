@@ -34,6 +34,9 @@ import { ConvertQuoteToOrderModal } from "./convert-quote-to-order-modal";
 import { QuoteItemsCard } from "./quote-items-card";
 import { AddQuoteItemsModal } from "./add-quote-items";
 import { RefreshCcw } from "lucide-react";
+import { useZohoEnabled } from "@/features/settings/integrations/zoho/hooks/use-zoho-enbled";
+import { useStoreScope } from "@/lib/providers/store-scope-provider";
+import { DownloadQuotePdfButton } from "./download-quote-pdf";
 
 function StatusBadge({ status }: { status: QuoteStatus }) {
   if (status === "new") return <Badge>New</Badge>;
@@ -47,14 +50,14 @@ export default function QuoteDetailsClient({ quoteId }: { quoteId: string }) {
   const { data: session, status: authStatus } = useSession();
   const axios = useAxiosAuth();
   const router = useRouter();
-
+  const { activeStoreId } = useStoreScope();
   const { data, isLoading } = useGetQuote(session, axios, quoteId);
   const updateStatus = useUpdateQuoteStatus(session, axios);
   const convert = useConvertQuoteToOrder(session, axios);
   const sendToZoho = useSendQuoteToZoho(session, axios);
   const updateItems = useUpdateQuoteItems(session, axios);
   const removeItems = useRemoveQuoteItems(session, axios);
-
+  const { isEnabled: zohoEnabled } = useZohoEnabled(activeStoreId);
   const [convertOpen, setConvertOpen] = useState(false);
   const [addItemsOpen, setAddItemsOpen] = useState(false);
 
@@ -89,36 +92,52 @@ export default function QuoteDetailsClient({ quoteId }: { quoteId: string }) {
         description="Quote request details and actions."
       >
         {convertedOrderId ? (
-          <Button
-            onClick={() => router.push(`/sales/orders/${convertedOrderId}`)}
-          >
-            Open Order
-          </Button>
+          <div className="flex gap-3">
+            <DownloadQuotePdfButton
+              quoteId={quoteId}
+              session={session}
+              axios={axios}
+            />
+            <Button
+              onClick={() => router.push(`/sales/orders/${convertedOrderId}`)}
+            >
+              Open Order
+            </Button>
+          </div>
         ) : (
           <div className="flex gap-3">
             <Button variant="clean" onClick={() => setAddItemsOpen(true)}>
               Add Item
             </Button>
-            <Button
-              variant="secondary"
-              onClick={handleSendToZoho}
-              disabled={quote.status === "archived" || sendToZoho.isPending}
-              className="flex items-center gap-2"
-            >
-              {!quote.zohoEstimateId ? (
-                <div className="flex items-center gap-2">
-                  <SiZoho className="text-green-500" />
-                  {sendToZoho.isPending ? "Sending…" : "Send to Zoho"}
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <RefreshCcw
-                    className={sendToZoho.isPending ? "animate-spin" : ""}
-                  />
-                  {sendToZoho.isPending ? "Syncing…" : "Sync to Zoho"}
-                </div>
-              )}
-            </Button>
+
+            <DownloadQuotePdfButton
+              quoteId={quoteId}
+              session={session}
+              axios={axios}
+            />
+
+            {zohoEnabled && (
+              <Button
+                variant="secondary"
+                onClick={handleSendToZoho}
+                disabled={quote.status === "archived" || sendToZoho.isPending}
+                className="flex items-center gap-2"
+              >
+                {!quote.zohoEstimateId ? (
+                  <div className="flex items-center gap-2">
+                    <SiZoho className="text-green-500" />
+                    {sendToZoho.isPending ? "Sending…" : "Send to Zoho"}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <RefreshCcw
+                      className={sendToZoho.isPending ? "animate-spin" : ""}
+                    />
+                    {sendToZoho.isPending ? "Syncing…" : "Sync to Zoho"}
+                  </div>
+                )}
+              </Button>
+            )}
 
             <Button
               onClick={() => setConvertOpen(true)}

@@ -239,3 +239,36 @@ export function useRecordInvoicePayment(
     },
   });
 }
+
+export function useDownloadInvoicePdf(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  return useMutation({
+    mutationFn: async (args: {
+      invoiceId: string;
+      storeId?: string;
+      templateId?: string;
+    }) => {
+      const res = await axios.post(
+        `/api/invoice-templates/${args.invoiceId}/pdf`,
+        undefined,
+        {
+          params: {
+            storeId: args.storeId,
+            templateId: args.templateId,
+          },
+        },
+      );
+
+      return res.data.data as {
+        pdfUrl: string;
+        fileName: string;
+        generatedInvoiceId: string;
+      };
+    },
+    onSuccess: (data) => {
+      window.open(data.pdfUrl, "_blank");
+    },
+  });
+}

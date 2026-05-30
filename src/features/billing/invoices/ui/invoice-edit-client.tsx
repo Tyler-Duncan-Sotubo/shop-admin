@@ -172,6 +172,13 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
               {inv.balanceMinor > 0 && !inv.zohoOrganizationId && (
                 <Button onClick={() => setOpen(true)}>Record payment</Button>
               )}
+              <DownloadInvoicePdfButton
+                invoiceId={invoiceId}
+                session={session}
+                axios={axios}
+                storeId={activeStoreId}
+                invoiceStatus={inv.status}
+              />
             </div>
           )}
         </div>
