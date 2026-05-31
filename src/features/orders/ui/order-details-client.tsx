@@ -23,6 +23,7 @@ import { StockWarning } from "./stock-warning";
 import { useAuthPermissions } from "@/lib/auth/use-permissions";
 import { useOrderPermissions } from "../hooks/use-order-permissions";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
+import { ApplyDiscountModal } from "./apply-discount-modal";
 
 function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
   if (status === "paid") return <Badge>Paid</Badge>;
@@ -41,12 +42,13 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   const { permissions, session, status: authStatus } = useAuthPermissions();
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
-
-  const { data, isLoading } = useGetOrder(session, axios, orderId);
+  const [discountOpen, setDiscountOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [editCustomerShippingOpen, setEditCustomerShippingOpen] =
     useState(false);
+
+  const { data, isLoading } = useGetOrder(session, axios, orderId);
 
   const { canRead, canUpdate } = useOrderPermissions(permissions);
 
@@ -94,6 +96,17 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
         description="Order details and actions."
         tooltip="On hold = pending payment. Completed = fulfilled."
       >
+        {order.channel === "manual" &&
+          order.status !== "fulfilled" &&
+          order.status !== "cancelled" &&
+          order.status !== "refunded" && (
+            <>
+              <Button onClick={() => setDiscountOpen(true)} variant="clean">
+                Apply Discount
+              </Button>
+              {/* existing Add Item button */}
+            </>
+          )}
         {order.channel === "manual" &&
           order.status !== "paid" &&
           order.status !== "fulfilled" &&
@@ -265,6 +278,15 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
         onClose={() => setEditCustomerShippingOpen(false)}
         orderId={order.id}
         storeId={order.storeId ?? null}
+      />
+
+      <ApplyDiscountModal
+        open={discountOpen}
+        onClose={() => setDiscountOpen(false)}
+        orderId={order.id}
+        subtotal={order.subtotal as string | number}
+        currency={order.currency}
+        currentDiscount={order.discountTotal}
       />
     </section>
   );

@@ -413,3 +413,66 @@ export function useDeleteManualOrder(
     },
   });
 }
+
+export function useApplyDiscount(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      type,
+      value,
+    }: {
+      orderId: string;
+      type: "flat" | "percent";
+      value: number;
+    }) => {
+      try {
+        const res = await axios.post(`/api/orders/${orderId}/discount`, {
+          type,
+          value,
+        });
+        return res.data.data;
+      } catch (err) {
+        const e = err as AxiosError<any>;
+        const msg =
+          e.response?.data?.error?.message ??
+          e.response?.data?.message ??
+          e.message;
+        throw new Error(msg);
+      }
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["orders", vars.orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useRemoveDiscount(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      try {
+        const res = await axios.delete(`/api/orders/${orderId}/discount`);
+        return res.data.data;
+      } catch (err) {
+        const e = err as AxiosError<any>;
+        const msg =
+          e.response?.data?.error?.message ??
+          e.response?.data?.message ??
+          e.message;
+        throw new Error(msg);
+      }
+    },
+    onSuccess: (_, orderId) => {
+      qc.invalidateQueries({ queryKey: ["orders", orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}

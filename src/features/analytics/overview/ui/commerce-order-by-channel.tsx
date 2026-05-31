@@ -164,7 +164,7 @@ export function CommerceOrdersByChannelPie({
                   formatter={(_value, _name, item) => {
                     const payload = item?.payload as any;
                     const revenueMinor = Number(payload?.value ?? 0);
-                    return [formatMoneyNGN(revenueMinor, "NGN"), "Sales"];
+                    return [formatMoneyNGN(revenueMinor / 100, "NGN"), "Sales"];
                   }}
                 />
               }
@@ -227,9 +227,7 @@ export function CommerceOrdersByChannelPie({
         <div className="mt-4 space-y-2">
           {data.map((r) => {
             const pct =
-              totalRevenueMinor > 0
-                ? (Number(r.value) / totalRevenueMinor) * 100
-                : 0;
+              totalRevenueMinor > 0 ? Number(r.value) / totalRevenueMinor : 0;
 
             return (
               <div
@@ -246,7 +244,7 @@ export function CommerceOrdersByChannelPie({
 
                 <div className="flex items-center gap-3">
                   <span className="font-medium">
-                    {formatMoneyNGN(Number(r.value), "NGN")}
+                    {formatMoneyNGN(Number(r.value) / 100, "NGN")}
                   </span>
                   <span className="text-xs text-muted-foreground w-12 text-right">
                     {pct.toFixed(0)}%

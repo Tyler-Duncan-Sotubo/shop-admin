@@ -353,6 +353,7 @@ export function InvoiceLineItemsTable({
       </div>
 
       {/* Totals */}
+      {/* Totals */}
       <div className="flex justify-end">
         <div className="w-full md:w-[380px] space-y-2 rounded-xl border p-4 bg-white">
           <div className="flex justify-between text-sm">
@@ -361,12 +362,23 @@ export function InvoiceLineItemsTable({
               {formatMoneyNGN(minorToMajor(inv.subtotalMinor), inv.currency)}
             </span>
           </div>
+
+          {Number(inv.discountMinor ?? 0) > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-red-500">Discount</span>
+              <span className="font-medium text-red-500">
+                -{formatMoneyNGN(minorToMajor(inv.discountMinor), inv.currency)}
+              </span>
+            </div>
+          )}
+
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Tax</span>
             <span className="font-medium">
               {formatMoneyNGN(minorToMajor(inv.taxMinor), inv.currency)}
             </span>
           </div>
+
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Total</span>
             <span className="font-semibold">
