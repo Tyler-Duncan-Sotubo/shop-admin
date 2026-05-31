@@ -72,3 +72,38 @@ export function useUpdateOrderCustomerShipping(
     },
   });
 }
+
+export function useUpdateShippingFee(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      amount,
+    }: {
+      orderId: string;
+      amount: number;
+    }) => {
+      try {
+        const res = await axios.patch(`/api/orders/${orderId}/shipping-fee`, {
+          amount,
+        });
+        return res.data.data;
+      } catch (err) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const e = err as AxiosError<any>;
+        throw new Error(
+          e.response?.data?.error?.message ??
+            e.response?.data?.message ??
+            e.message,
+        );
+      }
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["orders", vars.orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}

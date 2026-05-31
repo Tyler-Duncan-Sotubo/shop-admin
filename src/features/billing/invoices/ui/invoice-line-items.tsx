@@ -2,7 +2,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Input } from "@/shared/ui/input";
 import {
   Table,
   TableBody,
@@ -26,15 +25,7 @@ import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { useUpdateInvoiceLine } from "../hooks/use-invoices";
 import { useDebounceCallback } from "@/shared/hooks/use-debounce";
 
-const toMinor = (major: unknown) => {
-  const n = Number(major);
-  if (Number.isNaN(n)) return 0;
-  return Math.round(n * 100);
-};
-
 type DraftEdit = {
-  quantity?: number;
-  unitPriceMajor?: string; // user types NGN
   taxId?: string | null;
 };
 
@@ -64,14 +55,7 @@ export function InvoiceLineItemsTable({
   }, [lines]);
 
   const { debounced: debouncedSaveLine } = useDebounceCallback(
-    async (
-      lineId: string,
-      payload: {
-        quantity?: number;
-        unitPriceMinor?: number;
-        taxId?: string | null;
-      },
-    ) => {
+    async (lineId: string, payload: { taxId?: string | null }) => {
       const line = lineById.get(lineId);
       if (!line) return;
       if (line.meta?.kind === "shipping") return;
@@ -90,9 +74,53 @@ export function InvoiceLineItemsTable({
     [lines],
   );
 
+  const renderTaxCell = (l: any, fullWidth = false) => {
+    const isShipping = l.meta?.kind === "shipping";
+    const edit = draftEdits[l.id] ?? {};
+    const taxId = isShipping ? null : (edit.taxId ?? l.taxId ?? null);
+
+    if (isShipping) {
+      return <span className="text-sm text-muted-foreground">—</span>;
+    }
+
+    if (!isDraft) {
+      return (
+        <span className="text-sm text-muted-foreground">
+          {taxes.find((t: any) => t.id === taxId)?.name ?? "No tax"}
+        </span>
+      );
+    }
+
+    return (
+      <Select
+        value={taxId ?? "none"}
+        onValueChange={(val) => {
+          const nextTaxId = val === "none" ? null : val;
+          setDraftEdits((s) => ({
+            ...s,
+            [l.id]: { ...s[l.id], taxId: nextTaxId },
+          }));
+          debouncedSaveLine(l.id, { taxId: nextTaxId });
+        }}
+      >
+        <SelectTrigger className={`h-9 bg-white ${fullWidth ? "w-full" : ""}`}>
+          <SelectValue placeholder="No tax" />
+        </SelectTrigger>
+        <SelectContent className="bg-white">
+          <SelectItem value="none">No tax</SelectItem>
+          {taxes.map((t: any) => (
+            <SelectItem key={t.id} value={t.id}>
+              {t.name} ({(t.rateBps / 100).toFixed(2)}%)
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  };
+
   return (
     <div className="space-y-4">
-      {/* Desktop table */}
+      {/* Desktop */}
       <div className="hidden md:block">
         <Table>
           <TableHeader>
@@ -108,19 +136,7 @@ export function InvoiceLineItemsTable({
           <TableBody>
             {sortedLines.map((l) => {
               const isShipping = l.meta?.kind === "shipping";
-              const disabledRow = !isDraft || isShipping;
-
-              const edit = draftEdits[l.id] ?? {};
-
-              const quantity = edit.quantity ?? Number(l.quantity ?? 1);
-
-              const defaultUnitPriceMajor = minorToMajor(
-                Number(l.unitPriceMinor ?? 0),
-              );
-              const unitPriceMajor =
-                edit.unitPriceMajor ?? defaultUnitPriceMajor;
-
-              const taxId = isShipping ? null : (edit.taxId ?? l.taxId ?? null);
+              const quantity = Number(l.quantity ?? 1);
 
               return (
                 <TableRow
@@ -128,10 +144,8 @@ export function InvoiceLineItemsTable({
                   className={isShipping ? "bg-muted/30" : ""}
                 >
                   <TableCell>
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium leading-snug">
-                        {l.description}
-                      </div>
+                    <div className="text-sm font-medium leading-snug">
+                      {l.description}
                     </div>
                   </TableCell>
 
@@ -140,65 +154,15 @@ export function InvoiceLineItemsTable({
                   </TableCell>
 
                   <TableCell>
-                    {isDraft && !isShipping ? (
-                      <Input
-                        value={unitPriceMajor}
-                        disabled={disabledRow}
-                        className="h-9 bg-white"
-                        inputMode="decimal"
-                        onChange={(e) => {
-                          const v = e.target.value;
-
-                          setDraftEdits((s) => ({
-                            ...s,
-                            [l.id]: { ...s[l.id], unitPriceMajor: v },
-                          }));
-
-                          if (!disabledRow) {
-                            debouncedSaveLine(l.id, {
-                              unitPriceMinor: toMinor(v),
-                            });
-                          }
-                        }}
-                      />
-                    ) : (
-                      <div className="h-9 flex items-center" />
-                    )}
+                    <span className="text-sm">
+                      {formatMoneyNGN(
+                        minorToMajor(Number(l.unitPriceMinor ?? 0)),
+                        inv.currency,
+                      )}
+                    </span>
                   </TableCell>
 
-                  <TableCell>
-                    {isShipping ? (
-                      <div className="h-9 flex items-center text-sm text-muted-foreground" />
-                    ) : (
-                      <Select
-                        disabled={!isDraft}
-                        value={taxId ?? "none"}
-                        onValueChange={(val) => {
-                          const nextTaxId = val === "none" ? null : val;
-
-                          setDraftEdits((s) => ({
-                            ...s,
-                            [l.id]: { ...s[l.id], taxId: nextTaxId },
-                          }));
-
-                          if (isDraft)
-                            debouncedSaveLine(l.id, { taxId: nextTaxId });
-                        }}
-                      >
-                        <SelectTrigger className="h-9 bg-white">
-                          <SelectValue placeholder="No tax" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white">
-                          <SelectItem value="none">No tax</SelectItem>
-                          {taxes.map((t: any) => (
-                            <SelectItem key={t.id} value={t.id}>
-                              {t.name} ({(t.rateBps / 100).toFixed(2)}%)
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </TableCell>
+                  <TableCell>{renderTaxCell(l)}</TableCell>
 
                   <TableCell className="text-right">
                     <div className="font-medium">
@@ -215,136 +179,57 @@ export function InvoiceLineItemsTable({
         </Table>
       </div>
 
-      {/* Mobile rows */}
+      {/* Mobile */}
       <div className="md:hidden rounded-lg border divide-y">
         {sortedLines.map((l) => {
           const isShipping = l.meta?.kind === "shipping";
-          const disabledRow = !isDraft || isShipping;
-
-          const edit = draftEdits[l.id] ?? {};
-          const quantity = edit.quantity ?? Number(l.quantity ?? 1);
-
-          const defaultUnitPriceMajor = minorToMajor(
-            Number(l.unitPriceMinor ?? 0),
-          );
-          const unitPriceMajor = edit.unitPriceMajor ?? defaultUnitPriceMajor;
-
-          const taxId = isShipping ? null : (edit.taxId ?? l.taxId ?? null);
+          const quantity = Number(l.quantity ?? 1);
 
           return (
-            <div key={l.id} className={isShipping ? "bg-muted/30" : ""}>
-              <div className="p-4 space-y-3">
-                {/* Title + amount */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium leading-snug">
-                      {l.description}
-                    </div>
-                    {isShipping ? (
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        Shipping
-                      </div>
-                    ) : null}
+            <div
+              key={l.id}
+              className={`p-4 space-y-3 ${isShipping ? "bg-muted/30" : ""}`}
+            >
+              {/* Title + amount */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium leading-snug">
+                    {l.description}
                   </div>
+                  {isShipping && (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Shipping
+                    </div>
+                  )}
+                </div>
+                <div className="shrink-0 text-sm font-semibold whitespace-nowrap">
+                  {formatMoneyNGN(
+                    minorToMajor(Number(l.lineTotalMinor ?? 0)),
+                    inv.currency,
+                  )}
+                </div>
+              </div>
 
-                  <div className="shrink-0 text-sm font-semibold whitespace-nowrap">
+              {/* Details */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <div className="text-xs text-muted-foreground">Quantity</div>
+                  <div className="text-sm font-medium">{quantity}</div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-xs text-muted-foreground">Rate</div>
+                  <div className="text-sm font-medium">
                     {formatMoneyNGN(
-                      minorToMajor(Number(l.lineTotalMinor ?? 0)),
+                      minorToMajor(Number(l.unitPriceMinor ?? 0)),
                       inv.currency,
                     )}
                   </div>
                 </div>
 
-                {/* Inputs */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <div className="text-xs text-muted-foreground">
-                      Quantity
-                    </div>
-                    <Input
-                      value={String(quantity)}
-                      disabled={disabledRow}
-                      className="h-9 bg-white"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      onChange={(e) => {
-                        const q = Number(e.target.value);
-
-                        setDraftEdits((s) => ({
-                          ...s,
-                          [l.id]: { ...s[l.id], quantity: q },
-                        }));
-
-                        if (!disabledRow)
-                          debouncedSaveLine(l.id, { quantity: q });
-                      }}
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="text-xs text-muted-foreground">Rate</div>
-                    {isDraft && !isShipping ? (
-                      <Input
-                        value={unitPriceMajor}
-                        disabled={disabledRow}
-                        className="h-9 bg-white"
-                        inputMode="decimal"
-                        onChange={(e) => {
-                          const v = e.target.value;
-
-                          setDraftEdits((s) => ({
-                            ...s,
-                            [l.id]: { ...s[l.id], unitPriceMajor: v },
-                          }));
-
-                          if (!disabledRow) {
-                            debouncedSaveLine(l.id, {
-                              unitPriceMinor: toMinor(v),
-                            });
-                          }
-                        }}
-                      />
-                    ) : (
-                      <div className="h-9 rounded-md border bg-muted/20" />
-                    )}
-                  </div>
-
-                  <div className="col-span-2 space-y-1">
-                    <div className="text-xs text-muted-foreground">Tax</div>
-                    {isShipping ? (
-                      <div className="h-9 flex items-center text-sm text-muted-foreground">
-                        No tax
-                      </div>
-                    ) : (
-                      <Select
-                        disabled={!isDraft}
-                        value={taxId ?? "none"}
-                        onValueChange={(val) => {
-                          const nextTaxId = val === "none" ? null : val;
-
-                          setDraftEdits((s) => ({
-                            ...s,
-                            [l.id]: { ...s[l.id], taxId: nextTaxId },
-                          }));
-
-                          if (isDraft)
-                            debouncedSaveLine(l.id, { taxId: nextTaxId });
-                        }}
-                      >
-                        <SelectTrigger className="h-9 bg-white w-full">
-                          <SelectValue placeholder="No tax" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white">
-                          <SelectItem value="none">No tax</SelectItem>
-                          {taxes.map((t: any) => (
-                            <SelectItem key={t.id} value={t.id}>
-                              {t.name} ({(t.rateBps / 100).toFixed(2)}%)
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
+                <div className="col-span-2 space-y-1">
+                  <div className="text-xs text-muted-foreground">Tax</div>
+                  {renderTaxCell(l, true)}
                 </div>
               </div>
             </div>
@@ -352,7 +237,6 @@ export function InvoiceLineItemsTable({
         })}
       </div>
 
-      {/* Totals */}
       {/* Totals */}
       <div className="flex justify-end">
         <div className="w-full md:w-[380px] space-y-2 rounded-xl border p-4 bg-white">

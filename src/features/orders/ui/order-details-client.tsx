@@ -25,6 +25,7 @@ import { useOrderPermissions } from "../hooks/use-order-permissions";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { ApplyDiscountModal } from "./apply-discount-modal";
 import { BackButton } from "@/shared/ui/back-button";
+import { EditShippingFeeModal } from "./edit-shipping-fee-modal";
 
 function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
   if (status === "paid") return <Badge>Paid</Badge>;
@@ -48,6 +49,7 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [editCustomerShippingOpen, setEditCustomerShippingOpen] =
     useState(false);
+  const [shippingOpen, setShippingOpen] = useState(false);
 
   const { data, isLoading } = useGetOrder(session, axios, orderId);
 
@@ -119,6 +121,14 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
               size="sm"
             >
               Discount
+            </Button>
+
+            <Button
+              onClick={() => setShippingOpen(true)}
+              variant="clean"
+              size="sm"
+            >
+              Shipping
             </Button>
 
             {order.status === "pending_payment" && (
@@ -299,6 +309,14 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
         subtotal={order.subtotal as string | number}
         currency={order.currency}
         currentDiscount={order.discountTotal}
+      />
+
+      <EditShippingFeeModal
+        open={shippingOpen}
+        onClose={() => setShippingOpen(false)}
+        orderId={order.id}
+        currentShipping={order.shippingTotal}
+        currency={order.currency}
       />
     </section>
   );
