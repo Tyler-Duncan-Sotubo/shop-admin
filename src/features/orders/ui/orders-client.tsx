@@ -6,14 +6,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import PageHeader from "@/shared/ui/page-header";
 import Loading from "@/shared/ui/loading";
-import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Tabs } from "@/shared/ui/tabs";
 import type { ListOrdersParams } from "../types/order.type";
 import { useGetOrders } from "../hooks/use-orders";
 import { useOrderCountsForTabs } from "../hooks/use-order-counts";
 import { ORDER_TAB_TO_STATUS, OrderTab } from "../constants/order-tabs";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { CreateManualOrderButton } from "./open-manual-orders-button";
-import { TabLabel } from "@/shared/ui/tab-label";
 import { DataTable } from "@/shared/ui/data-table";
 import { orderColumns } from "./order-columns";
 import { OrdersMobileRow } from "./orders-mobile-row";
@@ -25,8 +24,10 @@ const VALID_TABS: OrderTab[] = [
   "draft",
   "on_hold",
   "lay_buy",
+  "awaiting_dispatch",
   "paid",
   "fulfilled",
+  "refunded",
   "cancelled",
   "all",
 ];
@@ -84,9 +85,21 @@ export default function OrdersClient() {
       showZero: false,
     },
     {
+      value: "awaiting_dispatch",
+      label: "Awaiting dispatch",
+      count: counts.awaitingDispatch,
+      showZero: false,
+    },
+    {
       value: "fulfilled",
       label: "Fulfilled",
       count: counts.fulfilled,
+      showZero: false,
+    },
+    {
+      value: "refunded",
+      label: "Refunded",
+      count: counts.refunded,
       showZero: false,
     },
     {
@@ -112,9 +125,22 @@ export default function OrdersClient() {
         title: "No paid orders",
         description: "Orders with confirmed payment will appear here.",
       },
+      lay_buy: {
+        title: "No lay-buy orders",
+        description:
+          "Orders being fulfilled before payment is collected will appear here.",
+      },
+      awaiting_dispatch: {
+        title: "No orders awaiting dispatch",
+        description: "Orders ready to be shipped will appear here.",
+      },
       fulfilled: {
         title: "No fulfilled orders",
         description: "Shipped or delivered orders will appear here.",
+      },
+      refunded: {
+        title: "No refunded orders",
+        description: "Refunded orders will appear here.",
       },
       cancelled: {
         title: "No cancelled orders",
@@ -124,11 +150,6 @@ export default function OrdersClient() {
         title: "No orders yet",
         description:
           "Orders will appear here once customers start placing them.",
-      },
-      lay_buy: {
-        title: "No lay-buy orders",
-        description:
-          "Orders being fulfilled before payment is collected will appear here.",
       },
     };
 
@@ -166,7 +187,7 @@ export default function OrdersClient() {
                 wrap
               />
 
-              <div className="hidden sm:block w-full sm:w-auto overflow-x-auto">
+              {/* <div className="hidden sm:block w-full sm:w-auto overflow-x-auto">
                 <TabsList className="w-max whitespace-nowrap">
                   <TabsTrigger value="draft">
                     <TabLabel label="Draft" count={counts.draft} />
@@ -178,6 +199,13 @@ export default function OrdersClient() {
                     <TabLabel
                       label="Lay Buy"
                       count={counts.layBuy}
+                      showZero={false}
+                    />
+                  </TabsTrigger>
+                  <TabsTrigger value="awaiting_dispatch">
+                    <TabLabel
+                      label="Awaiting Dispatch"
+                      count={counts.awaitingDispatch}
                       showZero={false}
                     />
                   </TabsTrigger>
@@ -195,6 +223,13 @@ export default function OrdersClient() {
                       showZero={false}
                     />
                   </TabsTrigger>
+                  <TabsTrigger value="refunded">
+                    <TabLabel
+                      label="Refunded"
+                      count={counts.refunded}
+                      showZero={false}
+                    />
+                  </TabsTrigger>
                   <TabsTrigger value="cancelled">
                     <TabLabel
                       label="Cancelled"
@@ -206,7 +241,7 @@ export default function OrdersClient() {
                     <TabLabel label="All" count={counts.all} />
                   </TabsTrigger>
                 </TabsList>
-              </div>
+              </div> */}
             </>
           }
         />

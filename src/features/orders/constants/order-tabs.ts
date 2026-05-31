@@ -4,6 +4,8 @@ export type OrderTab =
   | "on_hold"
   | "paid"
   | "lay_buy" // 👈
+  | "awaiting_dispatch"
+  | "refunded"
   | "fulfilled"
   | "cancelled";
 
@@ -13,6 +15,9 @@ export type OrderStatus =
   | "fulfilled"
   | "cancelled"
   | "draft"
+  | "lay_buy"
+  | "awaiting_dispatch"
+  | "refunded"
   | "lay_buy";
 
 export const ORDER_TAB_TO_STATUS: Record<OrderTab, OrderStatus | undefined> = {
@@ -23,4 +28,6 @@ export const ORDER_TAB_TO_STATUS: Record<OrderTab, OrderStatus | undefined> = {
   cancelled: "cancelled",
   draft: "draft",
   lay_buy: "lay_buy",
+  awaiting_dispatch: "awaiting_dispatch",
+  refunded: "refunded",
 };

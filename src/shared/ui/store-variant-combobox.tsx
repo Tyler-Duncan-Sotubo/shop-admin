@@ -92,6 +92,9 @@ export function StoreVariantCombobox({
       <PopoverContent
         className="w-[--radix-popover-trigger-width] p-0"
         align="start"
+        side="bottom"
+        sideOffset={4}
+        avoidCollisions={false}
       >
         <Command shouldFilter={false}>
           <CommandInput
@@ -139,8 +142,24 @@ export function StoreVariantCombobox({
                     )}
                   />
 
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="flex flex-col min-w-0 flex-1 gap-0.5">
+                    {/* Mobile: stacked */}
+                    <div className="flex flex-col min-w-0 sm:hidden">
+                      <span className="truncate text-xs font-medium leading-tight">
+                        {opt.productName ?? "Product"}
+                      </span>
+                      <span className="truncate text-[10px] text-muted-foreground leading-tight">
+                        {opt.title}
+                      </span>
+                      {opt.sku && (
+                        <span className="text-[9px] text-muted-foreground/60">
+                          SKU: {opt.sku}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Desktop: inline */}
+                    <div className="hidden sm:flex items-center gap-1.5 min-w-0">
                       <span className="truncate text-xs font-medium">
                         {opt.productName ?? "Product"}
                       </span>
@@ -149,7 +168,7 @@ export function StoreVariantCombobox({
                       </span>
                     </div>
                     {opt.sku && (
-                      <span className="text-[10px] text-muted-foreground/70">
+                      <span className="hidden sm:block text-[10px] text-muted-foreground/70">
                         SKU: {opt.sku}
                       </span>
                     )}
@@ -160,11 +179,13 @@ export function StoreVariantCombobox({
                       {outOfStock ? (
                         <span className="flex items-center gap-0.5 text-[10px] text-destructive font-medium">
                           <AlertCircle className="h-3 w-3" />
-                          Out of stock
+                          <span className="hidden sm:inline">Out of stock</span>
+                          <span className="sm:hidden">OOS</span>
                         </span>
                       ) : (
                         <span className="text-[10px] text-muted-foreground">
-                          {opt.available} in stock
+                          {opt.available}
+                          <span className="hidden sm:inline"> in stock</span>
                         </span>
                       )}
                     </div>

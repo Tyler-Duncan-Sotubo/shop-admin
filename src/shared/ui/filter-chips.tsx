@@ -32,7 +32,7 @@ export function FilterChips<T extends string>({
   className,
 }: FilterChipsProps<T>) {
   return (
-    <div className={cn("sm:hidden", scrollable ? "-mx-3 px-4" : "", className)}>
+    <div className={cn("sm:", scrollable ? "-mx-2 px-2" : "", className)}>
       <div
         className={cn(
           "flex gap-1",

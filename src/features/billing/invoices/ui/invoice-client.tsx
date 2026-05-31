@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { DataTable } from "@/shared/ui/data-table";
-import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Tabs } from "@/shared/ui/tabs";
 import Loading from "@/shared/ui/loading";
 import PageHeader from "@/shared/ui/page-header";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
@@ -15,7 +15,6 @@ import { useGetInvoices } from "../hooks/use-invoices";
 import { useInvoiceCountsForTabs } from "../hooks/use-invoice-counts";
 import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
 import { InvoicesMobileRow } from "./invoices-mobile-row";
-import { TabLabel } from "@/shared/ui/tab-label";
 
 type Tab = "draft" | "issued" | "paid" | "all";
 
@@ -115,27 +114,6 @@ export function InvoiceClient() {
                   chips={chips}
                   wrap
                 />
-
-                <div className="hidden sm:block">
-                  <TabsList>
-                    <TabsTrigger value="all">
-                      <TabLabel label="All" count={counts.all} />
-                    </TabsTrigger>
-                    <TabsTrigger value="draft">
-                      <TabLabel label="Draft" count={counts.draft} />
-                    </TabsTrigger>
-                    <TabsTrigger value="issued">
-                      <TabLabel label="Issued" count={counts.issued} />
-                    </TabsTrigger>
-                    <TabsTrigger value="paid">
-                      <TabLabel
-                        label="Paid"
-                        count={counts.paid}
-                        showZero={false}
-                      />
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
               </>
             }
           />

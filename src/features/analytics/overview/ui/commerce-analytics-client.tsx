@@ -28,6 +28,22 @@ import { SellThroughTable } from "../../extended/ui/sell-through-table";
 import { NewVsReturningChart } from "../../extended/ui/new-vs-returning-chart";
 import { FulfillmentCards } from "../../extended/ui/fulfillment-cards";
 import { AnalyticsClient } from "../../core/ui/analytics-client";
+import { FilterChip, FilterChips } from "@/shared/ui/filter-chips";
+
+type AnalyticsTab =
+  | "overview"
+  | "commerce"
+  | "products"
+  | "customers"
+  | "fulfillment";
+
+const ANALYTICS_TABS: FilterChip<AnalyticsTab>[] = [
+  { value: "overview", label: "Overview" },
+  { value: "commerce", label: "Commerce" },
+  { value: "products", label: "Products" },
+  { value: "customers", label: "Customers" },
+  { value: "fulfillment", label: "Fulfillment" },
+];
 
 function toIso(d: Date) {
   return d.toISOString();
@@ -36,6 +52,7 @@ function toIso(d: Date) {
 export function CommerceAnalyticsClient() {
   const { data: session } = useSession();
   const { activeStoreId } = useStoreScope();
+  const [activeTab, setActiveTab] = React.useState<AnalyticsTab>("overview");
 
   // global date range
   const [range, setRange] = React.useState<DateRange>({
@@ -102,14 +119,30 @@ export function CommerceAnalyticsClient() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="commerce">Commerce</TabsTrigger>
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="customers">Customers</TabsTrigger>
-          <TabsTrigger value="fulfillment">Fulfillment</TabsTrigger>
-        </TabsList>
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as AnalyticsTab)}
+      >
+        {/* Mobile: FilterChips */}
+        <div className="sm:hidden">
+          <FilterChips<AnalyticsTab>
+            value={activeTab}
+            onChange={setActiveTab}
+            chips={ANALYTICS_TABS}
+            wrap
+          />
+        </div>
+
+        {/* Desktop: TabsList */}
+        <div className="hidden sm:block">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="commerce">Commerce</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="customers">Customers</TabsTrigger>
+            <TabsTrigger value="fulfillment">Fulfillment</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* ── Overview ── */}
         <TabsContent value="overview" className="space-y-6 mt-6">

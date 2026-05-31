@@ -2,15 +2,21 @@
 
 import Link from "next/link";
 import type { DataTableMobileRowProps } from "@/shared/ui/data-table";
-import type { Order } from "../types/order.type";
+import type { Order, OrderWithItems } from "../types/order.type";
 import { formatMoneyNGN } from "@/shared/utils/format-to-naira";
 import { Badge } from "@/shared/ui/badge";
 
-function StatusBadge({ status }: { status: Order["status"] }) {
+function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
   if (status === "paid") return <Badge>Paid</Badge>;
+  if (status === "awaiting_dispatch")
+    return <Badge variant="pending">Awaiting Dispatch</Badge>;
   if (status === "fulfilled") return <Badge>Fulfilled</Badge>;
-  if (status === "cancelled") return <Badge variant="outline">Cancelled</Badge>;
-  return <Badge variant="secondary">Pending</Badge>;
+  if (status === "lay_buy") return <Badge variant="pending">Lay-buy</Badge>;
+  if (status === "refunded")
+    return <Badge variant="destructive">Refunded</Badge>;
+  if (status === "cancelled")
+    return <Badge variant="secondary">Cancelled</Badge>;
+  return <Badge variant="secondary">On hold</Badge>;
 }
 
 export function OrdersMobileRow({

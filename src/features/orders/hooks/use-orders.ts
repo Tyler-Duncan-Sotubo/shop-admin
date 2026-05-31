@@ -8,6 +8,7 @@ import type {
   OrderWithItems,
 } from "../types/order.type";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 type ApiError = {
   status: "error";
@@ -60,29 +61,6 @@ export function usePayOrder(session: Session | null, axios: AxiosInstance) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
-    },
-  });
-}
-
-export function useCancelOrder(session: Session | null, axios: AxiosInstance) {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const res = await axios.post(`/api/orders/${id}/cancel`);
-      return res.data.data;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["orders"] });
-    },
-    onError: (err) => {
-      const e = err as AxiosError<ApiError>;
-      const msg =
-        e.response?.data?.error?.message ??
-        e.response?.data?.message ??
-        e.message;
-
-      throw new Error(msg);
     },
   });
 }
@@ -254,6 +232,184 @@ export function useCancelDispatch(
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useAddOrderItem(session: Session | null, axios: AxiosInstance) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      variantId,
+      quantity,
+      name,
+    }: {
+      orderId: string;
+      variantId: string;
+      quantity: number;
+      name?: string;
+    }) => {
+      try {
+        const res = await axios.post(`/api/orders/manual/items`, {
+          orderId,
+          variantId,
+          quantity,
+          name,
+        });
+        return res.data.data;
+      } catch (err) {
+        const e = err as AxiosError<any>;
+        const msg =
+          e.response?.data?.error?.message ??
+          e.response?.data?.message ??
+          e.message;
+        throw new Error(msg);
+      }
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["orders", vars.orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useUpdateOrderItemQty(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      itemId,
+      quantity,
+    }: {
+      orderId: string;
+      itemId: string;
+      quantity: number;
+    }) => {
+      try {
+        const res = await axios.patch(
+          `/api/orders/${orderId}/items/${itemId}`,
+          { quantity },
+        );
+        return res.data.data;
+      } catch (err) {
+        const e = err as AxiosError<any>;
+        const msg =
+          e.response?.data?.error?.message ??
+          e.response?.data?.message ??
+          e.message;
+        throw new Error(msg);
+      }
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["orders", vars.orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useRemoveOrderItem(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      itemId,
+    }: {
+      orderId: string;
+      itemId: string;
+    }) => {
+      try {
+        const res = await axios.delete(
+          `/api/orders/${orderId}/items/${itemId}`,
+        );
+        return res.data.data;
+      } catch (err) {
+        const e = err as AxiosError<any>;
+        const msg =
+          e.response?.data?.error?.message ??
+          e.response?.data?.message ??
+          e.message;
+        throw new Error(msg);
+      }
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["orders", vars.orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useCancelOrderWithRefund(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      forceRefund,
+      refundNote,
+    }: {
+      orderId: string;
+      forceRefund?: boolean;
+      refundNote?: string;
+    }) => {
+      try {
+        const res = await axios.post(`/api/orders/${orderId}/cancel`, {
+          forceRefund,
+          refundNote,
+        });
+        return res.data.data;
+      } catch (err) {
+        const e = err as AxiosError<any>;
+        console.error("Cancel order error", e.response?.data?.error?.message);
+        const msg = e.response?.data?.error?.message;
+        throw new Error(msg);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (err) => {
+      const e = err as AxiosError<any>;
+      const msg =
+        e.response?.data?.error?.message ??
+        e.response?.data?.message ??
+        e.message;
+      toast.error(msg);
+    },
+  });
+}
+
+export function useDeleteManualOrder(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  const qc = useQueryClient();
+  const router = useRouter();
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      try {
+        const res = await axios.delete(`/api/orders/manual/${orderId}`);
+        return res.data.data;
+      } catch (err) {
+        const e = err as AxiosError<any>;
+        const msg =
+          e.response?.data?.error?.message ??
+          e.response?.data?.message ??
+          e.message;
+        throw new Error(msg);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      router.push("/sales/orders");
     },
   });
 }

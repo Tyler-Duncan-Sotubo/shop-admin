@@ -6,11 +6,9 @@ import Loading from "@/shared/ui/loading";
 import { productColumns } from "./product-columns";
 import type { ProductListRow } from "../types/product.type";
 import { useGetProducts } from "../hooks/use-product";
-import { useSession } from "next-auth/react";
-import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Tabs } from "@/shared/ui/tabs";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
-import { TabLabel } from "@/shared/ui/tab-label";
 import { useProductCountsForTabs } from "../hooks/use-product-counts";
 import { Button } from "@/shared/ui/button";
 import { FaPlus } from "react-icons/fa6";
@@ -128,21 +126,6 @@ export function ProductTable({ data = [] }: { data?: ProductListRow[] }) {
                 chips={chips}
                 wrap
               />
-
-              {/* ✅ Desktop tabs */}
-              <div className="hidden sm:block">
-                <TabsList>
-                  <TabsTrigger value="active">
-                    <TabLabel label="Published" count={counts.active ?? 0} />
-                  </TabsTrigger>
-                  <TabsTrigger value="draft">
-                    <TabLabel label="Draft" count={counts.draft ?? 0} />
-                  </TabsTrigger>
-                  <TabsTrigger value="archived">
-                    <TabLabel label="Archived" count={counts.archived ?? 0} />
-                  </TabsTrigger>
-                </TabsList>
-              </div>
             </>
           ) : null
         }

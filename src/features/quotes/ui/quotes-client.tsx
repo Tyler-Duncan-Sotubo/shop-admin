@@ -7,8 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import PageHeader from "@/shared/ui/page-header";
 import Loading from "@/shared/ui/loading";
-import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import { TabLabel } from "@/shared/ui/tab-label";
+import { Tabs } from "@/shared/ui/tabs";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import type { ListQuotesParams, Quote } from "../types/quote.type";
 import { useGetQuotes } from "../hooks/use-quotes";
@@ -164,34 +163,6 @@ export default function QuotesClient() {
                 ]}
                 wrap
               />
-
-              <div className="hidden sm:block">
-                <TabsList>
-                  <TabsTrigger value="new">
-                    <TabLabel label="New" count={counts.new} />
-                  </TabsTrigger>
-                  <TabsTrigger value="in_progress">
-                    <TabLabel label="In progress" count={counts.inProgress} />
-                  </TabsTrigger>
-                  <TabsTrigger value="converted">
-                    <TabLabel
-                      label="Converted"
-                      count={counts.converted}
-                      showZero={false}
-                    />
-                  </TabsTrigger>
-                  <TabsTrigger value="archived">
-                    <TabLabel
-                      label="Archived"
-                      count={counts.archived}
-                      showZero={false}
-                    />
-                  </TabsTrigger>
-                  <TabsTrigger value="all">
-                    <TabLabel label="All" count={counts.all} />
-                  </TabsTrigger>
-                </TabsList>
-              </div>
             </>
           }
         />

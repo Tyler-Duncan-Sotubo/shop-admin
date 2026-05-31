@@ -30,6 +30,8 @@ export function useOrderCountsForTabs(
       { key: "on_hold", status: "pending_payment" },
       { key: "paid", status: "paid" },
       { key: "lay_buy", status: "lay_buy" }, // 👈
+      { key: "awaiting_dispatch", status: "awaiting_dispatch" },
+      { key: "refunded", status: "refunded" },
       { key: "fulfilled", status: "fulfilled" },
       { key: "cancelled", status: "cancelled" },
     ].map(({ key, status }) => ({
@@ -47,7 +49,9 @@ export function useOrderCountsForTabs(
     onHold: queries[2].data ?? 0,
     paid: queries[3].data ?? 0,
     layBuy: queries[4].data ?? 0, // 👈
-    fulfilled: queries[5].data ?? 0,
-    cancelled: queries[6].data ?? 0,
+    awaitingDispatch: queries[5].data ?? 0,
+    refunded: queries[6].data ?? 0,
+    fulfilled: queries[7].data ?? 0,
+    cancelled: queries[8].data ?? 0,
   };
 }

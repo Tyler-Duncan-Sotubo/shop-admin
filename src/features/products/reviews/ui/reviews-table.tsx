@@ -99,6 +99,7 @@ export function ReviewsTable() {
               onChange={setStatusTab}
               chips={chips}
               wrap
+              className="-mx-2 px-2 sm:hidden"
               // or: scrollable
             />
 

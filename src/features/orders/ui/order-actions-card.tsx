@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -6,11 +5,12 @@ import { Button } from "@/shared/ui/button";
 import type { OrderWithItems } from "../types/order.type";
 import {
   usePayOrder,
-  useCancelOrder,
   useConvertToLayBuy,
   useRequestDispatch,
   useConfirmDispatch,
-  useCancelDispatch, // 👈 new hook — see below
+  useCancelDispatch,
+  useCancelOrderWithRefund,
+  useDeleteManualOrder,
 } from "../hooks/use-orders";
 import type { Session } from "next-auth";
 import type { AxiosInstance } from "axios";
@@ -31,39 +31,58 @@ export function OrderActionsCard({
   storeId: string;
 }) {
   const payMut = usePayOrder(session, axios);
-  const cancelMut = useCancelOrder(session, axios);
+  const cancelMut = useCancelOrderWithRefund(session, axios);
   const layBuyMut = useConvertToLayBuy(session, axios);
   const requestDispatchMut = useRequestDispatch(session, axios);
   const confirmDispatchMut = useConfirmDispatch(session, axios);
   const cancelDispatchMut = useCancelDispatch(session, axios);
+  const deleteMut = useDeleteManualOrder(session, axios);
+
+  const [openDelete, setOpenDelete] = useState(false);
+  const [openRequestDispatch, setOpenRequestDispatch] = useState(false);
+  const [openCancelDispatch, setOpenCancelDispatch] = useState(false);
+  const [openCancel, setOpenCancel] = useState(false);
+  const [openLayBuy, setOpenLayBuy] = useState(false);
 
   const isMutating =
     payMut.isPending ||
     cancelMut.isPending ||
     layBuyMut.isPending ||
     requestDispatchMut.isPending ||
-    confirmDispatchMut.isPending ||
-    cancelDispatchMut.isPending;
+    cancelDispatchMut.isPending ||
+    deleteMut.isPending;
 
-  const cancelError = cancelMut.isError
-    ? ((cancelMut.error as any)?.response?.data?.error?.message ??
-      "Unable to cancel order")
-    : null;
+  const status = order.status;
+  const isPaid = status === "paid" || status === "awaiting_dispatch";
+  const isAwaitingDispatch = status === "awaiting_dispatch";
+  const isLayBuy = status === "lay_buy";
+  const isPendingPayment = status === "pending_payment";
+  const isDraft = status === "draft";
 
-  const canRequestDispatch =
-    order.status === "paid" || order.status === "lay_buy";
-  const canConfirmDispatch = order.status === "awaiting_dispatch";
-  const canCancelDispatch = order.status === "awaiting_dispatch";
+  const canRequestDispatch = isPaid || isLayBuy;
+  const canCancelDispatch = isAwaitingDispatch;
+  const canConvertToLayBuy = isPendingPayment || isDraft;
   const canCancel =
-    order.status === "pending_payment" || order.status === "lay_buy";
-  const canConvertToLayBuy =
-    order.status === "pending_payment" || order.status === "draft";
+    isPendingPayment || isLayBuy || isPaid || isAwaitingDispatch;
+  const canDelete = isDraft;
 
-  const [openRequestDispatch, setOpenRequestDispatch] = useState(false);
-  const [openConfirmDispatch, setOpenConfirmDispatch] = useState(false);
-  const [openCancelDispatch, setOpenCancelDispatch] = useState(false);
-  const [openCancel, setOpenCancel] = useState(false);
-  const [openLayBuy, setOpenLayBuy] = useState(false);
+  const cancelTitle = isPaid
+    ? "Cancel & process refund?"
+    : isAwaitingDispatch
+      ? "Cancel order & dispatch?"
+      : "Cancel this order?";
+
+  const cancelDescription = isPaid
+    ? "This order has already been paid. Cancelling it will mark it as refunded — you'll need to return the money to the customer manually outside the system."
+    : isAwaitingDispatch
+      ? "This will cancel the active dispatch request and the order. The warehouse will no longer need to process it."
+      : isLayBuy
+        ? "This will cancel the lay-buy order and release the reserved stock back to inventory."
+        : "This will cancel the order and release any reserved stock back to inventory.";
+
+  const cancelLabel = isPaid
+    ? "Yes, cancel & mark as refunded"
+    : "Yes, cancel order";
 
   return (
     <div className="border rounded-lg p-2">
@@ -72,19 +91,6 @@ export function OrderActionsCard({
       </div>
 
       <div className="space-y-3 p-3">
-        {/* Step 1 — admin/sales requests dispatch */}
-        {canRequestDispatch && (
-          <Button
-            className="w-full"
-            variant="secondary"
-            disabled={!canUpdate || isMutating}
-            onClick={() => setOpenRequestDispatch(true)}
-          >
-            Request Dispatch
-          </Button>
-        )}
-
-        {/* Cancel dispatch — revert back to paid */}
         {canCancelDispatch && (
           <Button
             className="w-full"
@@ -103,102 +109,148 @@ export function OrderActionsCard({
             disabled={!canUpdate || isMutating}
             onClick={() => setOpenLayBuy(true)}
           >
-            Convert to lay-buy
+            Convert to Lay-buy
           </Button>
         )}
 
-        <Button
-          className="w-full"
-          variant="destructive"
-          disabled={!canCancel || !canUpdate || isMutating}
-          onClick={() => setOpenCancel(true)}
-        >
-          Cancel order
-        </Button>
+        {canDelete && (
+          <Button
+            className="w-full"
+            variant="destructive"
+            disabled={!canUpdate || isMutating}
+            onClick={() => setOpenDelete(true)}
+          >
+            Delete Order
+          </Button>
+        )}
 
-        <div className="text-xs text-muted-foreground">
-          Actions require confirmation to prevent mistakes.
-        </div>
+        {canRequestDispatch && !isAwaitingDispatch && (
+          <Button
+            className="w-full"
+            variant="secondary"
+            disabled={!canUpdate || isMutating}
+            onClick={() => setOpenRequestDispatch(true)}
+          >
+            Request Dispatch
+          </Button>
+        )}
 
-        <ConfirmOrderActionDialog
-          open={openRequestDispatch}
-          onOpenChange={setOpenRequestDispatch}
-          title="Send to warehouse?"
-          description="This will notify the warehouse to prepare and dispatch this order."
-          confirmLabel="Yes, send to warehouse"
-          isLoading={requestDispatchMut.isPending}
-          error={(requestDispatchMut.error as Error)?.message}
-          onConfirm={() =>
-            requestDispatchMut.mutate(
-              { id: order.id, storeId },
-              { onSuccess: () => setOpenRequestDispatch(false) },
-            )
-          }
-        />
+        {canCancel && (
+          <Button
+            className="w-full"
+            variant="destructive"
+            disabled={!canUpdate || isMutating}
+            onClick={() => setOpenCancel(true)}
+          >
+            {isPaid ? "Cancel & Refund" : "Cancel Order"}
+          </Button>
+        )}
 
-        <ConfirmOrderActionDialog
-          open={openConfirmDispatch}
-          onOpenChange={setOpenConfirmDispatch}
-          title="Confirm dispatch?"
-          description="Confirm that this order has been physically packed and is leaving the warehouse. Stock will be deducted."
-          confirmLabel="Yes, confirm dispatch"
-          isLoading={confirmDispatchMut.isPending}
-          error={(confirmDispatchMut.error as Error)?.message}
-          onConfirm={() =>
-            confirmDispatchMut.mutate(
-              { id: order.id, storeId },
-              { onSuccess: () => setOpenConfirmDispatch(false) },
-            )
-          }
-        />
-
-        <ConfirmOrderActionDialog
-          open={openCancelDispatch}
-          onOpenChange={setOpenCancelDispatch}
-          title="Cancel dispatch request?"
-          description="This will cancel the dispatch request and return the order to paid status."
-          confirmLabel="Yes, cancel dispatch"
-          isLoading={cancelDispatchMut.isPending}
-          error={(cancelDispatchMut.error as Error)?.message}
-          onConfirm={() =>
-            cancelDispatchMut.mutate(
-              { id: order.id },
-              { onSuccess: () => setOpenCancelDispatch(false) },
-            )
-          }
-        />
-
-        <ConfirmOrderActionDialog
-          open={openLayBuy}
-          onOpenChange={setOpenLayBuy}
-          title="Convert to lay-buy?"
-          description="The order will be fulfilled now and payment collected later."
-          confirmLabel="Yes, convert to lay-buy"
-          isLoading={layBuyMut.isPending}
-          onConfirm={() =>
-            layBuyMut.mutate(order.id, {
-              onSuccess: () => setOpenLayBuy(false),
-            })
-          }
-        />
-
-        <ConfirmOrderActionDialog
-          open={openCancel}
-          onOpenChange={setOpenCancel}
-          title="Cancel this order?"
-          description="This will cancel the order and release any reservations."
-          confirmLabel="Yes, cancel order"
-          confirmVariant="destructive"
-          requireText={order.orderNumber}
-          isLoading={cancelMut.isPending}
-          onConfirm={() =>
-            cancelMut.mutate(order.id, {
-              onSuccess: () => setOpenCancel(false),
-            })
-          }
-          error={cancelError}
-        />
+        <p className="text-xs text-muted-foreground">
+          All actions require confirmation to prevent mistakes.
+        </p>
       </div>
+
+      {/* ── Dialogs ── */}
+
+      <ConfirmOrderActionDialog
+        open={openRequestDispatch}
+        onOpenChange={setOpenRequestDispatch}
+        title="Send to warehouse?"
+        description="The warehouse team will be notified to pack and dispatch this order. You can cancel the request if needed before they confirm it."
+        confirmLabel="Yes, send to warehouse"
+        isLoading={requestDispatchMut.isPending}
+        error={(requestDispatchMut.error as Error)?.message}
+        onConfirm={() =>
+          requestDispatchMut.mutate(
+            { id: order.id, storeId },
+            { onSuccess: () => setOpenRequestDispatch(false) },
+          )
+        }
+      />
+
+      <ConfirmOrderActionDialog
+        open={openCancelDispatch}
+        onOpenChange={setOpenCancelDispatch}
+        title="Cancel dispatch request?"
+        description="The warehouse will no longer process this order for dispatch. The order will return to its previous status and can be re-dispatched later."
+        confirmLabel="Yes, cancel dispatch"
+        isLoading={cancelDispatchMut.isPending}
+        error={(cancelDispatchMut.error as Error)?.message}
+        onConfirm={() =>
+          cancelDispatchMut.mutate(
+            { id: order.id },
+            { onSuccess: () => setOpenCancelDispatch(false) },
+          )
+        }
+      />
+
+      <ConfirmOrderActionDialog
+        open={openLayBuy}
+        onOpenChange={setOpenLayBuy}
+        title="Convert to lay-buy?"
+        description="The customer will receive their items now and pay later. This is useful when a customer needs the goods before payment is complete."
+        confirmLabel="Yes, convert to lay-buy"
+        isLoading={layBuyMut.isPending}
+        onConfirm={() =>
+          layBuyMut.mutate(order.id, {
+            onSuccess: () => setOpenLayBuy(false),
+          })
+        }
+      />
+
+      <ConfirmOrderActionDialog
+        open={openDelete}
+        onOpenChange={setOpenDelete}
+        title="Delete this order?"
+        description="This draft order will be permanently deleted and cannot be recovered. No stock or payments are affected."
+        confirmLabel="Yes, delete order"
+        confirmVariant="destructive"
+        requireText={order.orderNumber}
+        isLoading={deleteMut.isPending}
+        error={(deleteMut.error as Error)?.message}
+        onConfirm={() =>
+          deleteMut.mutate(order.id, {
+            onSuccess: () => setOpenDelete(false),
+          })
+        }
+      />
+
+      <ConfirmOrderActionDialog
+        open={openCancel}
+        onOpenChange={(open) => {
+          console.log("isPaid:", isPaid, "status:", order.status);
+
+          setOpenCancel(open);
+          if (!open) cancelMut.reset();
+        }}
+        title={cancelTitle}
+        description={cancelDescription}
+        confirmLabel={cancelLabel}
+        confirmVariant="destructive"
+        requireText={order.orderNumber}
+        isLoading={cancelMut.isPending}
+        error={
+          cancelMut.isError
+            ? ((cancelMut.error as Error)?.message ?? "Unable to cancel order")
+            : null
+        }
+        onConfirm={() =>
+          cancelMut.mutate(
+            {
+              orderId: order.id,
+              forceRefund: isPaid,
+              refundNote: isPaid ? "Cancelled by admin" : undefined,
+            },
+            {
+              onSuccess: () => {
+                setOpenCancel(false);
+                cancelMut.reset();
+              },
+            },
+          )
+        }
+      />
     </div>
   );
 }

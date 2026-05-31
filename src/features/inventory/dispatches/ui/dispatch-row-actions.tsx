@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // features/inventory/dispatches/ui/dispatch-row-actions.tsx
 "use client";
 
@@ -39,7 +40,10 @@ export function DispatchRowActions({
         description="Confirm this order has been packed and is leaving the warehouse. Stock will be deducted."
         confirmLabel="Yes, confirm dispatch"
         isLoading={confirmMut.isPending}
-        error={(confirmMut.error as Error)?.message}
+        error={
+          (confirmMut.error as any)?.response?.data?.error?.message ??
+          (confirmMut.error as Error)?.message
+        }
         onConfirm={() =>
           confirmMut.mutate(
             { orderId: dispatch.orderId, storeId: dispatch.storeId },
@@ -48,10 +52,12 @@ export function DispatchRowActions({
                 setOpen(false);
                 toast.success("Dispatch confirmed");
               },
-              onError: (err) => {
-                toast.error(
-                  (err as Error).message ?? "Failed to confirm dispatch",
-                );
+              onError: (err: any) => {
+                const message =
+                  err?.response?.data?.error?.message ??
+                  err?.message ??
+                  "Failed to confirm dispatch";
+                toast.error(message);
               },
             },
           )

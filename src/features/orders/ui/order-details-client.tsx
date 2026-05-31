@@ -30,6 +30,8 @@ function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
     return <Badge variant="pending">Awaiting Dispatch</Badge>;
   if (status === "fulfilled") return <Badge>Fulfilled</Badge>;
   if (status === "lay_buy") return <Badge variant="pending">Lay-buy</Badge>;
+  if (status === "refunded")
+    return <Badge variant="destructive">Refunded</Badge>;
   if (status === "cancelled")
     return <Badge variant="secondary">Cancelled</Badge>;
   return <Badge variant="secondary">On hold</Badge>;
@@ -102,12 +104,6 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
                 <Button onClick={() => setIsOpen(true)} variant="clean">
                   <FaRegEdit />
                   Add Item
-                </Button>
-              )}
-
-              {order.status === "draft" && (
-                <Button onClick={handleCreateManualPayment} variant="clean">
-                  Convert to Invoice
                 </Button>
               )}
 
@@ -233,7 +229,11 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
             />
           </div>
 
-          <OrderItemsCard currency={order.currency} items={order.items ?? []} />
+          <OrderItemsCard
+            currency={order.currency}
+            items={order.items ?? []}
+            orderId={order.id}
+          />
         </div>
 
         <div className="space-y-6">

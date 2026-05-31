@@ -8,7 +8,6 @@ import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import Loading from "@/shared/ui/loading";
 import { DataTable } from "@/shared/ui/data-table";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-
 import {
   useGetInventoryOverview,
   useGetStoreLocations,
@@ -228,17 +227,6 @@ export function InventoryOverview() {
                 wrap={false}
                 scrollable
               />
-
-              {/* ✅ Desktop: tabs */}
-              <div className="hidden sm:block">
-                <TabsList>
-                  {locationTabs.map((l) => (
-                    <TabsTrigger key={l.locationId} value={l.locationId}>
-                      {l.name}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </div>
             </>
           }
           toolbarRight={

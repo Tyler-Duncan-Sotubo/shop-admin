@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { BsFillBoxSeamFill } from "react-icons/bs";
 import { FaTag, FaReceipt } from "react-icons/fa";
@@ -75,6 +74,7 @@ export default function ProductClient() {
         chips={chips}
         scrollable
         wrap={false}
+        className="mb-4 sm:hidden"
       />
 
       <Tabs value={tab} onValueChange={(v) => onTabChange(v as ProductTabKey)}>
