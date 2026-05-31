@@ -97,40 +97,40 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
         tooltip="On hold = pending payment. Completed = fulfilled."
       >
         {order.channel === "manual" &&
-          order.status !== "fulfilled" &&
-          order.status !== "cancelled" &&
-          order.status !== "refunded" && (
-            <>
-              <Button onClick={() => setDiscountOpen(true)} variant="clean">
-                Apply Discount
-              </Button>
-              {/* existing Add Item button */}
-            </>
-          )}
-        {order.channel === "manual" &&
-          order.status !== "paid" &&
-          order.status !== "fulfilled" &&
-          order.status !== "cancelled" && (
-            <>
+          !["fulfilled", "cancelled", "refunded"].includes(order.status) && (
+            <div className="flex flex-wrap gap-2">
               {(order.sourceType === "manual" ||
                 order.sourceType === "quote") && (
-                <Button onClick={() => setIsOpen(true)} variant="clean">
+                <Button
+                  onClick={() => setIsOpen(true)}
+                  variant="clean"
+                  size="sm"
+                >
                   <FaRegEdit />
                   Add Item
                 </Button>
               )}
 
+              <Button
+                onClick={() => setDiscountOpen(true)}
+                variant="clean"
+                size="sm"
+              >
+                Discount
+              </Button>
+
               {order.status === "pending_payment" && (
                 <Button
                   onClick={handleCreateManualPayment}
                   variant="clean"
+                  size="sm"
                   isLoading={isSubmitting}
                   disabled={isSubmitting}
                 >
                   Sync Invoice
                 </Button>
               )}
-            </>
+            </div>
           )}
       </PageHeader>
 

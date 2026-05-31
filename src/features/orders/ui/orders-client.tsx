@@ -44,9 +44,9 @@ export default function OrdersClient() {
   const searchParams = useSearchParams();
   const { canCreateManual } = useOrderPermissions(permissions);
 
-  // Read tab from URL, fall back to "draft"
+  // Read tab from URL, fall back to "all"
   const statusParam = searchParams.get("status");
-  const tab: OrderTab = isValidTab(statusParam) ? statusParam : "draft";
+  const tab: OrderTab = isValidTab(statusParam) ? statusParam : "all";
 
   // Write tab back to URL
   const setTab = (value: OrderTab) => {
