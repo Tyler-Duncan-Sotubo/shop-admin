@@ -168,18 +168,20 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
               </Button>
             </>
           ) : (
-            <div className="flex gap-2">
-              {inv.balanceMinor > 0 && !inv.zohoOrganizationId && (
-                <Button onClick={() => setOpen(true)}>Record payment</Button>
-              )}
-              <DownloadInvoicePdfButton
-                invoiceId={invoiceId}
-                session={session}
-                axios={axios}
-                storeId={activeStoreId}
-                invoiceStatus={inv.status}
-              />
-            </div>
+            inv.status !== "void" && (
+              <div className="flex gap-2">
+                {inv.balanceMinor > 0 && !inv.zohoOrganizationId && (
+                  <Button onClick={() => setOpen(true)}>Record payment</Button>
+                )}
+                <DownloadInvoicePdfButton
+                  invoiceId={invoiceId}
+                  session={session}
+                  axios={axios}
+                  storeId={activeStoreId}
+                  invoiceStatus={inv.status}
+                />
+              </div>
+            )
           )}
         </div>
       </PageHeader>
