@@ -21,6 +21,7 @@ import { DownloadInvoicePdfButton } from "./download-invoice-pdf-button";
 import { ShareInvoiceLinkButton } from "./share-invoice-link-button";
 import { RecordPaymentModal } from "./record-payment-modal";
 import { InvoicePaymentsAccordion } from "../../payments/ui/invoice-payments-accordion";
+import { BackButton } from "@/shared/ui/back-button";
 
 function DateField({
   label,
@@ -132,6 +133,7 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
 
   return (
     <div className="space-y-4">
+      <BackButton href="/sales/invoices" label="Back to invoices" />
       <PageHeader
         title={inv.number ? `Invoice ${inv.number}` : "Invoice"}
         description={`Order: ${inv.meta?.orderNumber ?? "—"}`}

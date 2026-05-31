@@ -24,6 +24,7 @@ import { useAuthPermissions } from "@/lib/auth/use-permissions";
 import { useOrderPermissions } from "../hooks/use-order-permissions";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { ApplyDiscountModal } from "./apply-discount-modal";
+import { BackButton } from "@/shared/ui/back-button";
 
 function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
   if (status === "paid") return <Badge>Paid</Badge>;
@@ -78,6 +79,10 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   const insufficientItems =
     stockCheck.data?.items.filter((i) => !i.sufficient) ?? [];
 
+  const isLocked = ["fulfilled", "cancelled", "refunded"].includes(
+    order.status,
+  );
+
   const handleCreateManualPayment = () => {
     try {
       setIsSubmitting(true);
@@ -91,47 +96,51 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
 
   return (
     <section className="space-y-6">
+      <BackButton href="/sales/orders" label="Back to orders" />
+
       <PageHeader
         title={`Order ${order.orderNumber}`}
         description="Order details and actions."
         tooltip="On hold = pending payment. Completed = fulfilled."
       >
-        {order.channel === "manual" &&
-          !["fulfilled", "cancelled", "refunded"].includes(order.status) && (
-            <div className="flex flex-wrap gap-2">
-              {(order.sourceType === "manual" ||
-                order.sourceType === "quote") && (
-                <Button
-                  onClick={() => setIsOpen(true)}
-                  variant="clean"
-                  size="sm"
-                >
-                  <FaRegEdit />
-                  Add Item
-                </Button>
-              )}
+        {order.channel === "manual" && !isLocked && (
+          <div className="flex flex-wrap gap-2">
+            {(order.sourceType === "manual" ||
+              order.sourceType === "quote") && (
+              <Button onClick={() => setIsOpen(true)} variant="clean" size="sm">
+                <FaRegEdit />
+                Add Item
+              </Button>
+            )}
 
+            <Button
+              onClick={() => setDiscountOpen(true)}
+              variant="clean"
+              size="sm"
+            >
+              Discount
+            </Button>
+
+            {order.status === "pending_payment" && (
               <Button
-                onClick={() => setDiscountOpen(true)}
+                onClick={handleCreateManualPayment}
                 variant="clean"
                 size="sm"
+                isLoading={isSubmitting}
+                disabled={isSubmitting}
               >
-                Discount
+                Sync Invoice
               </Button>
-
-              {order.status === "pending_payment" && (
-                <Button
-                  onClick={handleCreateManualPayment}
-                  variant="clean"
-                  size="sm"
-                  isLoading={isSubmitting}
-                  disabled={isSubmitting}
-                >
-                  Sync Invoice
-                </Button>
-              )}
-            </div>
-          )}
+            )}
+          </div>
+        )}
+        {isLocked && (
+          <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+            This order is{" "}
+            <span className="font-medium uppercase">{order.status}</span> and
+            can no longer be modified.
+          </div>
+        )}
       </PageHeader>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
@@ -230,7 +239,7 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
               address={order.shippingAddress}
               editable
               onEdit={() => setEditCustomerShippingOpen(true)}
-              canUpdate={canUpdate}
+              canUpdate={canUpdate && !isLocked}
             />
 
             <OrderAddressCard
@@ -238,7 +247,7 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
               address={billingOrShipping}
               editable
               onEdit={() => setEditCustomerShippingOpen(true)}
-              canUpdate={canUpdate}
+              canUpdate={canUpdate && !isLocked}
             />
           </div>
 
@@ -246,6 +255,7 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
             currency={order.currency}
             items={order.items ?? []}
             orderId={order.id}
+            isLocked={isLocked}
           />
         </div>
 
@@ -254,13 +264,15 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
             insufficientItems={insufficientItems}
             fulfillmentModel={stockCheck.data?.fulfillmentModel}
           />
-          <OrderActionsCard
-            order={order}
-            session={session}
-            axios={axios}
-            canUpdate={canUpdate}
-            storeId={activeStoreId as string}
-          />
+          {!isLocked && (
+            <OrderActionsCard
+              order={order}
+              session={session}
+              axios={axios}
+              canUpdate={canUpdate}
+              storeId={activeStoreId as string}
+            />
+          )}
           <OrderAuditCard events={order.events ?? []} />
         </div>
       </div>

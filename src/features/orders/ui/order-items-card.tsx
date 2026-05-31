@@ -23,9 +23,10 @@ type Props = {
   orderId: string;
   currency?: string;
   items: Item[];
+  isLocked?: boolean;
 };
 
-export function OrderItemsCard({ orderId, currency, items }: Props) {
+export function OrderItemsCard({ orderId, currency, items, isLocked }: Props) {
   const { data: session } = useSession();
   const axios = useAxiosAuth();
   const updateQty = useUpdateOrderItemQty(session, axios);
@@ -128,7 +129,7 @@ export function OrderItemsCard({ orderId, currency, items }: Props) {
                       size="icon"
                       variant="outline"
                       className="h-8 w-8"
-                      disabled={isBusy || qty <= 1}
+                      disabled={isBusy || qty <= 1 || isLocked}
                       onClick={() => handleQtyChange(it.id, qty - 1)}
                     >
                       <Minus className="h-4 w-4" />
@@ -145,6 +146,7 @@ export function OrderItemsCard({ orderId, currency, items }: Props) {
                         }}
                         className="h-8 w-16 text-center"
                         inputMode="numeric"
+                        disabled={isBusy || isLocked}
                       />
                     ) : (
                       <button
@@ -162,7 +164,7 @@ export function OrderItemsCard({ orderId, currency, items }: Props) {
                       size="icon"
                       variant="outline"
                       className="h-8 w-8"
-                      disabled={isBusy}
+                      disabled={isBusy || isLocked}
                       onClick={() => handleQtyChange(it.id, qty + 1)}
                     >
                       <Plus className="h-4 w-4" />
@@ -176,7 +178,7 @@ export function OrderItemsCard({ orderId, currency, items }: Props) {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive ml-auto"
-                      disabled={isBusy}
+                      disabled={isBusy || isLocked}
                       onClick={() => handleRemove(it.id)}
                     >
                       <Trash2 className="h-4 w-4" />

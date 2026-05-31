@@ -12,11 +12,9 @@ import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { useOrdersTotalCount } from "@/features/orders/hooks/use-orders-total-count";
 import { useQuotesTotalCount } from "@/features/quotes/hooks/use-quotes-total-count";
 import { filterMenu, main } from "../config/admin-nav.config";
-import { FaHome } from "react-icons/fa";
-import { FaChartLine } from "react-icons/fa";
-import { FaBox } from "react-icons/fa";
+import { FaFileAlt, FaHome } from "react-icons/fa";
 import { FaShoppingBag } from "react-icons/fa";
-import { FaTruckFast } from "react-icons/fa6";
+import { FaFileInvoice, FaUsers } from "react-icons/fa6";
 import { MobileMoreNav } from "./mobile-more-nav";
 
 type BottomTab = {
@@ -74,33 +72,33 @@ export function MobileAppNav() {
       isActive: (p) => isLinkOrDescendant(p, "/dashboard"),
     },
     {
-      key: "analytics",
-      label: "Analytics",
-      href: "/analytics",
-      icon: <FaChartLine className="h-5 w-5" />,
-      isActive: (p) => isLinkOrDescendant(p, "/analytics"),
-    },
-    {
       key: "sales",
-      label: "Sales",
+      label: "Orders",
       href: "/sales/orders",
       icon: <FaShoppingBag className="h-5 w-5" />,
       badge: salesBadge,
-      isActive: (p) => isLinkOrDescendant(p, "/sales"),
+      isActive: (p) => isLinkOrDescendant(p, "/sales/orders"),
     },
     {
-      key: "products",
-      label: "Products",
-      href: "/products",
-      icon: <FaBox className="h-5 w-5" />,
-      isActive: (p) => isLinkOrDescendant(p, "/products"),
+      key: "invoices",
+      label: "Invoices",
+      href: "/sales/invoices",
+      icon: <FaFileInvoice className="h-5 w-5" />,
+      isActive: (p) => isLinkOrDescendant(p, "/sales/invoices"),
     },
     {
-      key: "shipping",
-      label: "Shipping",
-      href: "/shipping?tab=zones",
-      icon: <FaTruckFast className="h-5 w-5" />,
-      isActive: (p) => isLinkOrDescendant(p, "/shipping"),
+      key: "quotes",
+      label: "Quotes",
+      href: "/sales/rfqs",
+      icon: <FaFileAlt className="h-5 w-5" />,
+      isActive: (p) => isLinkOrDescendant(p, "/sales/rfqs"),
+    },
+    {
+      key: "customers",
+      label: "Customers",
+      href: "/customers",
+      icon: <FaUsers className="h-5 w-5" />,
+      isActive: (p) => isLinkOrDescendant(p, "/customers"),
     },
   ];
 
