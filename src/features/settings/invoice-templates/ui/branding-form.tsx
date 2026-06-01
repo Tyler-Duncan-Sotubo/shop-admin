@@ -23,6 +23,7 @@ import {
   type InvoiceBrandingValues,
 } from "../schema/invoice-branding.schema";
 import type { InvoiceBranding } from "../types/invoice-template.type";
+import { TiptapSimple } from "@/shared/ui/tiptap-simple";
 
 export function BrandingForm({
   initial,
@@ -73,7 +74,7 @@ export function BrandingForm({
         },
         footerNote: initial?.footerNote ?? null,
       },
-      { keepErrors: false }
+      { keepErrors: false },
     );
   }, [initial, loading, form]);
 
@@ -248,9 +249,9 @@ export function BrandingForm({
               <FormItem>
                 <FormLabel>Footer note</FormLabel>
                 <FormControl>
-                  <Textarea
+                  <TiptapSimple
                     value={field.value ?? ""}
-                    onChange={(e) => field.onChange(e.target.value || null)}
+                    onChange={(html) => field.onChange(html || null)}
                     placeholder="Thank you for your business."
                   />
                 </FormControl>
