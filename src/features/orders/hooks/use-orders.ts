@@ -476,3 +476,42 @@ export function useRemoveDiscount(
     },
   });
 }
+
+export function useUpdateOrderItem(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      itemId,
+      quantity,
+      unitPrice,
+    }: {
+      orderId: string;
+      itemId: string;
+      quantity?: number;
+      unitPrice?: number;
+    }) => {
+      try {
+        const res = await axios.patch(
+          `/api/orders/${orderId}/items/${itemId}`,
+          { quantity, unitPrice },
+        );
+        return res.data.data;
+      } catch (err) {
+        const e = err as AxiosError<any>;
+        throw new Error(
+          e.response?.data?.error?.message ??
+            e.response?.data?.message ??
+            e.message,
+        );
+      }
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["orders", vars.orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}

@@ -9,6 +9,7 @@ import { useRemoveOrderItem, useUpdateOrderItemQty } from "../hooks/use-orders";
 import { useSession } from "next-auth/react";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { toast } from "sonner";
+import { EditOrderItemPriceModal } from "./edit-order-item-price-modal";
 
 type Item = {
   id: string;
@@ -17,6 +18,7 @@ type Item = {
   quantity: number;
   lineTotal?: string | null;
   imageUrl?: string | null;
+  unitPrice?: string | number | null;
 };
 
 type Props = {
@@ -35,6 +37,11 @@ export function OrderItemsCard({ orderId, currency, items, isLocked }: Props) {
   const [editingItemId, setEditingItemId] = React.useState<string | null>(null);
   const [draftQty, setDraftQty] = React.useState<string>("");
   const [pendingItemId, setPendingItemId] = React.useState<string | null>(null);
+  const [editPriceItem, setEditPriceItem] = React.useState<{
+    itemId: string;
+    itemName: string;
+    unitPrice: string | number;
+  } | null>(null);
 
   const count = items?.length ?? 0;
 
@@ -112,6 +119,23 @@ export function OrderItemsCard({ orderId, currency, items, isLocked }: Props) {
                     <div className="text-sm font-medium leading-tight wrap-break-word min-w-0">
                       {it.name}
                     </div>
+                    <button
+                      onClick={() =>
+                        setEditPriceItem({
+                          itemId: it.id,
+                          itemName: it.name,
+                          unitPrice: it.unitPrice ?? 0,
+                        })
+                      }
+                      className="group inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <span className="font-medium text-foreground">
+                        {formatMoneyNGN(it.unitPrice, currency)}
+                      </span>
+                      <span className="text-[10px] border rounded px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        edit
+                      </span>
+                    </button>
                     <div className="text-sm font-bold whitespace-nowrap shrink-0">
                       {formatMoneyNGN(it.lineTotal, currency)}
                     </div>
@@ -190,6 +214,18 @@ export function OrderItemsCard({ orderId, currency, items, isLocked }: Props) {
           })
         )}
       </div>
+
+      {editPriceItem && (
+        <EditOrderItemPriceModal
+          open={!!editPriceItem}
+          onClose={() => setEditPriceItem(null)}
+          orderId={orderId}
+          itemId={editPriceItem.itemId}
+          itemName={editPriceItem.itemName}
+          currentUnitPrice={editPriceItem.unitPrice}
+          currency={currency}
+        />
+      )}
     </section>
   );
 }
