@@ -114,7 +114,7 @@ export function ManualOrderFormModal({
       <Form {...form}>
         <div className="space-y-4">
           {/* Customer */}
-          <FormField
+          {/* <FormField
             control={form.control}
             name="customerId"
             render={({ field }) => (
@@ -132,7 +132,7 @@ export function ManualOrderFormModal({
                 <FormMessage />
               </FormItem>
             )}
-          />
+          /> */}
 
           {/* Channel */}
           <FormField

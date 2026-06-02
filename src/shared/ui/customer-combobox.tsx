@@ -54,7 +54,13 @@ export function AdminCustomerCombobox({
   const options = React.useMemo(() => {
     return rows.map((c: any) => {
       const email = c.email ?? c.customerEmail ?? "";
-      const name = c.fullName ?? c.name ?? c.firstName ?? "";
+      const firstName = c.firstName ?? "";
+      const lastName = c.lastName ?? c.surname ?? "";
+      const name =
+        c.fullName ??
+        c.name ??
+        [firstName, lastName].filter(Boolean).join(" ") ??
+        "";
       const label = name ? `${name}` : email || c.id;
       return { id: c.id, label };
     });

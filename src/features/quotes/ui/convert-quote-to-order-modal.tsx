@@ -115,7 +115,7 @@ export function ConvertQuoteToOrderModal({
       <Form {...form}>
         <div className="space-y-4">
           {/* Customer (optional) */}
-          <FormField
+          {/* <FormField
             control={form.control}
             name="customerId"
             render={({ field }) => (
@@ -133,7 +133,7 @@ export function ConvertQuoteToOrderModal({
                 <FormMessage />
               </FormItem>
             )}
-          />
+          /> */}
 
           {/* Channel */}
           <FormField
