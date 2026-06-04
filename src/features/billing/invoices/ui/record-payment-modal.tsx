@@ -72,7 +72,7 @@ export function RecordPaymentModal({
     invoiceId,
     form,
     setSubmitError,
-    onClose
+    onClose,
   );
 
   const description = useMemo(() => {
@@ -174,40 +174,24 @@ export function RecordPaymentModal({
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
-              name="currency"
+              name="reference"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Currency</FormLabel>
+                  <FormLabel>Reference (optional)</FormLabel>
                   <FormControl>
-                    <Input {...field} disabled />
+                    <Input
+                      {...field}
+                      placeholder="e.g. Transfer ref / POS ref"
+                      disabled={isSubmitting}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
-
-          <FormField
-            control={form.control}
-            name="reference"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Reference (optional)</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="e.g. Transfer ref / POS ref"
-                    disabled={isSubmitting}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           {/* Evidence upload */}
           <FormField
             control={form.control}
@@ -225,7 +209,7 @@ export function RecordPaymentModal({
                         info?.fileName ?? null,
                         {
                           shouldDirty: true,
-                        }
+                        },
                       );
                     }}
                     accept={{ "image/*": [], "application/pdf": [] }}
@@ -237,7 +221,7 @@ export function RecordPaymentModal({
             )}
           />
 
-          <FormField
+          {/* <FormField
             control={form.control}
             name="evidenceNote"
             render={({ field }) => (
@@ -254,7 +238,7 @@ export function RecordPaymentModal({
                 <FormMessage />
               </FormItem>
             )}
-          />
+          /> */}
 
           {submitError ? (
             <div className="text-sm text-red-600">{submitError}</div>
