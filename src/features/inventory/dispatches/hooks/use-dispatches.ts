@@ -27,6 +27,21 @@ export type DispatchListItem = {
   shippingAddress: Record<string, any> | null;
 };
 
+export type DispatchItem = {
+  id: string;
+  name: string;
+  sku: string | null;
+  quantity: number;
+  unitPrice: string | null;
+  lineTotal: string | null;
+  variantId: string | null;
+  productId: string | null;
+};
+
+export type DispatchDetail = DispatchListItem & {
+  items: DispatchItem[];
+};
+
 export function useListDispatches(
   storeId: string | null,
   status: DispatchStatus | undefined,
@@ -45,6 +60,21 @@ export function useListDispatches(
   });
 }
 
+export function useGetDispatch(
+  orderId: string | null,
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  return useQuery({
+    queryKey: ["inventory", "dispatch", orderId],
+    enabled: !!orderId && !!session?.backendTokens?.accessToken,
+    queryFn: async (): Promise<DispatchDetail> => {
+      const res = await axios.get(`/api/orders/${orderId}/dispatch`);
+      return res.data.data;
+    },
+  });
+}
+
 export function useConfirmDispatch(axios: AxiosInstance) {
   const qc = useQueryClient();
   return useMutation({
@@ -58,6 +88,53 @@ export function useConfirmDispatch(axios: AxiosInstance) {
       note?: string;
     }) => {
       const res = await axios.post(`/api/orders/${orderId}/confirm-dispatch`, {
+        storeId,
+        note,
+      });
+      return res.data.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["inventory", "dispatches"] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useCancelDispatch(axios: AxiosInstance) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      note,
+    }: {
+      orderId: string;
+      note?: string;
+    }) => {
+      const res = await axios.post(`/api/orders/${orderId}/cancel-dispatch`, {
+        note,
+      });
+      return res.data.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["inventory", "dispatches"] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useRequestDispatch(axios: AxiosInstance) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      storeId,
+      note,
+    }: {
+      orderId: string;
+      storeId: string;
+      note?: string;
+    }) => {
+      const res = await axios.post(`/api/orders/${orderId}/request-dispatch`, {
         storeId,
         note,
       });

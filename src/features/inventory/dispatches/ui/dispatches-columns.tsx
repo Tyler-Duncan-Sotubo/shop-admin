@@ -1,10 +1,12 @@
 // features/inventory/dispatches/ui/dispatches-columns.tsx
 "use client";
 
+import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/shared/ui/badge";
 import type { DispatchListItem, DispatchStatus } from "../hooks/use-dispatches";
 import { DispatchRowActions } from "./dispatch-row-actions";
+import { DispatchItemsModal } from "./dispatch-items-modal";
 import { formatMoneyNGN } from "@/shared/utils/format-to-naira";
 
 function StatusBadge({ status }: { status: DispatchStatus }) {
@@ -12,6 +14,31 @@ function StatusBadge({ status }: { status: DispatchStatus }) {
   if (status === "dispatched")
     return <Badge variant="completed">Dispatched</Badge>;
   return <Badge variant="secondary">Cancelled</Badge>;
+}
+
+function ItemsCell({ dispatch }: { dispatch: DispatchListItem }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        className="inline-flex items-center gap-1.5 text-sm tabular-nums hover:text-primary transition-colors"
+        onClick={() => setOpen(true)}
+      >
+        <span className="font-medium">{dispatch.itemCount ?? 0}</span>
+        <span className="text-[10px] border rounded px-1.5 py-0.5 text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+          view
+        </span>
+      </button>
+
+      <DispatchItemsModal
+        open={open}
+        onClose={() => setOpen(false)}
+        orderId={dispatch.orderId}
+        orderNumber={dispatch.orderNumber}
+      />
+    </>
+  );
 }
 
 export const dispatchesColumns: ColumnDef<DispatchListItem>[] = [
@@ -42,9 +69,7 @@ export const dispatchesColumns: ColumnDef<DispatchListItem>[] = [
   {
     id: "items",
     header: "Items",
-    cell: ({ row }) => (
-      <span className="tabular-nums">{row.original.itemCount ?? "—"}</span>
-    ),
+    cell: ({ row }) => <ItemsCell dispatch={row.original} />,
   },
   {
     id: "total",
