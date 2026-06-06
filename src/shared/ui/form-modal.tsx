@@ -18,19 +18,12 @@ type FormModalProps = {
   description?: string;
   mode?: "create" | "edit";
   onClose: () => void;
-
-  // form handling
   onSubmit: (e: FormEvent<HTMLFormElement>) => void;
-
-  // buttons
   isSubmitting?: boolean;
   submitLabel?: string;
   cancelLabel?: string;
-
-  /** Hide footer (useful for empty states / custom actions) */
   showFooter?: boolean;
   contentClassName?: string;
-
   children: ReactNode;
 };
 
@@ -44,7 +37,7 @@ export function FormModal({
   isSubmitting,
   submitLabel,
   cancelLabel = "Cancel",
-  showFooter = true, // ✅ default
+  showFooter = true,
   contentClassName,
   children,
 }: FormModalProps) {
@@ -60,18 +53,24 @@ export function FormModal({
       }}
     >
       <DialogContent
-        className={cn("bg-white max-w-2xl w-[90vw]", contentClassName)}
+        className={cn(
+          "bg-white max-w-2xl w-[90vw] flex flex-col max-h-[80vh]",
+          contentClassName,
+        )}
       >
-        <DialogHeader>
+        <DialogHeader className="shrink-0">
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
 
-        <form onSubmit={onSubmit} className="space-y-4">
-          {children}
+        <form
+          onSubmit={onSubmit}
+          className="flex flex-col flex-1 min-h-0 space-y-4"
+        >
+          <div className="flex-1 overflow-y-auto pr-1">{children}</div>
 
           {showFooter && (
-            <DialogFooter className="mt-4">
+            <DialogFooter className="shrink-0 mt-4">
               <Button
                 type="button"
                 variant="clean"
