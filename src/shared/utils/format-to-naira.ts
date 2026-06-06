@@ -43,8 +43,8 @@ export function fmtCompactMajor(value: unknown, currency = "NGN"): string {
   const symbol = getCurrencySymbol(currency);
 
   if (abs >= 1_000_000_000)
-    return `${symbol}${(n / 1_000_000_000).toFixed(1)}B`;
-  if (abs >= 1_000_000) return `${symbol}${(n / 1_000_000).toFixed(1)}M`;
+    return `${symbol}${(n / 1_000_000_000).toFixed(3)}B`;
+  if (abs >= 1_000_000) return `${symbol}${(n / 1_000_000).toFixed(3)}M`;
   if (abs >= 1_000) return `${symbol}${(n / 1_000).toFixed(1)}K`;
 
   return formatMoneyNGN(n, currency);

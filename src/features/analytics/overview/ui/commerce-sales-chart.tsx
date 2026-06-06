@@ -253,10 +253,7 @@ export function CommerceSalesChart({
                   }
                   formatter={(value, name) => {
                     if (name === "salesMinor") {
-                      return [
-                        formatMoneyNGN(Number(value) / 100, "NGN"),
-                        "Revenue",
-                      ];
+                      return [formatMoneyNGN(Number(value), "NGN"), "Revenue"];
                     }
                     if (name === "orders") {
                       return [
