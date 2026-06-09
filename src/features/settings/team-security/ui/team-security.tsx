@@ -5,7 +5,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Users as UsersIcon } from "lucide-react";
 import Link from "next/link";
-
+import { EditUserModal } from "./edit-user-modal";
 import { Button } from "@/shared/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import PageHeader from "@/shared/ui/page-header";
@@ -102,8 +102,16 @@ export default function TeamAndSecurity() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  const { users, isLoading, isError, fetchError, openEdit } =
-    useUsersAndRoles();
+  const {
+    users,
+    isLoading,
+    isError,
+    fetchError,
+    openEdit,
+    selectedUser,
+    isOpen,
+    closeModal,
+  } = useUsersAndRoles();
 
   const {
     data: roles = [],
@@ -159,7 +167,7 @@ export default function TeamAndSecurity() {
         title="Team and security"
         description="Manage users and roles to control access to the system."
         tooltip="Invite teammates, assign roles, and manage access to keep your account secure."
-        icon={<UsersIcon className="h-5 w-5" />}
+        icon={<UsersIcon className="w-5 h-5" />}
       >
         <Link href={inviteHref}>
           <Button>Invite user</Button>
@@ -177,7 +185,7 @@ export default function TeamAndSecurity() {
             <MobileTabChips value={activeTab} onChange={handleTabChangeValue} />
 
             {/* ✅ Desktop tabs */}
-            <div className="hidden sm:flex items-center justify-between">
+            <div className="items-center justify-between hidden sm:flex">
               <TabsList className="flex justify-start">
                 <TabsTrigger value="users">Users</TabsTrigger>
                 <TabsTrigger value="roles">Roles</TabsTrigger>
@@ -207,6 +215,8 @@ export default function TeamAndSecurity() {
             <SecurityHistoryTab enabled={true} />
           </TabsContent>
         </Tabs>
+
+        <EditUserModal open={isOpen} onClose={closeModal} user={selectedUser} />
       </div>
     </div>
   );

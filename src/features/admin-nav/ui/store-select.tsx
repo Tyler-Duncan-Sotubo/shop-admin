@@ -36,35 +36,59 @@ export function StoreSwitcher({
     [stores, value],
   );
 
+  const isSingle = stores.length === 1;
+
+  // Single store — just show the name, no dropdown
+  if (isSingle) {
+    return (
+      <div className={cn("flex items-center gap-2 h-10 px-3", className)}>
+        {active?.imageUrl ? (
+          <Image
+            src={active.imageUrl}
+            alt={active.imageAltText || active.name}
+            width={20}
+            height={20}
+            className="object-cover rounded-md"
+          />
+        ) : (
+          <div className="rounded-md h-7 w-7 bg-muted" />
+        )}
+        <span className="text-xs font-extrabold truncate">
+          {active?.name ?? placeholder}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             type="button"
-            className="h-10 w-full justify-between px-3 bg-primary/20 text-black hover:bg-primary hover:text-white"
+            className="justify-between w-full h-10 px-3 text-black bg-primary/20 hover:bg-primary hover:text-white"
           >
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center min-w-0 gap-3">
               {active?.imageUrl ? (
                 <Image
                   src={active.imageUrl}
                   alt={active.imageAltText || active.name}
                   width={20}
                   height={20}
-                  className="rounded-md object-cover"
+                  className="object-cover rounded-md"
                 />
               ) : (
-                <div className="h-7 w-7 rounded-md bg-muted" />
+                <div className="rounded-md h-7 w-7 bg-muted" />
               )}
 
               <div className="min-w-0 text-left">
-                <div className="font-extrabold truncate text-xs">
+                <div className="text-xs font-extrabold truncate">
                   {active?.name ?? placeholder}
                 </div>
               </div>
             </div>
 
-            <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronsUpDown className="w-4 h-4 text-muted-foreground" />
           </Button>
         </PopoverTrigger>
 
@@ -73,7 +97,7 @@ export function StoreSwitcher({
             Select a store
           </div>
 
-          <div className="max-h-60 overflow-auto">
+          <div className="overflow-auto max-h-60">
             {stores.map((store) => {
               const selected = store.id === value;
               return (
@@ -95,19 +119,19 @@ export function StoreSwitcher({
                       alt={store.imageAltText || store.name}
                       width={32}
                       height={32}
-                      className="rounded-md object-cover"
+                      className="object-cover rounded-md"
                     />
                   ) : (
-                    <div className="h-8 w-8 rounded-md bg-muted" />
+                    <div className="w-8 h-8 rounded-md bg-muted" />
                   )}
 
-                  <div className="min-w-0 flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">
                       {store.name}
                     </div>
                   </div>
 
-                  {selected ? <Check className="h-4 w-4" /> : null}
+                  {selected ? <Check className="w-4 h-4" /> : null}
                 </button>
               );
             })}

@@ -12,7 +12,7 @@ import React, {
 import { useSession } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useStores } from "@/features/settings/stores/core/hooks/use-stores";
+import { useAccessibleStores } from "@/features/settings/stores/core/hooks/use-accessible-stores";
 
 type StoreScope = {
   activeStoreId: string | null;
@@ -37,7 +37,7 @@ export function StoreScopeProvider({
   children: React.ReactNode;
 }) {
   const { data: session, status } = useSession();
-  const { stores } = useStores();
+  const { data: stores = [], isLoading } = useAccessibleStores();
   const queryClient = useQueryClient();
   const router = useRouter();
 

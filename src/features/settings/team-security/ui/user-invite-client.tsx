@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import FormError from "@/shared/ui/form-error";
+import { Checkbox } from "@/shared/ui/checkbox";
 
 import {
   Form,
@@ -31,12 +32,12 @@ import { Switch } from "@/shared/ui/switch";
 import Loading from "@/shared/ui/loading";
 import { useCreateMutation } from "@/shared/hooks/use-create-mutation";
 import { usePermissions } from "@/features/settings/permissions/hooks/use-permissions";
+import { useStores } from "@/features/settings/stores/core/hooks/use-stores";
 
 import { z } from "zod";
 import { PermissionSwitchSelector } from "./permission-level-selector";
 import { useQueryClient } from "@tanstack/react-query";
 
-// ✅ Schema for page-based invite (existing role OR create role)
 const inviteSchema = z
   .object({
     name: z.string().min(1, "Name is required"),
@@ -72,13 +73,13 @@ export default function UserInviteClient() {
   const queryClient = useQueryClient();
 
   const [error, setError] = React.useState<string | null>(null);
+  const [permissionIds, setPermissionIds] = React.useState<string[]>([]);
+  const [storeIds, setStoreIds] = React.useState<string[]>([]);
 
-  // ✅ This hook gives roles + permissions catalog
   const { sessionStatus, roles, permissions, isLoading, isError, fetchError } =
     usePermissions();
 
-  // Selected permission IDs for "new role" mode
-  const [permissionIds, setPermissionIds] = React.useState<string[]>([]);
+  const { stores } = useStores();
 
   const form = useForm<InviteValues>({
     resolver: zodResolver(inviteSchema),
@@ -91,7 +92,6 @@ export default function UserInviteClient() {
     },
   });
 
-  // Watch the mode field directly
   const watchedMode = useWatch({
     control: form.control,
     name: "mode",
@@ -110,6 +110,12 @@ export default function UserInviteClient() {
     },
   });
 
+  const toggleStore = (id: string) => {
+    setStoreIds((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
+    );
+  };
+
   if (sessionStatus === "loading" || isLoading) return <Loading />;
   if (isError)
     return <FormError message={fetchError ?? "Failed to load data."} />;
@@ -117,33 +123,30 @@ export default function UserInviteClient() {
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null);
 
-    // Payload supports:
-    // - existing role assignment: { email, name, companyRoleId }
-    // - create role during invite: { email, name, createRole, roleName, baseRoleId?, permissionIds }
     const payload: any =
       values.mode === "existing"
         ? {
             email: values.email,
             name: values.name,
             companyRoleId: values.companyRoleId,
+            storeIds,
           }
         : {
             email: values.email,
             name: values.name,
             createRole: true,
             roleName: values.roleName,
-            // optional: choose a base role by reusing companyRoleId field if you want.
-            // baseRoleId: values.companyRoleId || undefined,
             permissionIds,
+            storeIds,
           };
 
     await inviteUser(payload, setError, () => {
-      router.push("/settings/access-control?tab=roles"); // back to list
+      router.push("/settings/access-control?tab=roles");
     });
   });
 
   return (
-    <div className="space-y-6 max-w-2xl py-8">
+    <div className="max-w-2xl py-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold">Invite user</h1>
@@ -164,10 +167,9 @@ export default function UserInviteClient() {
 
       <Form {...form}>
         <div className="space-y-6">
+          {/* User */}
           <div>
-            <div>
-              <p className="text-lg font-bold my-3">User</p>
-            </div>
+            <p className="my-3 text-lg font-bold">User</p>
             <div className="space-y-5">
               <FormField
                 control={form.control}
@@ -199,18 +201,18 @@ export default function UserInviteClient() {
             </div>
           </div>
 
+          {/* Role */}
           <div>
             <div className="pb-3">
               <p className="text-xl font-bold">Role</p>
             </div>
 
             <div className="space-y-6">
-              {/* Mode switch */}
               <FormField
                 control={form.control}
                 name="mode"
                 render={({ field }) => (
-                  <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                  <FormItem className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="space-y-1">
                       <FormLabel className="m-0">Create new role</FormLabel>
                       <div className="text-xs text-muted-foreground">
@@ -229,7 +231,6 @@ export default function UserInviteClient() {
                 )}
               />
 
-              {/* Existing role */}
               {mode === "existing" ? (
                 <FormField
                   control={form.control}
@@ -258,7 +259,6 @@ export default function UserInviteClient() {
                 />
               ) : (
                 <>
-                  {/* New role name */}
                   <FormField
                     control={form.control}
                     name="roleName"
@@ -276,7 +276,6 @@ export default function UserInviteClient() {
                     )}
                   />
 
-                  {/* Permission selector (returns permissionIds) */}
                   <PermissionSwitchSelector
                     permissions={permissions}
                     value={permissionIds}
@@ -286,6 +285,50 @@ export default function UserInviteClient() {
               )}
 
               {error && <FormError message={error} />}
+            </div>
+          </div>
+
+          {/* Store Access */}
+          <div>
+            <div className="pb-3">
+              <p className="text-xl font-bold">Store Access</p>
+              <p className="text-sm text-muted-foreground">
+                Select which stores this user can access.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              {stores.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No stores found.
+                </p>
+              ) : (
+                stores.map((store) => (
+                  <div
+                    key={store.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      {store.imageUrl ? (
+                        <img
+                          src={store.imageUrl}
+                          alt={store.name}
+                          className="object-cover rounded-md w-7 h-7"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center text-xs font-bold rounded-md w-7 h-7 bg-muted">
+                          {store.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="text-sm font-medium">{store.name}</span>
+                    </div>
+                    <Checkbox
+                      checked={storeIds.includes(store.id)}
+                      onCheckedChange={() => toggleStore(store.id)}
+                    />
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

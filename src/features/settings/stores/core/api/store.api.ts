@@ -6,7 +6,7 @@ import {
 } from "../types/store.type";
 
 export async function fetchStores(
-  axiosInstance: AxiosInstance
+  axiosInstance: AxiosInstance,
 ): Promise<Store[]> {
   const res = await axiosInstance.get("/api/stores");
   return res.data.data as Store[];
@@ -15,7 +15,7 @@ export async function fetchStores(
 export async function createStoreApi(
   axiosInstance: AxiosInstance,
   data: CreateStorePayload,
-  accessToken?: string
+  accessToken?: string,
 ): Promise<Store> {
   const res = await axiosInstance.post("/api/stores", data, {
     headers: {
@@ -29,7 +29,7 @@ export async function updateStoreApi(
   axiosInstance: AxiosInstance,
   storeId: string,
   data: UpdateStorePayload,
-  accessToken?: string
+  accessToken?: string,
 ): Promise<Store> {
   const res = await axiosInstance.patch(`/api/stores/${storeId}`, data, {
     headers: {

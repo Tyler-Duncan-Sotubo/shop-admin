@@ -54,6 +54,7 @@ export function CommerceAnalyticsClient() {
   const { activeStoreId } = useStoreScope();
   const [activeTab, setActiveTab] = React.useState<AnalyticsTab>("overview");
 
+  console.log("Active Store ID in CommerceAnalyticsClient:", activeStoreId);
   // global date range
   const [range, setRange] = React.useState<DateRange>({
     from: subDays(new Date(), 30),
@@ -145,13 +146,13 @@ export function CommerceAnalyticsClient() {
         </div>
 
         {/* ── Overview ── */}
-        <TabsContent value="overview" className="space-y-6 mt-6">
+        <TabsContent value="overview" className="mt-6 space-y-6">
           <ExtendedSalesCards
             data={salesCards.data}
             isLoading={salesCards.isLoading}
           />
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 items-stretch">
+          <div className="grid items-stretch grid-cols-1 gap-4 md:grid-cols-3">
             <div className="md:col-span-2">
               <CommerceSalesChart
                 session={session}
@@ -168,7 +169,7 @@ export function CommerceAnalyticsClient() {
         </TabsContent>
 
         {/* ── Commerce ── */}
-        <TabsContent value="commerce" className="space-y-6 mt-6">
+        <TabsContent value="commerce" className="mt-6 space-y-6">
           <AnalyticsClient
             externalRange={range as any}
             shouldShowHeader={false}
@@ -176,18 +177,18 @@ export function CommerceAnalyticsClient() {
         </TabsContent>
 
         {/* ── Products ── */}
-        <TabsContent value="products" className="space-y-6 mt-6">
+        <TabsContent value="products" className="mt-6 space-y-6">
           <div>
-            <h3 className="text-sm font-semibold mb-1">ABC Classification</h3>
-            <p className="text-xs text-muted-foreground mb-4">
+            <h3 className="mb-1 text-sm font-semibold">ABC Classification</h3>
+            <p className="mb-4 text-xs text-muted-foreground">
               A = top 70% revenue · B = next 20% · C = bottom 10%
             </p>
             <AbcClassificationTable data={abc.data} isLoading={abc.isLoading} />
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold mb-1">Sell-Through Rate</h3>
-            <p className="text-xs text-muted-foreground mb-4">
+            <h3 className="mb-1 text-sm font-semibold">Sell-Through Rate</h3>
+            <p className="mb-4 text-xs text-muted-foreground">
               Units sold ÷ (units sold + units available) for {rangeLabel}
             </p>
             <SellThroughTable
@@ -198,10 +199,10 @@ export function CommerceAnalyticsClient() {
         </TabsContent>
 
         {/* ── Customers ── */}
-        <TabsContent value="customers" className="space-y-6 mt-6">
+        <TabsContent value="customers" className="mt-6 space-y-6">
           <div>
-            <h3 className="text-sm font-semibold mb-1">New vs Returning</h3>
-            <p className="text-xs text-muted-foreground mb-4">
+            <h3 className="mb-1 text-sm font-semibold">New vs Returning</h3>
+            <p className="mb-4 text-xs text-muted-foreground">
               Customer acquisition and retention for {rangeLabel}
             </p>
             <NewVsReturningChart
@@ -212,12 +213,12 @@ export function CommerceAnalyticsClient() {
         </TabsContent>
 
         {/* ── Fulfillment ── */}
-        <TabsContent value="fulfillment" className="space-y-6 mt-6">
+        <TabsContent value="fulfillment" className="mt-6 space-y-6">
           <div>
-            <h3 className="text-sm font-semibold mb-1">
+            <h3 className="mb-1 text-sm font-semibold">
               Fulfillment Performance
             </h3>
-            <p className="text-xs text-muted-foreground mb-4">
+            <p className="mb-4 text-xs text-muted-foreground">
               Based on time between order placed and status reaching fulfilled
               for {rangeLabel}
             </p>

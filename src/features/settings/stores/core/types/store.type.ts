@@ -16,6 +16,7 @@ export type Store = {
   primaryDomain?: string | null;
   domains?: string[]; // includes primary + secondary domains
   storeEmail?: string | null;
+  imageUrl?: string | null;
 };
 
 export type CreateStorePayload = {
