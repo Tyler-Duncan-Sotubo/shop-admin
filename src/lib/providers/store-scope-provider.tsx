@@ -37,7 +37,7 @@ export function StoreScopeProvider({
   children: React.ReactNode;
 }) {
   const { data: session, status } = useSession();
-  const { data: stores = [], isLoading } = useAccessibleStores();
+  const { data: stores = [] } = useAccessibleStores();
   const queryClient = useQueryClient();
   const router = useRouter();
 

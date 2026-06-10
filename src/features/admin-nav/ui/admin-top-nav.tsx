@@ -11,7 +11,7 @@ import { UserMenu } from "./user-menu";
 import { StoreSwitcher } from "./store-select";
 import { GlobalSearch } from "./global-search";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
-import { useStores } from "@/features/settings/stores/core/hooks/use-stores";
+import { useAccessibleStores } from "@/features/settings/stores/core/hooks/use-accessible-stores";
 import { useNewContactEmailCount } from "@/features/contact-emails/hooks/use-contact-emails";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 
@@ -20,7 +20,7 @@ export function AdminTopNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { activeStoreId, setActiveStoreId } = useStoreScope();
-  const { stores } = useStores();
+  const { data: stores = [], isLoading } = useAccessibleStores();
 
   const permissions = session?.permissions ?? [];
   const canReadContactEmails = permissions.includes("mail.messages.read");
@@ -36,9 +36,9 @@ export function AdminTopNav() {
   );
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 h-14 bg-white border-b flex items-center px-4 sm:px-6 gap-3">
+    <div className="fixed top-0 left-0 right-0 z-50 flex items-center gap-3 px-4 bg-white border-b h-14 sm:px-6">
       {/* Left: logo + store switcher */}
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center min-w-0 gap-3">
         <Link href="/dashboard" className="shrink-0">
           <Image
             src="/apple-touch-icon.png"
@@ -51,22 +51,24 @@ export function AdminTopNav() {
 
         {/* Store switcher — desktop next to logo, mobile also here */}
         <div className="min-w-0 ml-3">
-          <StoreSwitcher
-            stores={stores}
-            value={activeStoreId}
-            onChange={setActiveStoreId}
-            className="w-40 sm:w-[200px]"
-          />
+          {!isLoading && (
+            <StoreSwitcher
+              stores={stores}
+              value={activeStoreId}
+              onChange={setActiveStoreId}
+              className="w-40 sm:w-[200px]"
+            />
+          )}
         </div>
       </div>
 
       {/* Centre: global search */}
-      <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2">
+      <div className="absolute hidden -translate-x-1/2 sm:flex left-1/2">
         {canUseGlobalSearch ? <GlobalSearch /> : null}
       </div>
 
       {/* Right actions */}
-      <div className="flex items-center gap-3 sm:gap-4 ml-auto">
+      <div className="flex items-center gap-3 ml-auto sm:gap-4">
         {canReadContactEmails && (
           <Link
             href="/contact-emails"
