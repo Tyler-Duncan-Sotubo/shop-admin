@@ -29,6 +29,8 @@ export type CustomerAddress = {
   phone: string | null;
   isDefaultBilling: boolean | null;
   isDefaultShipping: boolean | null;
+  addressee?: string | null;
+  companyName?: string | null;
 };
 
 export type CreateAddressPayload = {
@@ -44,6 +46,8 @@ export type CreateAddressPayload = {
   phone?: string;
   isDefaultBilling?: boolean;
   isDefaultShipping?: boolean;
+  addressee?: string;
+  companyName?: string;
 };
 
 export type CustomerDetail = {

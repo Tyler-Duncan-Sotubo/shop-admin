@@ -23,6 +23,8 @@ export const customerAddressSchema = z.object({
   phone: z.string().trim().optional().or(z.literal("")),
   isDefaultBilling: z.boolean().optional(),
   isDefaultShipping: z.boolean().optional(),
+  addressee: z.string().optional(),
+  companyName: z.string().optional(),
 });
 
 export type CustomerAddressFormValues = z.infer<typeof customerAddressSchema>;

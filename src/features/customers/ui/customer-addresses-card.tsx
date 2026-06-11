@@ -62,6 +62,8 @@ export function CustomerAddressesCard({ customer }: Props) {
     resolver: zodResolver(customerAddressSchema),
     defaultValues: {
       label: "",
+      addressee: "",
+      companyName: "",
       firstName: "",
       lastName: "",
       line1: "",
@@ -114,6 +116,8 @@ export function CustomerAddressesCard({ customer }: Props) {
       phone: asText(addr.phone),
       isDefaultBilling: !!addr.isDefaultBilling,
       isDefaultShipping: !!addr.isDefaultShipping,
+      addressee: asText(addr.addressee),
+      companyName: asText(addr.companyName),
     });
     setSheetOpen(true);
   };
@@ -137,6 +141,8 @@ export function CustomerAddressesCard({ customer }: Props) {
 
     const payload: CreateAddressPayload = {
       label: values.label?.trim() ? values.label.trim() : undefined,
+      addressee: values.addressee?.trim() || undefined,
+      companyName: values.companyName?.trim() || undefined,
       firstName: values.firstName?.trim() ? values.firstName.trim() : undefined,
       lastName: values.lastName?.trim() ? values.lastName.trim() : undefined,
       line1: values.line1.trim(),
@@ -185,27 +191,24 @@ export function CustomerAddressesCard({ customer }: Props) {
           ) : (
             addresses.map((a) => (
               <Card key={a.id} className="border-muted/60">
-                <CardContent className="p-4">
-                  {/* Header row */}
+                <CardContent className="p-4 space-y-3">
+                  {/* Header */}
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="truncate text-sm font-semibold">
-                          {a.label || "Address"}
-                        </div>
-
-                        {a.isDefaultShipping ? (
-                          <Badge className="h-6">Default shipping</Badge>
-                        ) : null}
-
-                        {a.isDefaultBilling ? (
-                          <Badge variant="secondary" className="h-6">
-                            Default billing
-                          </Badge>
-                        ) : null}
-                      </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold">
+                        {a.label || "Address"}
+                      </span>
+                      {a.isDefaultShipping && (
+                        <Badge className="h-5 text-[11px]">
+                          Default shipping
+                        </Badge>
+                      )}
+                      {a.isDefaultBilling && (
+                        <Badge variant="secondary" className="h-5 text-[11px]">
+                          Default billing
+                        </Badge>
+                      )}
                     </div>
-
                     <Button
                       variant="link"
                       size="sm"
@@ -215,37 +218,73 @@ export function CustomerAddressesCard({ customer }: Props) {
                     </Button>
                   </div>
 
-                  {/* Person line */}
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {[a.firstName, a.lastName].filter(Boolean).join(" ") ||
-                        "—"}
-                    </span>
-                    {a.phone ? (
-                      <span className="text-muted-foreground">
-                        {" "}
-                        • {a.phone}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  {/* Address line */}
-                  <div className="mt-2 space-y-1 text-sm">
-                    <div className="text-foreground">
-                      {a.line1 ?? ""}
-                      {a.line2 ? (
-                        <span className="text-muted-foreground">
-                          , {a.line2}
+                  <div className="text-sm">
+                    {/* Addressee */}
+                    {(a.addressee || a.firstName || a.lastName) && (
+                      <div className="flex items-start gap-3 px-3 py-2">
+                        <span className="w-28 shrink-0 text-muted-foreground">
+                          Addressee
                         </span>
-                      ) : null}
+                        <span className="font-medium">
+                          {a.addressee ??
+                            [a.firstName, a.lastName].filter(Boolean).join(" ")}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Company */}
+                    {a.companyName && (
+                      <div className="flex items-start gap-3 px-3 py-2">
+                        <span className="w-28 shrink-0 text-muted-foreground">
+                          Company
+                        </span>
+                        <span className="font-medium">{a.companyName}</span>
+                      </div>
+                    )}
+
+                    {/* Address */}
+                    <div className="flex items-start gap-3 px-3 py-2">
+                      <span className="w-28 shrink-0 text-muted-foreground">
+                        Address
+                      </span>
+                      <span className="font-medium">
+                        {[a.line1, a.line2].filter(Boolean).join(", ")}
+                      </span>
                     </div>
 
-                    <div className="text-muted-foreground">
-                      {[a.city, a.state, a.postalCode]
-                        .filter(Boolean)
-                        .join(", ") || "—"}
-                      {a.country ? <span> • {a.country}</span> : null}
-                    </div>
+                    {/* City / State / Postal */}
+                    {(a.city || a.state || a.postalCode) && (
+                      <div className="flex items-start gap-3 px-3 py-2">
+                        <span className="w-28 shrink-0 text-muted-foreground">
+                          City / State
+                        </span>
+                        <span className="font-medium">
+                          {[a.city, a.state?.replace(/_/g, " "), a.postalCode]
+                            .filter(Boolean)
+                            .join(", ")}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Country */}
+                    {a.country && (
+                      <div className="flex items-start gap-3 px-3 py-2">
+                        <span className="w-28 shrink-0 text-muted-foreground">
+                          Country
+                        </span>
+                        <span className="font-medium">{a.country}</span>
+                      </div>
+                    )}
+
+                    {/* Phone */}
+                    {a.phone && (
+                      <div className="flex items-start gap-3 px-3 py-2">
+                        <span className="w-28 shrink-0 text-muted-foreground">
+                          Phone
+                        </span>
+                        <span className="font-medium">{a.phone}</span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -298,6 +337,38 @@ export function CustomerAddressesCard({ customer }: Props) {
                       <FormLabel>Phone</FormLabel>
                       <FormControl>
                         <Input placeholder="+44..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="addressee"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Addressee</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g. Procurement Manager"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="companyName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Company Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Acme Corporation" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
