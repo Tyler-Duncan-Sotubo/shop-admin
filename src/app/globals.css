@@ -58,20 +58,19 @@
   --popover-foreground: oklch(0.22 0.02 255);
 
   /* Premium brand primary — deep navy with subtle chroma */
-  --primary: #635bff;
-  --primary-foreground: oklch(0.99 0.01 255); /* near-white for contrast */
+  --primary: #1a1a2e;
+  --primary-foreground: oklch(0.99 0.01 255);
 
   /* Secondary — softer premium lavender/steel */
-  --secondary: oklch(0.93 0.02 270);
-  --secondary-foreground: oklch(0.35 0.03 270);
-
+  --secondary: oklch(0.93 0.01 255); /* neutral cool grey */
+  --secondary-foreground: oklch(0.25 0.02 255);
   /* Muted neutrals */
   --muted: oklch(95.815% 0.00011 271.152);
   --muted-foreground: oklch(59.649% 0.00007 271.152);
 
   /* Accents — subtle luxury blue glow */
-  --accent: oklch(0.94 0.02 250);
-  --accent-foreground: oklch(0.3 0.05 250);
+  --accent: oklch(0.94 0.01 255);
+  --accent-foreground: #1a1a2e;
 
   /* Destructive — premium orange-red (non-cheap) */
   --destructive: oklch(0.63 0.22 30);
@@ -80,7 +79,7 @@
   /* Borders & Inputs */
   --border: oklch(0.88 0.01 255);
   --input: oklch(0.88 0.01 255);
-  --ring: oklch(0.55 0.02 260);
+  --ring: #1a1a2e;
 
   /* Dashboard Charts — premium professional palette */
   --chart-1: oklch(0.45 0.07 260); /* deep navy */
@@ -90,7 +89,7 @@
   --chart-5: oklch(0.55 0.13 20); /* terracotta */
 
   /* Sidebar — lighter minimal slate */
-  --sidebar: oklch(0.96 0.01 255);
+  --sidebar-primary: #1a1a2e;
   --sidebar-foreground: oklch(0.25 0.02 255);
   --sidebar-primary: oklch(0.38 0.05 260);
   --sidebar-primary-foreground: oklch(0.98 0.01 260);
@@ -111,8 +110,8 @@
   --popover-foreground: oklch(0.97 0.02 255);
 
   /* Primary — luxurious cobalt/navy glow */
-  --primary: #635bff;
-  --primary-foreground: oklch(0.12 0.01 255); /* deep near-black */
+  --primary: #e8e8f0; /* light version for dark mode contrast */
+  --primary-foreground: #1a1a2e;
 
   /* Secondary — muted steel tone */
   --secondary: oklch(0.26 0.01 255);
@@ -142,8 +141,8 @@
   /* Sidebar — subtle elevated panel */
   --sidebar: oklch(0.21 0.005 255);
   --sidebar-foreground: oklch(0.97 0.02 255);
-  --sidebar-primary: oklch(0.68 0.1 260);
-  --sidebar-primary-foreground: oklch(0.12 0.01 255);
+  --primary: #e8e8f0; /* light version for dark mode contrast */
+  --primary-foreground: #1a1a2e;
   --sidebar-accent: oklch(0.28 0.01 260);
   --sidebar-accent-foreground: oklch(0.92 0.02 255);
   --sidebar-border: oklch(0.32 0.005 255);

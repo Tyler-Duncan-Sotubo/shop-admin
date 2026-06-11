@@ -65,9 +65,13 @@ export function categoryColumns({
       cell: ({ row }) => {
         const active = row.original.isActive;
         return active ? (
-          <Badge>Active</Badge>
+          <Badge variant="success" className="h-5 px-2 text-[10px]">
+            Active
+          </Badge>
         ) : (
-          <Badge variant="outline">Inactive</Badge>
+          <Badge variant="muted" className="h-5 px-2 text-[10px]">
+            Inactive
+          </Badge>
         );
       },
     },

@@ -114,7 +114,15 @@ export function productColumns({
       header: () => <div>Status</div>,
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-1">
-          <Badge>{row.original.status}</Badge>
+          {row.original.status === "active" ? (
+            <Badge variant="success">Active</Badge>
+          ) : row.original.status === "draft" ? (
+            <Badge variant="muted">Draft</Badge>
+          ) : row.original.status === "archived" ? (
+            <Badge variant="muted">Archived</Badge>
+          ) : (
+            <Badge variant="muted">{row.original.status}</Badge>
+          )}
         </div>
       ),
       enableSorting: false,

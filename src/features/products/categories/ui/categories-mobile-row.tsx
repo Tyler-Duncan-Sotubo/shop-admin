@@ -45,9 +45,11 @@ export function CategoriesMobileRow({
               <div className="flex items-center gap-2">
                 <div className="text-sm font-semibold truncate">{c.name}</div>
                 {c.isActive ? (
-                  <Badge className="h-5 px-2 text-[10px]">Active</Badge>
+                  <Badge variant="success" className="h-5 px-2 text-[10px]">
+                    Active
+                  </Badge>
                 ) : (
-                  <Badge variant="outline" className="h-5 px-2 text-[10px]">
+                  <Badge variant="muted" className="h-5 px-2 text-[10px]">
                     Inactive
                   </Badge>
                 )}

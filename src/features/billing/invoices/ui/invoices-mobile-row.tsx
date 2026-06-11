@@ -9,12 +9,13 @@ import { formatMoneyNGN } from "@/shared/utils/format-to-naira";
 import { format } from "date-fns";
 
 function StatusBadge({ status }: { status: string }) {
-  if (status === "paid") return <Badge>Paid</Badge>;
-  if (status === "draft") return <Badge variant="secondary">Draft</Badge>;
-  if (status === "issued") return <Badge variant="outline">Issued</Badge>;
+  if (status === "issued") return <Badge variant="primary">Issued</Badge>;
+  if (status === "paid") return <Badge variant="success">Paid</Badge>;
   if (status === "partially_paid")
-    return <Badge variant="outline">Partially paid</Badge>;
-  return <Badge variant="secondary">{status}</Badge>;
+    return <Badge variant="warning">Partial</Badge>;
+  if (status === "overdue") return <Badge variant="danger">Overdue</Badge>;
+  if (status === "draft") return <Badge variant="muted">Draft</Badge>;
+  if (status === "void") return <Badge variant="muted">Void</Badge>;
 }
 
 export function InvoicesMobileRow({

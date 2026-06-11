@@ -12,11 +12,12 @@ import { minorToMajor } from "../../invoices/schema/invoice.schema";
 import { IoMdPrint } from "react-icons/io";
 
 function StatusBadge({ status }: { status: PaymentStatus }) {
-  if (status === "confirmed") return <Badge>Confirmed</Badge>;
-  if (status === "pending") return <Badge variant="secondary">Pending</Badge>;
-  if (status === "failed") return <Badge variant="destructive">Failed</Badge>;
-  if (status === "cancelled") return <Badge variant="outline">Cancelled</Badge>;
-  return <Badge variant="secondary">{status}</Badge>;
+  if (status === "confirmed") return <Badge variant="success">Confirmed</Badge>;
+  if (status === "succeeded") return <Badge variant="success">Succeeded</Badge>;
+  if (status === "pending") return <Badge variant="warning">Pending</Badge>;
+  if (status === "failed") return <Badge variant="danger">Failed</Badge>;
+  if (status === "cancelled") return <Badge variant="danger">Cancelled</Badge>;
+  return <Badge variant="muted">{status}</Badge>;
 }
 
 const PAYMENT_METHOD_LABEL: Record<string, string> = {

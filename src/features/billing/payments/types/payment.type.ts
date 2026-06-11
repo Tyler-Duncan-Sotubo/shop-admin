@@ -1,5 +1,10 @@
 export type PaymentMethod = "bank_transfer" | "cash" | "card_manual" | "other";
-export type PaymentStatus = "pending" | "confirmed" | "failed" | "cancelled"; // adjust to your enum
+export type PaymentStatus =
+  | "pending"
+  | "confirmed"
+  | "failed"
+  | "cancelled"
+  | "succeeded";
 
 export type Payment = {
   id: string;

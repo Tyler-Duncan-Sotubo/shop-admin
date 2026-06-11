@@ -7,11 +7,11 @@ import { Badge } from "@/shared/ui/badge";
 import { QuoteDetailsSheet } from "./quote-details-sheet";
 
 function StatusBadge({ status }: { status: QuoteStatus }) {
-  if (status === "new") return <Badge>New</Badge>;
+  if (status === "new") return <Badge variant="info">New</Badge>;
   if (status === "in_progress")
-    return <Badge variant="secondary">In progress</Badge>;
-  if (status === "converted") return <Badge>Converted</Badge>;
-  return <Badge variant="outline">Archived</Badge>;
+    return <Badge variant="warning">In Progress</Badge>;
+  if (status === "converted") return <Badge variant="success">Converted</Badge>;
+  if (status === "archived") return <Badge variant="muted">Archived</Badge>;
 }
 
 export function QuotesMobileRow({

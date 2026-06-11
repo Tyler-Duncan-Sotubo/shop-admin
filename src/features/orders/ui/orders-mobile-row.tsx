@@ -7,16 +7,17 @@ import { formatMoneyNGN } from "@/shared/utils/format-to-naira";
 import { Badge } from "@/shared/ui/badge";
 
 function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
-  if (status === "paid") return <Badge>Paid</Badge>;
+  if (status === "paid") return <Badge variant="success">Paid</Badge>;
+  if (status === "fulfilled") return <Badge variant="success">Fulfilled</Badge>;
   if (status === "awaiting_dispatch")
-    return <Badge variant="pending">Awaiting Dispatch</Badge>;
-  if (status === "fulfilled") return <Badge>Fulfilled</Badge>;
-  if (status === "lay_buy") return <Badge variant="pending">Lay-buy</Badge>;
-  if (status === "refunded")
-    return <Badge variant="destructive">Refunded</Badge>;
-  if (status === "cancelled")
-    return <Badge variant="secondary">Cancelled</Badge>;
-  return <Badge variant="secondary">On hold</Badge>;
+    return <Badge variant="info">Awaiting Dispatch</Badge>;
+  if (status === "lay_buy") return <Badge variant="warning">Lay-buy</Badge>;
+  if (status === "pending_payment")
+    return <Badge variant="warning">Pending Payment</Badge>;
+  if (status === "draft") return <Badge variant="muted">Draft</Badge>;
+  if (status === "refunded") return <Badge variant="danger">Refunded</Badge>;
+  if (status === "cancelled") return <Badge variant="danger">Cancelled</Badge>;
+  return <Badge variant="muted">On hold</Badge>;
 }
 
 export function OrdersMobileRow({

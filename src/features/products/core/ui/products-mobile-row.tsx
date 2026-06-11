@@ -74,15 +74,18 @@ export function ProductsMobileRow({
 
         {/* Content */}
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-primary truncate">
-            {p.name}
-            {p.status === "draft" && (
-              <span className="ml-2 font-semibold">- Draft</span>
-            )}
-          </p>
+          <p className="text-sm font-medium text-primary truncate">{p.name}</p>
 
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <Badge>{p.status}</Badge>
+            {p.status === "active" ? (
+              <Badge variant="success">Active</Badge>
+            ) : p.status === "draft" ? (
+              <Badge variant="muted">Draft</Badge>
+            ) : p.status === "archived" ? (
+              <Badge variant="muted">Archived</Badge>
+            ) : (
+              <Badge variant="muted">{p.status}</Badge>
+            )}
 
             <span className="text-xs text-muted-foreground">
               Stock:{" "}
