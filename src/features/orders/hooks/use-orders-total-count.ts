@@ -14,12 +14,7 @@ export function useOrdersTotalCount(
     enabled:
       !!session?.backendTokens?.accessToken && !!storeId && enabledOverride,
     queryFn: async (): Promise<number> => {
-      const statuses = [
-        "pending_payment",
-        "paid",
-        "lay_buy",
-        "awaiting_dispatch",
-      ];
+      const statuses = ["pending_payment"];
 
       const results = await Promise.all(
         statuses.map((status) =>
