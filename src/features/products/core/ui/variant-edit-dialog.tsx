@@ -35,6 +35,9 @@ import {
 } from "@/shared/utils/number-to-string";
 import { useProductVariants } from "../hooks/use-product-variants";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
+import { useGenerateBarcodeForVariant } from "../../barcodes/hooks/use-barcodes";
+import { Barcode, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 type PresignReq = { files: { fileName: string; mimeType: string }[] };
 type PresignedUpload = { key: string; uploadUrl: string; url: string };
@@ -119,6 +122,7 @@ export function VariantEditDialog({
   const [imageMimeType, setImageMimeType] = useState<string>("image/jpeg");
 
   const { updateVariant } = useProductVariants(productId);
+  const generateBarcode = useGenerateBarcodeForVariant();
 
   const form = useForm<VariantFormValues>({
     resolver: zodResolver(VariantSchema),
@@ -288,6 +292,19 @@ export function VariantEditDialog({
     }
   };
 
+  const handleGenerateBarcode = async () => {
+    if (!variant) return;
+    try {
+      const result = await generateBarcode.mutateAsync({
+        variantId: variant.id,
+      });
+      form.setValue("barcode", result.barcode, { shouldDirty: true });
+      toast.success("Barcode generated");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to generate barcode");
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(v) => (!v ? onClose() : null)}>
       <DialogContent className="sm:max-w-[920px]">
@@ -384,7 +401,6 @@ export function VariantEditDialog({
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="sku"
@@ -401,7 +417,7 @@ export function VariantEditDialog({
                       </FormItem>
                     )}
                   />
-
+                  {/* Replace the barcode FormField with this: */}
                   <FormField
                     control={form.control}
                     name="barcode"
@@ -409,13 +425,42 @@ export function VariantEditDialog({
                       <FormItem className="col-span-1">
                         <FormLabel>Barcode</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Optional"
-                            value={field.value ?? ""}
-                            onChange={field.onChange}
-                          />
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Optional"
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="shrink-0"
+                              onClick={handleGenerateBarcode}
+                              disabled={generateBarcode.isPending}
+                              title="Generate barcode"
+                            >
+                              {generateBarcode.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Barcode className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
                         </FormControl>
                         <FormMessage />
+                        {/* Show barcode image if variant already has one */}
+                        {(variant as any)?.barcodeImageUrl && (
+                          <div className="mt-2 p-2 border rounded-md bg-white inline-block">
+                            <Image
+                              src={(variant as any).barcodeImageUrl}
+                              alt={field.value ?? "barcode"}
+                              width={140}
+                              height={48}
+                              className="object-contain"
+                            />
+                          </div>
+                        )}
                       </FormItem>
                     )}
                   />

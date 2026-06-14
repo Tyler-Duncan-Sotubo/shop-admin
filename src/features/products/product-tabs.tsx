@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -5,17 +6,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { BsFillBoxSeamFill } from "react-icons/bs";
 import { FaTag, FaReceipt } from "react-icons/fa";
+import { BarcodeIcon } from "lucide-react";
 
 import PageHeader from "@/shared/ui/page-header";
 import { ProductTable } from "./core/ui/product-table";
 import { CategoriesClient } from "./categories/ui/category-client";
 import { ReviewsTable } from "./reviews/ui/reviews-table";
+import { BarcodesClient } from "./barcodes/ui/barcodes-client";
 import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
 import { useProductPermissions } from "./core/hooks/use-product-permissions";
 import { useCategoryPermissions } from "./categories/hooks/use-category-permissions";
 import { useAuthPermissions } from "@/lib/auth/use-permissions";
 
-type ProductTabKey = "products" | "collections" | "reviews";
+type ProductTabKey = "products" | "collections" | "reviews" | "barcodes";
 
 const DEFAULT_TAB: ProductTabKey = "products";
 
@@ -27,14 +30,13 @@ export default function ProductClient() {
   const { canRead: canReadProducts } = useProductPermissions(permissions);
   const { canRead: canReadCategories } = useCategoryPermissions(permissions);
   const canReadReviews = permissions.includes("reviews.read");
+  const canReadBarcodes = permissions.includes("products.read");
 
   const urlTab = searchParams.get("tab") as ProductTabKey | null;
   const [tab, setTab] = useState<ProductTabKey>(urlTab ?? DEFAULT_TAB);
 
-  // Keep state in sync with browser navigation
   useEffect(() => {
     if (urlTab && urlTab !== tab) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTab(urlTab);
     }
   }, [tab, urlTab]);
@@ -55,8 +57,11 @@ export default function ProductClient() {
       ...(canReadReviews
         ? [{ value: "reviews" as const, label: "Reviews" }]
         : []),
+      ...(canReadBarcodes
+        ? [{ value: "barcodes" as const, label: "Barcodes" }]
+        : []),
     ],
-    [canReadProducts, canReadCategories, canReadReviews],
+    [canReadProducts, canReadCategories, canReadReviews, canReadBarcodes],
   );
 
   return (
@@ -100,6 +105,13 @@ export default function ProductClient() {
               Reviews
             </TabsTrigger>
           )}
+
+          {canReadBarcodes && (
+            <TabsTrigger value="barcodes" className="text-base">
+              <BarcodeIcon className="mr-2 h-4 w-4" />
+              Barcodes
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {canReadProducts && (
@@ -117,6 +129,12 @@ export default function ProductClient() {
         {canReadReviews && (
           <TabsContent value="reviews" className="mt-4">
             <ReviewsTable />
+          </TabsContent>
+        )}
+
+        {canReadBarcodes && (
+          <TabsContent value="barcodes" className="mt-4">
+            <BarcodesClient />
           </TabsContent>
         )}
       </Tabs>
