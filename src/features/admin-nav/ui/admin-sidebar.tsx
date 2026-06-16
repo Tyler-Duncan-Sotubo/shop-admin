@@ -241,7 +241,7 @@ export default function AdminSidebar() {
               )}
 
               {hasSub && isSectionOpen && (
-                <ul className="mt-1 space-y-1">
+                <ul className="mt-2.5 space-y-1">
                   {(item as any).subItems!.map((sub: any) =>
                     sub.name ? (
                       <li
@@ -251,7 +251,7 @@ export default function AdminSidebar() {
                         {sub.name}
                       </li>
                     ) : (
-                      <li key={sub.link}>
+                      <li key={sub.link} className="px-2">
                         {(() => {
                           const isActiveSub = isLinkOrDescendant(
                             pathname,
@@ -263,10 +263,10 @@ export default function AdminSidebar() {
                           return (
                             <Link
                               href={sub.link!}
-                              className={`flex items-center justify-between px-4 py-1.5 text-sm rounded transition-colors ${
+                              className={`flex items-center justify-between px-4 py-1.5 text-[13px] rounded transition-colors ${
                                 isActiveSub
                                   ? "text-primary font-bold"
-                                  : "hover:bg-muted text-black font-medium"
+                                  : "hover:bg-muted text-black/70 font-medium"
                               }`}
                             >
                               <span className="flex items-center gap-2">
