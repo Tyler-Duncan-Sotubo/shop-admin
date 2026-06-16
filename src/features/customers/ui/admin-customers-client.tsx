@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// features/customers/components/admin-customers-client.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -7,8 +8,6 @@ import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import Loading from "@/shared/ui/loading";
 import PageHeader from "@/shared/ui/page-header";
 import { DataTable } from "@/shared/ui/data-table";
-import { Switch } from "@/shared/ui/switch";
-import { Label } from "@/shared/ui/label";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { useRouter } from "next/navigation";
 import { useAdminCustomers } from "../hooks/use-admin-customers";
@@ -21,38 +20,37 @@ import { LuImport } from "react-icons/lu";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import type { AdminCustomerRow } from "../types/admin-customer.type";
 import { CustomerBulkUploadModal } from "./customer-bulk-upload-modal";
+import { FilterChip, FilterChips } from "@/shared/ui/filter-chips";
+
+type CustomerTab = "all" | "customers" | "subscribers" | "inactive";
 
 export default function AdminCustomersClient() {
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
   const { data: session, status: authStatus } = useSession();
   const router = useRouter();
-  const [includeInactive, setIncludeInactive] = useState(false);
 
-  // ✅ NEW: include subscribers toggle
-  const [includeSubscribers, setIncludeSubscribers] = useState(true);
-
+  const [tab, setTab] = useState<CustomerTab>("all");
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [open, setOpen] = useState(false);
 
+  // Always fetch everything — filter client-side from the full list
   const query = useMemo(
     () => ({
       limit: 500,
       offset: 0,
-      includeInactive,
-      includeSubscribers, // ✅ NEW (hook must support it)
+      includeInactive: true, // always fetch inactive so the tab count is accurate
+      includeSubscribers: true, // always fetch subscribers
       storeId: activeStoreId,
     }),
-    [activeStoreId, includeInactive, includeSubscribers],
+    [activeStoreId],
   );
 
   const { data, isLoading, refetch } = useAdminCustomers(query, session, axios);
 
-  // ✅ Normalize: support either array response or { rows } response
-  const rows: AdminCustomerRow[] = useMemo(() => {
+  const allRows: AdminCustomerRow[] = useMemo(() => {
     if (!data) return [];
     const raw = Array.isArray(data) ? data : ((data as any).rows ?? []);
-
     return raw.map((r: any) => ({
       ...r,
       email: r.email ?? r.billingEmail ?? "",
@@ -62,13 +60,51 @@ export default function AdminCustomersClient() {
     }));
   }, [data]);
 
-  // Loading
-  if (authStatus === "loading" || isLoading) {
-    return <Loading />;
-  }
+  const counts = useMemo(
+    () => ({
+      all: allRows.length,
+      subscribed: allRows.filter((r) => r.marketingStatus === "subscribed")
+        .length,
+      inactive: allRows.filter(
+        (r) => r.entityType === "customer" && r.isActive === false,
+      ).length,
+    }),
+    [allRows],
+  );
 
-  // Empty state
-  if (rows.length === 0 && !includeInactive) {
+  type CustomerTab = "all" | "subscribed" | "inactive";
+
+  const chips: FilterChip<CustomerTab>[] = [
+    { value: "all", label: "All", count: counts.all },
+    {
+      value: "subscribed",
+      label: "Subscribed",
+      count: counts.subscribed,
+      showZero: false,
+    },
+    {
+      value: "inactive",
+      label: "Inactive",
+      count: counts.inactive,
+      showZero: false,
+    },
+  ];
+
+  // filter
+  const rows = useMemo(() => {
+    switch (tab) {
+      case "subscribed":
+        return allRows.filter((r) => r.marketingStatus === "subscribed");
+      case "inactive":
+        return allRows.filter((r) => r.isActive === false);
+      default:
+        return allRows;
+    }
+  }, [allRows, tab]);
+
+  if (authStatus === "loading" || isLoading) return <Loading />;
+
+  if (allRows.length === 0) {
     return (
       <section className="space-y-4">
         <PageHeader
@@ -76,7 +112,6 @@ export default function AdminCustomersClient() {
           description="Manage customers for your company."
           tooltip="Search customers by name, email, phone. View details and manage status."
         />
-
         <EmptyState
           icon={<FaUsers />}
           title="No customers yet"
@@ -90,20 +125,17 @@ export default function AdminCustomersClient() {
             onClick: () => setIsBulkOpen(true),
           }}
         />
-
         <CustomerBulkUploadModal
           isOpen={isBulkOpen}
           onClose={() => setIsBulkOpen(false)}
           endpoint={`/api/admin/customers/bulk/${activeStoreId ?? "null"}`}
           onSuccess={() => refetch()}
         />
-
         <CreateCustomerModal open={open} onClose={() => setOpen(false)} />
       </section>
     );
   }
 
-  // Normal render
   return (
     <section className="space-y-4">
       <PageHeader
@@ -112,8 +144,7 @@ export default function AdminCustomersClient() {
         tooltip="Search customers by name, email, phone. View details and manage status."
       >
         <Button onClick={() => setIsBulkOpen(true)}>
-          <LuImport size={16} />
-          Import
+          <LuImport size={16} /> Import
         </Button>
         <Button onClick={() => setOpen(true)}>
           <FaPlus /> Add Customer
@@ -124,28 +155,19 @@ export default function AdminCustomersClient() {
         <DataTable
           columns={adminCustomersColumns}
           data={rows}
-          onRowClick={(customer) => router.push(`/customers/${customer.id}`)}
+          onRowClick={(customer) => {
+            if (customer.entityType === "subscriber") return;
+            router.push(`/customers/${customer.id}`);
+          }}
           filterKey="search"
           filterPlaceholder="Search by name, email, phone, status…"
           toolbarLeft={
-            <div className="flex items-center justify-end gap-6">
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={includeInactive}
-                  onCheckedChange={setIncludeInactive}
-                />
-                <Label className="text-sm">Include inactive</Label>
-              </div>
-
-              {/* ✅ NEW */}
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={includeSubscribers}
-                  onCheckedChange={setIncludeSubscribers}
-                />
-                <Label className="text-sm">Include subscribers</Label>
-              </div>
-            </div>
+            <FilterChips<CustomerTab>
+              value={tab}
+              onChange={setTab}
+              chips={chips}
+              wrap
+            />
           }
         />
       </section>
@@ -156,7 +178,6 @@ export default function AdminCustomersClient() {
         endpoint={`/api/admin/customers/bulk/${activeStoreId ?? "null"}`}
         onSuccess={() => refetch()}
       />
-
       <CreateCustomerModal open={open} onClose={() => setOpen(false)} />
     </section>
   );

@@ -5,12 +5,15 @@ import {
   MdOutlineInventory2,
   MdBarChart,
   MdArticle,
+  MdCreditScore,
+  MdEmail,
 } from "react-icons/md";
 import { FaReceipt, FaFileAlt } from "react-icons/fa";
 import { TbUsers } from "react-icons/tb";
 import { hasPermission } from "@/lib/auth/has-permission";
 import { BsFillBoxSeamFill } from "react-icons/bs";
 import { FaGlobe, FaTruckFast } from "react-icons/fa6";
+import { RiMailSendLine } from "react-icons/ri"; // ← add
 
 /** -----------------------------
  * Types
@@ -151,11 +154,9 @@ export const main: readonly MenuItem[] = [
     link: "/dashboard",
   },
 
-  // ✅ keep Sales exactly as-is (per your request)
   {
     title: "Sales",
     icon: <MdShoppingCart size={18} />,
-
     subItems: [
       {
         title: "Orders",
@@ -228,7 +229,24 @@ export const main: readonly MenuItem[] = [
     permissions: ["analytics.read"],
   },
 
-  // ✅ keep Content exactly as-is (per your request)
+  // ── Marketing ──────────────────────────────────────────────
+  {
+    title: "Marketing",
+    icon: <RiMailSendLine size={18} />,
+    subItems: [
+      {
+        title: "Campaigns",
+        link: "/marketing/campaigns",
+        icon: <MdEmail size={18} />,
+      },
+      {
+        title: "Credits",
+        link: "/marketing/credits",
+        icon: <MdCreditScore size={18} />,
+      },
+    ],
+  },
+
   {
     title: "Content",
     icon: <FaFileAlt size={18} />,
@@ -251,7 +269,7 @@ export const main: readonly MenuItem[] = [
 
   {
     title: "Online Store",
-    link: "/online-store", // or "/stores" if you prefer
+    link: "/online-store",
     icon: <FaGlobe size={18} />,
     permissions: ["stores.read"],
   },

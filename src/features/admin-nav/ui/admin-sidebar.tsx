@@ -145,7 +145,7 @@ export default function AdminSidebar() {
 
   return (
     <aside
-      className="md:fixed hidden left-0 z-40 bg-white border-r p-2 md:flex flex-col overflow-y-auto no-scrollbar w-[180px]"
+      className="md:fixed hidden left-0 z-40 bg-white border-r p-2 md:flex flex-col overflow-y-auto no-scrollbar w-[200px]"
       style={{
         top: TOPBAR_HEIGHT,
         height: `calc(100dvh - ${TOPBAR_HEIGHT})`,
@@ -202,7 +202,7 @@ export default function AdminSidebar() {
             <div className={topLevelClassName}>
               {(item as any).icon}
 
-              <span className="flex items-center justify-between w-full text-[13px]">
+              <span className="flex items-center justify-between w-full text-sm">
                 <span className="flex items-center gap-2">
                   {item.title}
                   {topBadge ? (
@@ -246,7 +246,7 @@ export default function AdminSidebar() {
                     sub.name ? (
                       <li
                         key={sub.name}
-                        className="text-xs uppercase bg-muted px-5 py-1"
+                        className="text-sm uppercase bg-muted px-5 py-1"
                       >
                         {sub.name}
                       </li>
@@ -263,7 +263,7 @@ export default function AdminSidebar() {
                           return (
                             <Link
                               href={sub.link!}
-                              className={`flex items-center justify-between px-4 py-1.5 text-[13px] rounded transition-colors ${
+                              className={`flex items-center justify-between px-4 py-1.5 text-sm rounded transition-colors ${
                                 isActiveSub
                                   ? "text-primary font-bold"
                                   : "hover:bg-muted text-black font-medium"

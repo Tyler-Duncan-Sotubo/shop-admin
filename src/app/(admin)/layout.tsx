@@ -20,7 +20,7 @@ const Layout = async ({ children }: { children: React.ReactNode }) => {
       <div className="pt-18">
         <AdminSidebar />
 
-        <div className="w-full md:ml-[180px] md:w-[calc(100%-180px)]">
+        <div className="w-full md:ml-[200px] md:w-[calc(100%-200px)]">
           <main className="min-h-[calc(100vh-4.5rem)]">
             <ScrollToTop />
 

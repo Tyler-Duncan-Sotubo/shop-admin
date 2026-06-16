@@ -88,8 +88,7 @@ export function InventoryMobileRow({
 
   return (
     <div className="p-4">
-      <button
-        type="button"
+      <div
         className="w-full text-left"
         onClick={() => meta.toggleExpanded(r.productId)}
       >
@@ -148,7 +147,7 @@ export function InventoryMobileRow({
             />
           </div>
         </div>
-      </button>
+      </div>
     </div>
   );
 }

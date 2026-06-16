@@ -1,3 +1,4 @@
+// settings-items.ts
 import {
   FaUsersCog,
   FaClipboardCheck,
@@ -5,12 +6,13 @@ import {
   FaPercentage,
   FaFileInvoiceDollar,
   FaCreditCard,
-  FaCode,
   FaStore,
   FaPlug,
   FaMapMarkedAlt,
   FaUser,
 } from "react-icons/fa";
+import { MdEmail } from "react-icons/md";
+import { FaCode } from "react-icons/fa";
 import type { ReactNode } from "react";
 
 export type SettingsItem = {
@@ -23,21 +25,16 @@ export type SettingsItem = {
 };
 
 export const settingsItems: readonly SettingsItem[] = [
-  // -----------------
-  // Personal
-  // -----------------
+  // ── Personal ─────────────────────────────────────────────
   {
     category: "Personal",
     title: "Profile",
     description: "Update your name, avatar, and personal preferences.",
     link: "/settings/profile",
     icon: <FaUser size={20} />,
-    // usually always visible to signed-in users
   },
 
-  // -----------------
-  // Organization
-  // -----------------
+  // ── Organization ─────────────────────────────────────────
   {
     category: "Organization",
     title: "Business Details",
@@ -74,37 +71,27 @@ export const settingsItems: readonly SettingsItem[] = [
     permissions: ["audit.logs.read"],
   },
 
-  // -----------------
-  // Inventory
-  // -----------------
+  // ── Operations ───────────────────────────────────────────
   {
-    category: "Inventory",
-    title: "Locations",
+    category: "Operations",
+    title: "Inventory Locations",
     description:
       "Manage warehouses and store locations where stock is held and tracked.",
     link: "/settings/inventory/locations",
     icon: <FaMapMarkedAlt size={20} />,
     permissions: ["locations.read"],
   },
-
-  // -----------------
-  // Payments
-  // -----------------
   {
-    category: "Payments",
+    category: "Operations",
     title: "Payment Methods",
     description:
       "Enable and configure payment options including cards, bank transfers, and providers.",
     link: "/settings/payment-methods",
     icon: <FaCreditCard size={20} />,
     permissions: ["payments.read"],
-    // if this page is true provider config only, use:
-    // permissions: ["payments.manage_providers"]
   },
 
-  // -----------------
-  // Billing & Taxes
-  // -----------------
+  // ── Billing & Taxes ──────────────────────────────────────
   {
     category: "Billing & Taxes",
     title: "Invoice Template",
@@ -127,18 +114,17 @@ export const settingsItems: readonly SettingsItem[] = [
     permissions: ["billing.taxes.read", "settings.manage_tax"],
   },
 
-  // -----------------
-  // Developer
-  // -----------------
-  // {
-  //   category: "Developer",
-  //   title: "API & Webhooks",
-  //   description:
-  //     "Generate API keys and configure webhooks for external integrations.",
-  //   link: "/settings/developers",
-  //   icon: <FaCode size={20} />,
-  //   permissions: ["apikeys.read"],
-  // },
+  // ── Marketing ────────────────────────────────────────────
+  {
+    category: "Marketing",
+    title: "Email Configuration",
+    description:
+      "Configure your sender email, display name, logo, brand colour, and footer details for campaigns.",
+    link: "/settings/email-configuration",
+    icon: <MdEmail size={20} />,
+  },
+
+  // ── Developer ────────────────────────────────────────────
   {
     category: "Developer",
     title: "Integrations",
@@ -147,5 +133,14 @@ export const settingsItems: readonly SettingsItem[] = [
     link: "/settings/integrations",
     icon: <FaPlug size={20} />,
     permissions: ["integrations.analytics.read", "integrations.zoho.read"],
+  },
+  {
+    category: "Developer",
+    title: "API & Webhooks",
+    description:
+      "Generate API keys and configure webhooks for external integrations.",
+    link: "/settings/developers",
+    icon: <FaCode size={20} />,
+    permissions: ["apikeys.read"],
   },
 ];
