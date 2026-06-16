@@ -6,6 +6,7 @@ import { Button } from "@/shared/ui/button";
 import { Monitor, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CampaignBuilderValues } from "../schema/campaign.schema";
+import { FaTwitter, FaFacebook, FaInstagram, FaYoutube } from "react-icons/fa";
 
 type Props = {
   values: Partial<CampaignBuilderValues>;
@@ -176,16 +177,31 @@ export function CampaignPreview({
             className="px-6 py-6 text-center space-y-2"
             style={{ backgroundColor: "#111111" }}
           >
-            <div className="flex justify-center gap-2 mb-3">
-              {["tw", "fb", "ig", "yt"].map((s) => (
-                <div
-                  key={s}
-                  className="w-7 h-7 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: "#333333" }}
-                >
-                  <span style={{ fontSize: 8, color: "#888888" }}>{s}</span>
-                </div>
-              ))}
+            <div className="flex justify-center gap-3 mb-3">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: "#333333" }}
+              >
+                <FaTwitter size={14} color="#888888" />
+              </div>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: "#333333" }}
+              >
+                <FaFacebook size={14} color="#888888" />
+              </div>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: "#333333" }}
+              >
+                <FaInstagram size={14} color="#888888" />
+              </div>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: "#333333" }}
+              >
+                <FaYoutube size={14} color="#888888" />
+              </div>
             </div>
             <p style={{ fontSize: 11, color: "#999999" }}>{fromName}</p>
             <p style={{ fontSize: 11, color: "#777777" }}>

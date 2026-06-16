@@ -30,6 +30,7 @@ import {
 } from "../schema/email-sender-config.schema";
 import type { SocialLinks } from "../types/email-sender-config.types";
 import { CampaignImageUpload } from "@/features/marketing/campaigns/ui/campaign-image-upload";
+import { FaTwitter, FaFacebook, FaInstagram, FaYoutube } from "react-icons/fa";
 
 export function EmailSenderConfigClient() {
   const { data: session, status: authStatus } = useSession();
@@ -446,35 +447,23 @@ function FooterPreview({
         {hasSocial && (
           <div className="flex justify-center gap-2">
             {twitter && (
-              <div
-                className="w-7 h-7 rounded-full bg-gray-700 flex items-center
-                justify-center"
-              >
-                <span style={{ fontSize: 8, color: "#888" }}>tw</span>
+              <div className="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center">
+                <FaTwitter size={12} color="#888888" />
               </div>
             )}
             {facebook && (
-              <div
-                className="w-7 h-7 rounded-full bg-gray-700 flex items-center
-                justify-center"
-              >
-                <span style={{ fontSize: 8, color: "#888" }}>fb</span>
+              <div className="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center">
+                <FaFacebook size={12} color="#888888" />
               </div>
             )}
             {instagram && (
-              <div
-                className="w-7 h-7 rounded-full bg-gray-700 flex items-center
-                justify-center"
-              >
-                <span style={{ fontSize: 8, color: "#888" }}>ig</span>
+              <div className="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center">
+                <FaInstagram size={12} color="#888888" />
               </div>
             )}
             {youtube && (
-              <div
-                className="w-7 h-7 rounded-full bg-gray-700 flex items-center
-                justify-center"
-              >
-                <span style={{ fontSize: 8, color: "#888" }}>yt</span>
+              <div className="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center">
+                <FaYoutube size={12} color="#888888" />
               </div>
             )}
           </div>
