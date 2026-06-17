@@ -6,15 +6,21 @@ import { Button } from "@/shared/ui/button";
 import type { TransferListItem } from "../types/transfer.type";
 import { UpdateTransferStatusModal } from "./update-transfer-status-modal";
 
+import { useRouter } from "next/navigation";
+import { FaEdit } from "react-icons/fa";
+
 export function TransferStatusActions({
   transfer,
 }: {
   transfer: TransferListItem;
 }) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  const isPending = transfer.status === "pending";
 
   return (
-    <>
+    <div className="flex gap-2">
       <Button
         size="sm"
         variant="clean"
@@ -28,6 +34,19 @@ export function TransferStatusActions({
       >
         Update status
       </Button>
+
+      {isPending && (
+        <Button
+          size="sm"
+          variant="clean"
+          onClick={(e) => {
+            e.stopPropagation?.();
+            router.push(`/inventory/transfers/${transfer.id}/edit`);
+          }}
+        >
+          <FaEdit className="w-4 h-4 mr-1" /> Edit items
+        </Button>
+      )}
 
       <UpdateTransferStatusModal
         open={open}
@@ -43,6 +62,6 @@ export function TransferStatusActions({
         fromLocationName={transfer.fromLocationName}
         toLocationName={transfer.toLocationName}
       />
-    </>
+    </div>
   );
 }

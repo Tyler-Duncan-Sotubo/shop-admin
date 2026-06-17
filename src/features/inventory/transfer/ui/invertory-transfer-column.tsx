@@ -11,10 +11,10 @@ function StatusBadge({ status }: { status: TransferListItem["status"] }) {
     status === "completed"
       ? "completed"
       : status === "cancelled"
-      ? "destructive"
-      : status === "in_transit"
-      ? "warning" // or "secondary" if you don’t have warning
-      : "secondary";
+        ? "destructive"
+        : status === "in_transit"
+          ? "warning" // or "secondary" if you don’t have warning
+          : "secondary";
 
   const label =
     status === "in_transit"
@@ -116,7 +116,7 @@ export const transfersColumns: ColumnDef<TransferListItem>[] = [
           (it) =>
             `${it.productName ?? ""} ${it.variantTitle ?? ""} ${it.sku ?? ""} ${
               it.productVariantId
-            } x${it.quantity}`
+            } x${it.quantity}`,
         )
         .join(" ");
 
