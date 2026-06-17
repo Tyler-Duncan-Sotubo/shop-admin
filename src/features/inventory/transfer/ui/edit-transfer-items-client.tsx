@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/set-state-in-effect */
 // src/modules/transfer/ui/edit-transfer-items-page.tsx
 "use client";
@@ -5,17 +6,28 @@
 import { useSession } from "next-auth/react";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
+import { toast } from "sonner";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { StoreVariantCombobox } from "@/shared/ui/store-variant-combobox";
-import { useUpdateMutation } from "@/shared/hooks/use-update-mutation";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useGetTransfer } from "../hooks/use-transfers";
 import { useQueryClient } from "@tanstack/react-query";
 import type { TransferListItem } from "../types/transfer.type";
 import { BackButton } from "@/shared/ui/back-button";
+
+type StockError = {
+  productVariantId: string;
+  requested: number;
+  available: number;
+  shortage: number;
+  productName?: string | null;
+  variantTitle?: string | null;
+  sku?: string | null;
+  label?: string | null;
+};
 
 type Line = {
   productVariantId: string;
@@ -39,6 +51,7 @@ export function EditTransferItemsPage({ transferId }: Props) {
 
   const [lines, setLines] = useState<Line[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [stockErrors, setStockErrors] = useState<StockError[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [seeded, setSeeded] = useState(false);
 
@@ -48,15 +61,12 @@ export function EditTransferItemsPage({ transferId }: Props) {
     axios,
   );
 
-  // try to get rich item data (with names) from the list cache first
   const cachedTransfer = queryClient
     .getQueryData<TransferListItem[]>(["inventory", "transfers"])
     ?.find((t) => t.id === transferId);
 
   useEffect(() => {
     if (seeded) return;
-
-    // prefer cached list data since it has productName/variantTitle/sku
     const source = cachedTransfer ?? transfer;
     if (!source?.items?.length) return;
 
@@ -73,19 +83,6 @@ export function EditTransferItemsPage({ transferId }: Props) {
     setSeeded(true);
   }, [transfer, cachedTransfer, seeded]);
 
-  const updateTransferItems = useUpdateMutation({
-    endpoint: `/api/inventory/transfers/${transferId}/items`,
-    successMessage: "Transfer items updated successfully.",
-    refetchKey: "inventory transfers list history",
-    onSuccess: () => {
-      setIsSubmitting(false);
-      router.back();
-    },
-    onError: () => {
-      setIsSubmitting(false);
-    },
-  });
-
   const setLine = (idx: number, patch: Partial<Line>) =>
     setLines((prev) =>
       prev.map((l, i) => (i === idx ? { ...l, ...patch } : l)),
@@ -99,6 +96,8 @@ export function EditTransferItemsPage({ transferId }: Props) {
 
   const removeLine = (idx: number) =>
     setLines((prev) => prev.filter((_, i) => i !== idx));
+
+  const errorVariantIds = new Set(stockErrors.map((e) => e.productVariantId));
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -115,8 +114,40 @@ export function EditTransferItemsPage({ transferId }: Props) {
       return;
     }
 
+    setSubmitError(null);
+    setStockErrors([]);
     setIsSubmitting(true);
-    await updateTransferItems({ items: cleaned }, setSubmitError);
+
+    try {
+      await axios.patch(
+        `/api/inventory/transfers/${transferId}/items`,
+        { items: cleaned },
+        {
+          headers: {
+            Authorization: `Bearer ${session?.backendTokens?.accessToken}`,
+          },
+        },
+      );
+
+      toast.success("Transfer items updated successfully.");
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["transfers"] });
+      router.back();
+    } catch (err: any) {
+      const data = err?.response?.data;
+      const errors = data?.errors;
+      const msg =
+        data?.error?.message ?? data?.message ?? "Something went wrong.";
+
+      if (errors?.length) {
+        setStockErrors(errors);
+      } else {
+        setSubmitError(msg);
+        toast.error(msg);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading && !cachedTransfer) {
@@ -141,7 +172,6 @@ export function EditTransferItemsPage({ transferId }: Props) {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      {/* Header */}
       <BackButton href="/inventory" label="Back to Inventory" />
 
       <div>
@@ -170,98 +200,165 @@ export function EditTransferItemsPage({ transferId }: Props) {
 
         {/* Lines */}
         <div className="space-y-3">
-          {lines.map((line, idx) => (
-            <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-              {/* Variant cell */}
-              <div className="md:col-span-9 col-span-7">
-                {line.isNew ? (
-                  <StoreVariantCombobox
-                    storeId={activeStoreId}
-                    value={line.productVariantId}
-                    onChange={(variantId) =>
-                      setLine(idx, { productVariantId: variantId })
-                    }
-                    requireStock={false}
-                  />
-                ) : (
-                  <div className="flex flex-col justify-center min-h-9 px-3 py-1.5 border rounded-md bg-muted/40">
-                    <span className="text-xs font-medium truncate">
-                      {line.productName ?? "Unknown product"}
-                      {line.variantTitle ? (
-                        <span className="text-muted-foreground font-normal">
-                          {" "}
-                          — {line.variantTitle}
+          {lines.map((line, idx) => {
+            const stockErr = stockErrors.find(
+              (e) => e.productVariantId === line.productVariantId,
+            );
+            const hasError = !!stockErr;
+
+            return (
+              <div key={idx} className="space-y-1">
+                <div className="grid grid-cols-12 gap-2 items-center">
+                  {/* Variant cell */}
+                  <div className="md:col-span-9 col-span-7">
+                    {line.isNew ? (
+                      <StoreVariantCombobox
+                        storeId={activeStoreId}
+                        value={line.productVariantId}
+                        onChange={(variantId) =>
+                          setLine(idx, { productVariantId: variantId })
+                        }
+                        requireStock={false}
+                      />
+                    ) : (
+                      <div
+                        className={[
+                          "flex flex-col justify-center min-h-9 px-3 py-1.5 border rounded-md",
+                          hasError ? "border-red-400 bg-red-50" : "bg-muted/40",
+                        ].join(" ")}
+                      >
+                        <span className="text-xs font-medium truncate">
+                          {line.productName ?? "Unknown product"}
+                          {line.variantTitle ? (
+                            <span
+                              className={
+                                hasError
+                                  ? "text-red-400 font-normal"
+                                  : "text-muted-foreground font-normal"
+                              }
+                            >
+                              {" "}
+                              — {line.variantTitle}
+                            </span>
+                          ) : null}
                         </span>
-                      ) : null}
-                    </span>
-                    {line.sku ? (
-                      <span className="text-[10px] text-muted-foreground truncate">
-                        SKU: {line.sku}
-                      </span>
-                    ) : null}
+                        {line.sku ? (
+                          <span
+                            className={[
+                              "text-[10px] truncate",
+                              hasError
+                                ? "text-red-400"
+                                : "text-muted-foreground",
+                            ].join(" ")}
+                          >
+                            SKU: {line.sku}
+                          </span>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
+
+                  {/* Qty cell */}
+                  <div className="md:col-span-3 col-span-4">
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-9 w-9 p-0 shrink-0"
+                        onClick={() => {
+                          const current = Number(line.quantity);
+                          if (current > 1)
+                            setLine(idx, { quantity: String(current - 1) });
+                        }}
+                      >
+                        −
+                      </Button>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={line.quantity}
+                        onChange={(e) =>
+                          setLine(idx, { quantity: e.target.value })
+                        }
+                        className={[
+                          "text-center px-1",
+                          hasError ? "border-red-400 text-red-600" : "",
+                        ].join(" ")}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-9 w-9 p-0 shrink-0"
+                        onClick={() =>
+                          setLine(idx, {
+                            quantity: String(Number(line.quantity) + 1),
+                          })
+                        }
+                      >
+                        +
+                      </Button>
+                      {lines.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeLine(idx)}
+                          className="p-1 text-muted-foreground hover:text-red-500"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inline stock error per line */}
+                {stockErr && (
+                  <p className="text-xs text-red-600 pl-1">
+                    Only {stockErr.available} available — short by{" "}
+                    {stockErr.shortage}
+                  </p>
                 )}
               </div>
-
-              {/* Qty cell */}
-              <div className="md:col-span-3 col-span-4">
-                <div className="flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-9 w-9 p-0 shrink-0"
-                    onClick={() => {
-                      const current = Number(line.quantity);
-                      if (current > 1)
-                        setLine(idx, { quantity: String(current - 1) });
-                    }}
-                  >
-                    −
-                  </Button>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={line.quantity}
-                    onChange={(e) => setLine(idx, { quantity: e.target.value })}
-                    className="text-center px-1"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-9 w-9 p-0 shrink-0"
-                    onClick={() =>
-                      setLine(idx, {
-                        quantity: String(Number(line.quantity) + 1),
-                      })
-                    }
-                  >
-                    +
-                  </Button>
-                  {lines.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeLine(idx)}
-                      className="p-1 text-muted-foreground hover:text-red-500"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <Button type="button" variant="clean" onClick={addLine}>
           + Add item
         </Button>
 
+        {/* Generic error */}
         {submitError && (
-          <div className="text-sm text-red-600">{submitError}</div>
+          <div className="rounded-md border border-red-200 bg-red-50 p-3 space-y-1">
+            {submitError.split(" | ").map((line, i) => (
+              <p key={i} className="text-xs text-red-600">
+                {line.trim()}
+              </p>
+            ))}
+          </div>
+        )}
+        {/* Stock error summary if multiple lines failed */}
+        {stockErrors.length > 0 && (
+          <div className="rounded-md border border-red-200 bg-red-50 p-3 space-y-1">
+            <p className="text-sm font-medium text-red-700">
+              Insufficient stock for {stockErrors.length} item
+              {stockErrors.length !== 1 ? "s" : ""}
+            </p>
+            {stockErrors.map((e) => (
+              <p key={e.productVariantId} className="text-xs text-red-600">
+                <span className="font-medium">
+                  {e.label ?? e.productName ?? e.productVariantId}
+                </span>
+                {e.sku ? (
+                  <span className="text-red-400"> ({e.sku})</span>
+                ) : null}
+                : requested {e.requested}, only {e.available} available
+              </p>
+            ))}
+          </div>
         )}
 
         {/* Footer */}
