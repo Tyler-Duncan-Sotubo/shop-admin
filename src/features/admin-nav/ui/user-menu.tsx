@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { ChevronDown, ChevronUp, LogOut, Settings, User } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  LogOut,
+  Settings,
+  User,
+  CreditCard,
+} from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import {
@@ -21,9 +28,10 @@ type UserMenuProps = {
   name?: string | null;
   email?: string | null;
   avatar?: string | null;
+  role?: string | null;
 };
 
-export function UserMenu({ name, email, avatar }: UserMenuProps) {
+export function UserMenu({ name, email, avatar, role }: UserMenuProps) {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -59,6 +67,8 @@ export function UserMenu({ name, email, avatar }: UserMenuProps) {
 
   if (!mounted) return null;
 
+  const isOwner = role === "owner";
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
@@ -79,7 +89,6 @@ export function UserMenu({ name, email, avatar }: UserMenuProps) {
             </AvatarFallback>
           </Avatar>
 
-          {/* ✅ Chevron toggle */}
           <span className="text-gray-500">
             {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </span>
@@ -116,9 +125,24 @@ export function UserMenu({ name, email, avatar }: UserMenuProps) {
           </Link>
         </DropdownMenuItem>
 
+        {/* ── Billing — owner only ── */}
+        {isOwner && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link
+                href="/billing"
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <CreditCard className="h-4 w-4" />
+                Billing
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+
         <DropdownMenuSeparator />
 
-        {/* ✅ Logout (single click target, no nested Link needed) */}
         <DropdownMenuItem
           onClick={handleLogout}
           className="flex items-center gap-2 cursor-pointer"

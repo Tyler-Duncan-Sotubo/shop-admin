@@ -97,6 +97,7 @@ export function AdminTopNav() {
           name={session?.user?.firstName}
           email={session?.user?.email}
           avatar={session?.user?.avatar || ""}
+          role={session?.user?.role || ""}
         />
       </div>
     </div>

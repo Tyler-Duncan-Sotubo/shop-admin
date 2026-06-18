@@ -74,6 +74,28 @@ export function useCancelSubscription(
   });
 }
 
+// features/subscriptions/hooks/use-subscriptions.ts — add
+export type BillingSummary = {
+  subscription: CompanySubscription | null;
+  plans: SubscriptionPlan[];
+  topups: CreditTopupRequest[];
+  invoices: SubscriptionInvoice[];
+};
+
+export function useGetBillingSummary(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  return useQuery({
+    queryKey: ["subscriptions", "billing-summary"],
+    enabled: !!session?.backendTokens?.accessToken,
+    queryFn: async (): Promise<BillingSummary> => {
+      const res = await axios.get("/api/subscriptions/billing-summary");
+      return res.data.data;
+    },
+  });
+}
+
 // ── Initiate plan subscription ────────────────────────────────
 export function useInitiateSubscription(
   session: Session | null,

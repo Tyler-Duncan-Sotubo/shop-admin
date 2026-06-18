@@ -16,24 +16,21 @@ export function SubscriptionBanner() {
   const router = useRouter();
   const [dismissed, setDismissed] = useState(false);
 
-  const {
-    data: subscription,
-    isLoading: subLoading,
-    refetch: refetchSub,
-  } = useGetMySubscription(session, axios);
+  const { data: subscription, isLoading: subLoading } = useGetMySubscription(
+    session,
+    axios,
+  );
 
   const user = session?.user;
 
-  if (!subscription || dismissed) return null;
+  // ── Don't render while loading or dismissed ───────────────
+  if (subLoading || !subscription || dismissed) return null;
 
-  const subscriptionWithTrial = {
-    ...subscription,
-    ...getTrialInfo(subscription.trialEndsAt),
-  };
+  const { status } = subscription;
 
-  console.log("subscriptionWithTrial", subscriptionWithTrial);
-
-  const { status, trialDaysLeft, trialActive } = subscriptionWithTrial;
+  // ── Nothing to show for active non-trial ─────────────────
+  const { trialDaysLeft, trialActive } = getTrialInfo(subscription.trialEndsAt);
+  if (status === "active" && !trialActive) return null;
 
   const config = getBannerConfig(status, trialDaysLeft);
   if (!config) return null;
@@ -86,12 +83,29 @@ export function SubscriptionBanner() {
   );
 }
 
+// ── Trial info ────────────────────────────────────────────────
+function getTrialInfo(trialEndsAt: string | null) {
+  if (!trialEndsAt) {
+    return { trialDaysLeft: null, trialActive: false };
+  }
+
+  const now = new Date();
+  const trialEnd = new Date(trialEndsAt);
+  const diff = trialEnd.getTime() - now.getTime();
+
+  return {
+    trialDaysLeft: Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24))),
+    trialActive: diff > 0,
+  };
+}
+
+// ── Banner config per status ──────────────────────────────────
 function getBannerConfig(status: string, trialDaysLeft: number | null) {
   switch (status) {
     case "trialing":
       return {
         Icon: Clock,
-        href: "/billing/plans", // ← pick a plan
+        href: "/billing/plans",
         message:
           trialDaysLeft !== null && trialDaysLeft <= 3
             ? `⚠️ Your trial ends in ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"}. Upgrade now to keep access.`
@@ -110,7 +124,7 @@ function getBannerConfig(status: string, trialDaysLeft: number | null) {
     case "past_due":
       return {
         Icon: CreditCard,
-        href: "/billing", // ← fix payment on billing page
+        href: "/billing",
         message:
           "Payment failed. Please update your payment method to avoid losing access.",
         cta: "Fix payment",
@@ -121,7 +135,7 @@ function getBannerConfig(status: string, trialDaysLeft: number | null) {
     case "expired":
       return {
         Icon: AlertTriangle,
-        href: "/billing/plans", // ← pick a plan
+        href: "/billing/plans",
         message:
           "Your trial has expired. Choose a plan to continue using MyCenta.",
         cta: "Choose a plan",
@@ -132,7 +146,7 @@ function getBannerConfig(status: string, trialDaysLeft: number | null) {
     case "cancelled":
       return {
         Icon: AlertTriangle,
-        href: "/billing/plans", // ← resubscribe via plans page
+        href: "/billing/plans",
         message:
           "Your subscription is cancelled. Resubscribe to restore full access.",
         cta: "Resubscribe",
@@ -144,24 +158,3 @@ function getBannerConfig(status: string, trialDaysLeft: number | null) {
       return null;
   }
 }
-
-const getTrialInfo = (trialEndsAt: string | null) => {
-  if (!trialEndsAt) {
-    return {
-      trialDaysLeft: 0,
-      trialActive: false,
-    };
-  }
-
-  const now = new Date();
-  const trialEnd = new Date(trialEndsAt);
-
-  const diff = trialEnd.getTime() - now.getTime();
-
-  const trialDaysLeft = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-
-  return {
-    trialDaysLeft,
-    trialActive: diff > 0,
-  };
-};

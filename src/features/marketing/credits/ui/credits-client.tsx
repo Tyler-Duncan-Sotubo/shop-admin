@@ -1,23 +1,26 @@
 // features/credits/components/credits-client.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
+import { useSearchParams } from "next/navigation";
 import PageHeader from "@/shared/ui/page-header";
 import Loading from "@/shared/ui/loading";
 import { DataTable } from "@/shared/ui/data-table";
 import { FilterChips } from "@/shared/ui/filter-chips";
 import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
 import { format, parseISO, isValid } from "date-fns";
+import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   useGetCreditBalance,
   useGetCreditTransactions,
 } from "../hooks/use-credits";
 import type { CreditChannel, CreditTransaction } from "../types/credits.types";
+import { useVerifyTopup } from "@/features/subscription/hooks/use-subscriptions";
 import { BuyCreditsModal } from "@/features/subscription/ui/buy-credits-modal";
-import { Button } from "@/shared/ui/button";
 
 type ChannelTab = "all" | "email" | "sms";
 
@@ -102,10 +105,12 @@ const transactionColumns: ColumnDef<CreditTransaction>[] = [
 
 export default function CreditsClient() {
   const { data: session, status: authStatus } = useSession();
-  const owner = session?.user?.role === "owner";
   const axios = useAxiosAuth();
-  const [buyOpen, setBuyOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const verifiedRef = useRef(false);
+  const owner = session?.user?.role === "owner";
 
+  const [buyOpen, setBuyOpen] = useState(false);
   const [tab, setTab] = useState<ChannelTab>("all");
 
   const params = useMemo(
@@ -117,16 +122,52 @@ export default function CreditsClient() {
     [tab],
   );
 
-  const { data: balance, isLoading: balanceLoading } = useGetCreditBalance(
-    session,
-    axios,
-  );
+  const {
+    data: balance,
+    isLoading: balanceLoading,
+    refetch: refetchBalance,
+  } = useGetCreditBalance(session, axios);
 
-  const { data: transactions, isLoading: txLoading } = useGetCreditTransactions(
-    session,
-    axios,
-    params,
-  );
+  const {
+    data: transactions,
+    isLoading: txLoading,
+    refetch: refetchTx,
+  } = useGetCreditTransactions(session, axios, params);
+
+  const verifyTopup = useVerifyTopup(session, axios);
+
+  // ── Handle return from Paystack ───────────────────────────
+  useEffect(() => {
+    if (authStatus !== "authenticated") return;
+    if (verifiedRef.current) return;
+
+    const topupSuccess = searchParams.get("topup");
+    const reference =
+      searchParams.get("reference") ?? searchParams.get("trxref");
+
+    if (topupSuccess !== "success" || !reference) return;
+
+    verifiedRef.current = true;
+
+    // clear URL params immediately
+    window.history.replaceState({}, "", "/marketing/credits");
+
+    verifyTopup
+      .mutateAsync(reference)
+      .then(() => {
+        toast.success("Credits added to your account!");
+        refetchBalance();
+        refetchTx();
+      })
+      .catch((err: unknown) => {
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Payment received but credits not added. Please contact support.",
+        );
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authStatus]);
 
   if (authStatus === "loading") return <Loading />;
 
@@ -141,6 +182,7 @@ export default function CreditsClient() {
       >
         {owner && <Button onClick={() => setBuyOpen(true)}>Buy credits</Button>}
       </PageHeader>
+
       {/* ── Balance cards ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <BalanceCard
@@ -160,6 +202,7 @@ export default function CreditsClient() {
           loading={balanceLoading}
         />
       </div>
+
       {/* ── Transaction history ── */}
       <DataTable
         columns={transactionColumns}
@@ -183,12 +226,13 @@ export default function CreditsClient() {
           />
         }
       />
+
       <BuyCreditsModal open={buyOpen} onClose={() => setBuyOpen(false)} />
     </section>
   );
 }
 
-// ── Balance card ────────────────────────────────────────────
+// ── Balance card ──────────────────────────────────────────────
 function BalanceCard({
   label,
   value,

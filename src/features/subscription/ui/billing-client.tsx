@@ -13,45 +13,34 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { CreditCard, Zap, ArrowUpRight, RefreshCw, Clock } from "lucide-react";
 import { toast } from "sonner";
 import {
-  useGetInvoices,
-  useGetMySubscription,
-  useGetTopupHistory,
+  useGetBillingSummary,
   useVerifySubscription,
+  useRenewSubscription,
 } from "../hooks/use-subscriptions";
 import { StatusBadge } from "./status-badge";
 import type { CompanySubscription } from "../types/subscriptions.types";
 import { BillingHistory } from "./billing-history";
-import { useRenewSubscription } from "../hooks/use-subscriptions";
 
 export default function BillingClient() {
   const { data: session, status: authStatus } = useSession();
   const axios = useAxiosAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const verifiedRef = useRef(false); // ← prevent double-firing
+  const verifiedRef = useRef(false);
 
   const {
-    data: subscription,
-    isLoading: subLoading,
-    refetch: refetchSub,
-  } = useGetMySubscription(session, axios);
-  const { data: history = [], isLoading: historyLoading } = useGetTopupHistory(
-    session,
-    axios,
-  );
-  const { data: invoices = [], isLoading: invoicesLoading } = useGetInvoices(
-    session,
-    axios,
-  );
-  const renewSubscription = useRenewSubscription(session, axios);
+    data: summary,
+    isLoading,
+    refetch,
+  } = useGetBillingSummary(session, axios);
 
   const verifySubscription = useVerifySubscription(session, axios);
+  const renewSubscription = useRenewSubscription(session, axios);
 
   // ── Handle return from Paystack ───────────────────────────
-  // Wait for session to be authenticated before verifying
   useEffect(() => {
-    if (authStatus !== "authenticated") return; // ← wait for token
-    if (verifiedRef.current) return; // ← don't fire twice
+    if (authStatus !== "authenticated") return;
+    if (verifiedRef.current) return;
 
     const subSuccess = searchParams.get("sub");
     const reference =
@@ -60,15 +49,13 @@ export default function BillingClient() {
     if (subSuccess !== "success" || !reference) return;
 
     verifiedRef.current = true;
-
-    // clear URL params immediately
     window.history.replaceState({}, "", "/billing");
 
     verifySubscription
       .mutateAsync(reference)
       .then(() => {
         toast.success("Subscription activated! Welcome to MyCenta.");
-        refetchSub();
+        refetch();
       })
       .catch((err: unknown) => {
         toast.error(
@@ -78,7 +65,7 @@ export default function BillingClient() {
         );
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authStatus]); // ← re-run when authStatus changes to "authenticated"
+  }, [authStatus]);
 
   const handleRenew = async () => {
     try {
@@ -91,7 +78,9 @@ export default function BillingClient() {
     }
   };
 
-  if (authStatus === "loading" || subLoading) return <Loading />;
+  if (authStatus === "loading" || isLoading) return <Loading />;
+
+  const { subscription, topups = [], invoices = [] } = summary ?? {};
 
   return (
     <section className="space-y-8 max-w-4xl">
@@ -119,16 +108,12 @@ export default function BillingClient() {
         </div>
       )}
 
-      <BillingHistory
-        topups={history}
-        invoices={invoices}
-        isLoading={historyLoading || invoicesLoading}
-      />
+      <BillingHistory topups={topups} invoices={invoices} isLoading={false} />
     </section>
   );
 }
 
-// ── rest unchanged ────────────────────────────────────────────
+// ── Current plan section — unchanged ─────────────────────────
 function CurrentPlanSection({
   subscription,
   onChangePlan,

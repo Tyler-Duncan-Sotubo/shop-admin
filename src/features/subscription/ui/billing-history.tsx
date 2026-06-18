@@ -103,7 +103,7 @@ export function BillingHistory({ topups, invoices, isLoading }: Props) {
   // ── Normalise into unified rows ───────────────────────────
   const topupRows: BillingRow[] = topups.map((t) => ({
     id: t.id,
-    type: "credit_topup",
+    type: "credit_topup" as const,
     description: `${t.credits.toLocaleString()} credits`,
     amountNGN: t.amountNGN,
     status: t.status,
@@ -111,18 +111,17 @@ export function BillingHistory({ topups, invoices, isLoading }: Props) {
     date: t.paidAt ?? t.createdAt,
   }));
 
-  const invoiceRows: BillingRow[] = invoices.map((inv) => ({
-    id: inv.id,
-    type: inv.type,
-    description:
-      inv.type === "subscription"
-        ? "Subscription payment"
-        : `${inv.type} payment`,
-    amountNGN: inv.amountNGN,
-    status: inv.status,
-    reference: inv.paystackReference,
-    date: inv.paidAt ?? inv.createdAt,
-  }));
+  const invoiceRows: BillingRow[] = invoices
+    .filter((inv) => inv.type === "subscription") // ← filter out credit_topup
+    .map((inv) => ({
+      id: inv.id,
+      type: "subscription" as const,
+      description: "Subscription payment",
+      amountNGN: inv.amountNGN,
+      status: inv.status,
+      reference: inv.paystackReference,
+      date: inv.paidAt ?? inv.createdAt,
+    }));
 
   const allRows = [...topupRows, ...invoiceRows].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
