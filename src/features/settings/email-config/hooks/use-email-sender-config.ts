@@ -1,4 +1,4 @@
-// features/email-marketing/hooks/use-email-sender-config.ts
+// features/campaigns/hooks/use-email-sender-config.ts
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "next-auth";
 import type { AxiosInstance, AxiosError } from "axios";

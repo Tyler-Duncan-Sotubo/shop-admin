@@ -53,8 +53,6 @@ export function CommerceAnalyticsClient() {
   const { data: session } = useSession();
   const { activeStoreId } = useStoreScope();
   const [activeTab, setActiveTab] = React.useState<AnalyticsTab>("overview");
-
-  console.log("Active Store ID in CommerceAnalyticsClient:", activeStoreId);
   // global date range
   const [range, setRange] = React.useState<DateRange>({
     from: subDays(new Date(), 30),

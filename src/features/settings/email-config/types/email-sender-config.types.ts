@@ -1,4 +1,4 @@
-// features/email-marketing/types/email-sender-config.types.ts
+// features/campaigns/types/email-sender-config.types.ts
 export type EmailSenderConfig = {
   id: string;
   companyId: string;

@@ -36,6 +36,7 @@ export const useLogin = () => {
         user: JSON.stringify(data.user),
         backendTokens: JSON.stringify(data.backendTokens),
         permissions: JSON.stringify(data.permissions),
+        subscription: JSON.stringify(data.subscription),
       });
 
       if (signInResult?.error) {

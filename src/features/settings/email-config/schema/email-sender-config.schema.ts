@@ -1,4 +1,4 @@
-// features/email-marketing/schema/email-sender-config.schema.ts
+// features/campaigns/schema/email-sender-config.schema.ts
 import { z } from "zod";
 
 export const EmailSenderConfigSchema = z.object({

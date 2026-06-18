@@ -1,4 +1,4 @@
-// features/email-marketing/components/email-sender-config-client.tsx
+// features/campaigns/components/email-sender-config-client.tsx
 "use client";
 
 import { useEffect } from "react";

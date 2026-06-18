@@ -16,6 +16,8 @@ import {
   useGetCreditTransactions,
 } from "../hooks/use-credits";
 import type { CreditChannel, CreditTransaction } from "../types/credits.types";
+import { BuyCreditsModal } from "@/features/subscription/ui/buy-credits-modal";
+import { Button } from "@/shared/ui/button";
 
 type ChannelTab = "all" | "email" | "sms";
 
@@ -100,7 +102,9 @@ const transactionColumns: ColumnDef<CreditTransaction>[] = [
 
 export default function CreditsClient() {
   const { data: session, status: authStatus } = useSession();
+  const owner = session?.user?.role === "owner";
   const axios = useAxiosAuth();
+  const [buyOpen, setBuyOpen] = useState(false);
 
   const [tab, setTab] = useState<ChannelTab>("all");
 
@@ -134,8 +138,9 @@ export default function CreditsClient() {
         title="Credits"
         description="View your credit balance and usage across email and SMS."
         tooltip="Credits are consumed when campaigns are sent. 1 credit = 1 email or 1 SMS."
-      />
-
+      >
+        {owner && <Button onClick={() => setBuyOpen(true)}>Buy credits</Button>}
+      </PageHeader>
       {/* ── Balance cards ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <BalanceCard
@@ -155,7 +160,6 @@ export default function CreditsClient() {
           loading={balanceLoading}
         />
       </div>
-
       {/* ── Transaction history ── */}
       <DataTable
         columns={transactionColumns}
@@ -179,6 +183,7 @@ export default function CreditsClient() {
           />
         }
       />
+      <BuyCreditsModal open={buyOpen} onClose={() => setBuyOpen(false)} />
     </section>
   );
 }
