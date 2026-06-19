@@ -1,9 +1,8 @@
 // app/(dashboard)/no-store-access/page.tsx
 import { getServerSession } from "next-auth";
-import { Store } from "lucide-react";
 import { authOptions } from "@/lib/auth/auth-options";
 import {
-  Store as StoreIcon,
+  Store,
   Lock,
   ShoppingBag,
   Package,
@@ -38,13 +37,13 @@ const page = async () => {
         </div>
       </div>
 
-      {/* Right — illustration (hidden on mobile) */}
+      {/* Right — illustration */}
       <div className="items-center justify-center hidden min-h-full md:flex bg-muted">
         <div className="flex flex-col items-center gap-6 p-12 text-muted-foreground">
           {/* Main store icon */}
           <div className="relative">
             <div className="flex items-center justify-center w-32 h-32 rounded-3xl bg-muted-foreground/10">
-              <StoreIcon className="w-16 h-16 text-muted-foreground/40" />
+              <Store className="w-16 h-16 text-muted-foreground/40" />
             </div>
             {/* Lock badge */}
             <div className="absolute flex items-center justify-center w-10 h-10 border-2 rounded-full -bottom-3 -right-3 bg-background border-muted">
