@@ -13,6 +13,7 @@ import ShippingCarriersClient from "./shipping/carriers/ui/shipping-carriers-cli
 import PickupLocationsClient from "./pickup/ui/pickup-locations-client";
 
 import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
+import { PlanGate } from "../subscription/ui/plan-gate";
 
 type ShippingTabKey = "zones" | "rates" | "carriers" | "pickup";
 
@@ -58,7 +59,7 @@ export default function ShippingClient() {
 
       <Tabs value={tab} onValueChange={(v) => onTabChange(v as ShippingTabKey)}>
         {/* ✅ Mobile: Filter chips */}
-        <div className="sm:hidden -mx-3 px-3 min-w-0">
+        <div className="min-w-0 px-3 -mx-3 sm:hidden">
           <FilterChips<ShippingTabKey>
             value={tab}
             onChange={onTabChange}
@@ -99,7 +100,9 @@ export default function ShippingClient() {
         </TabsContent>
 
         <TabsContent value="carriers" className="mt-4">
-          <ShippingCarriersClient />
+          <PlanGate feature="shippingIntegrations">
+            <ShippingCarriersClient />
+          </PlanGate>
         </TabsContent>
 
         <TabsContent value="pickup" className="mt-4">

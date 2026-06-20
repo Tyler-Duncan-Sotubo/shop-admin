@@ -17,6 +17,7 @@ import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
 import { useProductPermissions } from "./core/hooks/use-product-permissions";
 import { useCategoryPermissions } from "./categories/hooks/use-category-permissions";
 import { useAuthPermissions } from "@/lib/auth/use-permissions";
+import { PlanGate } from "../subscription/ui/plan-gate";
 
 type ProductTabKey = "products" | "collections" | "reviews" | "barcodes";
 
@@ -108,7 +109,7 @@ export default function ProductClient() {
 
           {canReadBarcodes && (
             <TabsTrigger value="barcodes" className="text-base">
-              <BarcodeIcon className="mr-2 h-4 w-4" />
+              <BarcodeIcon className="w-4 h-4 mr-2" />
               Barcodes
             </TabsTrigger>
           )}
@@ -128,13 +129,17 @@ export default function ProductClient() {
 
         {canReadReviews && (
           <TabsContent value="reviews" className="mt-4">
-            <ReviewsTable />
+            <PlanGate feature="productReviews">
+              <ReviewsTable />
+            </PlanGate>
           </TabsContent>
         )}
 
         {canReadBarcodes && (
           <TabsContent value="barcodes" className="mt-4">
-            <BarcodesClient />
+            <PlanGate feature="barcodes">
+              <BarcodesClient />
+            </PlanGate>
           </TabsContent>
         )}
       </Tabs>

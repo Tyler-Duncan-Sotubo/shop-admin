@@ -40,9 +40,9 @@ function DeltaBadge({
     >
       {!isZero &&
         (good ? (
-          <ArrowUpRight className="h-3 w-3" />
+          <ArrowUpRight className="w-3 h-3" />
         ) : (
-          <ArrowDownRight className="h-3 w-3" />
+          <ArrowDownRight className="w-3 h-3" />
         ))}
       {fmtPct(pct)}
     </div>
@@ -79,7 +79,7 @@ function Card({
       <div>
         <div className="flex items-end justify-between gap-1">
           <span
-            className="text-base font-bold text-foreground truncate min-w-0"
+            className="min-w-0 text-[16px] font-bold truncate text-foreground"
             title={value}
           >
             {value}

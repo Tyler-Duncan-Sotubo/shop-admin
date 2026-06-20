@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ReactNode } from "react";
 import {
   MdDashboard,
@@ -8,12 +9,29 @@ import {
   MdCreditScore,
   MdEmail,
 } from "react-icons/md";
-import { FaReceipt, FaFileAlt } from "react-icons/fa";
+import {
+  FaReceipt,
+  FaFileAlt,
+  FaMapMarkedAlt,
+  FaPercentage,
+  FaFileInvoiceDollar,
+} from "react-icons/fa";
 import { TbUsers } from "react-icons/tb";
 import { hasPermission } from "@/lib/auth/has-permission";
 import { BsFillBoxSeamFill } from "react-icons/bs";
-import { FaGlobe, FaTruckFast } from "react-icons/fa6";
-import { RiMailSendLine } from "react-icons/ri"; // ← add
+import {
+  FaCode,
+  FaCreditCard,
+  FaGlobe,
+  FaPlug,
+  FaTruckFast,
+  FaWallet,
+} from "react-icons/fa6";
+import { RiMailSendLine } from "react-icons/ri";
+import {
+  PlanFeatureKey,
+  planHasFeature,
+} from "@/features/subscription/config/plan-features.map";
 
 /** -----------------------------
  * Types
@@ -22,10 +40,11 @@ export type Permission = string;
 
 type BaseItem = {
   title: string;
-  name?: string; // optional group label
+  name?: string;
   link?: string;
   icon?: ReactNode;
   permissions?: readonly Permission[];
+  planFeature?: PlanFeatureKey;
   subItems?: readonly MenuItem[];
   badgeKey?: "ordersCount";
 };
@@ -34,10 +53,10 @@ type DividerItem = {
   title: string;
   name?: string;
   type: "divider";
-
   link?: undefined;
   icon?: undefined;
   permissions?: undefined;
+  planFeature?: undefined;
   subItems?: undefined;
 };
 
@@ -47,7 +66,6 @@ export type MenuItem = BaseItem | DividerItem;
  * Type guard
  * ------------------------------*/
 const isDivider = (i: MenuItem): i is DividerItem =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (i as any).type === "divider";
 
 /** -----------------------------
@@ -78,11 +96,12 @@ export function withBasePerm(menu: readonly MenuItem[], basePerm: string) {
 }
 
 /** -----------------------------
- * Filtering by permissions
+ * Filtering by permissions + plan
  * ------------------------------*/
 export function filterMenu(
   menu: readonly MenuItem[],
   userPermissions: readonly string[],
+  userPlanName?: string,
 ): MenuItem[] {
   const filtered = menu
     .map<MenuItem | null>((item) => {
@@ -91,8 +110,13 @@ export function filterMenu(
       const parentAllowed = hasPermission(userPermissions, item.permissions);
       if (!parentAllowed) return null;
 
+      if (item.planFeature && userPlanName) {
+        const allowed = planHasFeature(userPlanName, item.planFeature);
+        if (!allowed) return null;
+      }
+
       const visibleSubs: MenuItem[] | undefined = item.subItems
-        ? filterMenu(item.subItems, userPermissions)
+        ? filterMenu(item.subItems, userPermissions, userPlanName)
         : undefined;
 
       if (!item.link) {
@@ -106,20 +130,30 @@ export function filterMenu(
     })
     .filter((x): x is MenuItem => x !== null);
 
+  // ── Remove orphaned dividers ──────────────────────────────
   const cleaned: MenuItem[] = [];
-  let lastWasDivider = true;
-  for (const it of filtered) {
-    if (isDivider(it)) {
-      if (!lastWasDivider) {
-        cleaned.push(it);
-        lastWasDivider = true;
+  for (let i = 0; i < filtered.length; i++) {
+    const item = filtered[i];
+    if (isDivider(item)) {
+      // Look ahead only until the next divider
+      const itemsUntilNextDivider: MenuItem[] = [];
+      for (let j = i + 1; j < filtered.length; j++) {
+        if (isDivider(filtered[j])) break;
+        itemsUntilNextDivider.push(filtered[j]);
+      }
+      // Only keep divider if it has at least one non-divider item after it
+      if (itemsUntilNextDivider.length > 0) {
+        cleaned.push(item);
       }
     } else {
-      cleaned.push(it);
-      lastWasDivider = false;
+      cleaned.push(item);
     }
   }
-  if (cleaned.at(-1) && isDivider(cleaned.at(-1)!)) cleaned.pop();
+
+  // Remove trailing divider
+  if (cleaned.length > 0 && isDivider(cleaned[cleaned.length - 1])) {
+    cleaned.pop();
+  }
 
   return cleaned;
 }
@@ -132,7 +166,6 @@ export function flattenSingleSubMenus(menu: MenuItem[]): MenuItem[] {
     const subs = item.subItems;
     if (subs && subs.length === 1 && !isDivider(subs[0])) {
       const onlyChild = subs[0] as BaseItem;
-      // Promote the child, but keep the parent's icon
       return {
         ...onlyChild,
         icon: item.icon ?? onlyChild.icon,
@@ -148,10 +181,18 @@ export function flattenSingleSubMenus(menu: MenuItem[]): MenuItem[] {
  * Commerce Admin Menu
  * ------------------------------*/
 export const main: readonly MenuItem[] = [
+  // ── Core ──────────────────────────────────────────────────
   {
     title: "Overview",
     icon: <MdDashboard size={18} />,
     link: "/dashboard",
+  },
+
+  {
+    title: "Products",
+    icon: <BsFillBoxSeamFill size={18} />,
+    link: "/products",
+    permissions: ["products.read", "categories.read", "attributes.read"],
   },
 
   {
@@ -170,6 +211,7 @@ export const main: readonly MenuItem[] = [
         link: "/sales/rfqs",
         icon: <FaReceipt size={18} />,
         permissions: ["quotes.read"],
+        planFeature: "quotes",
       },
       {
         title: "Invoices",
@@ -187,10 +229,10 @@ export const main: readonly MenuItem[] = [
   },
 
   {
-    title: "Products",
-    icon: <BsFillBoxSeamFill size={18} />,
-    link: "/products",
-    permissions: ["products.read", "categories.read", "attributes.read"],
+    title: "Customers",
+    icon: <TbUsers size={18} />,
+    link: "/customers",
+    permissions: ["customers.read"],
   },
 
   {
@@ -205,31 +247,14 @@ export const main: readonly MenuItem[] = [
   },
 
   {
-    title: "Customers",
-    icon: <TbUsers size={18} />,
-    link: "/customers",
-    permissions: ["customers.read"],
-  },
-
-  {
-    title: "Shipping",
-    link: "/shipping",
-    icon: <FaTruckFast size={18} />,
-    permissions: [
-      "shipping.zones.read",
-      "shipping.rates.read",
-      "shipping.carriers.read",
-    ],
-  },
-
-  {
     title: "Analytics",
     icon: <MdBarChart size={18} />,
     link: "/analytics",
     permissions: ["analytics.read"],
+    planFeature: "analyticsDeep",
   },
 
-  // ── Marketing ──────────────────────────────────────────────
+  // ── Marketing ─────────────────────────────────────────────
   {
     title: "Marketing",
     icon: <RiMailSendLine size={18} />,
@@ -238,11 +263,13 @@ export const main: readonly MenuItem[] = [
         title: "Campaigns",
         link: "/marketing/campaigns",
         icon: <MdEmail size={18} />,
+        planFeature: "emailCampaigns",
       },
       {
         title: "Credits",
         link: "/marketing/credits",
         icon: <MdCreditScore size={18} />,
+        planFeature: "emailCampaigns",
       },
     ],
   },
@@ -252,7 +279,11 @@ export const main: readonly MenuItem[] = [
     icon: <FaFileAlt size={18} />,
     permissions: ["blog.posts.read"],
     subItems: [
-      { title: "Files", link: "/content/files", icon: <FaFileAlt size={18} /> },
+      {
+        title: "Files",
+        link: "/content/files",
+        icon: <FaFileAlt size={18} />,
+      },
       {
         title: "Blogpost",
         link: "/content/blog",
@@ -261,8 +292,91 @@ export const main: readonly MenuItem[] = [
     ],
   },
 
+  // ── Finance ───────────────────────────────────────────────
   {
-    title: "Divider",
+    title: "FinanceDivider",
+    name: "Finance",
+    type: "divider",
+  },
+
+  {
+    title: "Finance",
+    icon: <FaWallet size={18} />,
+    subItems: [
+      {
+        title: "Payment Methods",
+        link: "/settings/payment-methods",
+        icon: <FaCreditCard size={18} />,
+        permissions: ["payments.read"],
+      },
+      {
+        title: "Tax Settings",
+        link: "/settings/tax-settings",
+        icon: <FaPercentage size={18} />,
+        permissions: ["billing.taxes.read", "settings.manage_tax"],
+        planFeature: "taxSettings",
+      },
+      {
+        title: "Invoice Template",
+        link: "/settings/invoice-template",
+        icon: <FaFileInvoiceDollar size={18} />,
+        permissions: [
+          "billing.invoiceTemplates.read",
+          "billing.invoiceBranding.read",
+        ],
+      },
+    ],
+  },
+
+  // ── Operations ────────────────────────────────────────────
+  {
+    title: "OperationsDivider",
+    name: "Operations",
+    type: "divider",
+  },
+
+  {
+    title: "Operations",
+    icon: <FaPlug size={18} />,
+    subItems: [
+      {
+        title: "Shipping",
+        link: "/shipping",
+        icon: <FaTruckFast size={18} />,
+        permissions: [
+          "shipping.zones.read",
+          "shipping.rates.read",
+          "shipping.carriers.read",
+        ],
+        planFeature: "shippingZones",
+      },
+      {
+        title: "Locations",
+        link: "/settings/inventory/locations",
+        icon: <FaMapMarkedAlt size={18} />,
+        permissions: ["locations.read"],
+        planFeature: "multiLocation",
+      },
+
+      {
+        title: "Integrations",
+        link: "/settings/integrations",
+        icon: <FaPlug size={18} />,
+        permissions: ["integrations.analytics.read", "integrations.zoho.read"],
+        planFeature: "googleAnalytics",
+      },
+      {
+        title: "API & Webhooks",
+        link: "/settings/developers",
+        icon: <FaCode size={18} />,
+        permissions: ["apikeys.read"],
+      },
+    ],
+  },
+
+  // ── Account & Setup ───────────────────────────────────────
+  {
+    title: "AccountDivider",
     name: "Account & Setup",
     type: "divider",
   },

@@ -1,49 +1,20 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/features/analytics/extended/ui/extended-analytics-client.tsx
 "use client";
 
 import * as React from "react";
 import { useSession } from "next-auth/react";
-import { format, subDays } from "date-fns";
+import { subDays } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { usePersistedState } from "@/features/analytics/core/hooks/use-persisted-state";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { DateRangePicker } from "@/shared/ui/date-range-picker";
 import { CompareModePicker } from "@/shared/ui/compare-mode-picker";
 import PageHeader from "@/shared/ui/page-header";
 import { CompareMode } from "../../extended/types/extended-analytics.type";
-import {
-  useAbcClassification,
-  useExtendedSalesCards,
-  useFulfillmentStats,
-  useNewVsReturning,
-  useSellThrough,
-} from "../../extended/hooks/use-extended-analytics";
+import { useExtendedSalesCards } from "../../extended/hooks/use-extended-analytics";
 import { ExtendedSalesCards } from "../../extended/ui/extended-sales-cards";
 import { CommerceSalesChart } from "./commerce-sales-chart";
 import { CommerceOrdersByChannelPie } from "./commerce-order-by-channel";
-import { AbcClassificationTable } from "../../extended/ui/abc-classification-table";
-import { SellThroughTable } from "../../extended/ui/sell-through-table";
-import { NewVsReturningChart } from "../../extended/ui/new-vs-returning-chart";
-import { FulfillmentCards } from "../../extended/ui/fulfillment-cards";
-import { AnalyticsClient } from "../../core/ui/analytics-client";
-import { FilterChip, FilterChips } from "@/shared/ui/filter-chips";
-
-type AnalyticsTab =
-  | "overview"
-  | "commerce"
-  | "products"
-  | "customers"
-  | "fulfillment";
-
-const ANALYTICS_TABS: FilterChip<AnalyticsTab>[] = [
-  { value: "overview", label: "Overview" },
-  { value: "commerce", label: "Commerce" },
-  { value: "products", label: "Products" },
-  { value: "customers", label: "Customers" },
-  { value: "fulfillment", label: "Fulfillment" },
-];
 
 function toIso(d: Date) {
   return d.toISOString();
@@ -52,14 +23,12 @@ function toIso(d: Date) {
 export function CommerceAnalyticsClient() {
   const { data: session } = useSession();
   const { activeStoreId } = useStoreScope();
-  const [activeTab, setActiveTab] = React.useState<AnalyticsTab>("overview");
-  // global date range
+
   const [range, setRange] = React.useState<DateRange>({
     from: subDays(new Date(), 30),
     to: new Date(),
   });
 
-  // comparison mode
   const [compareMode, setCompareMode] = usePersistedState<CompareMode>(
     "analytics:compare-mode",
     "mom",
@@ -88,15 +57,6 @@ export function CommerceAnalyticsClient() {
   };
 
   const salesCards = useExtendedSalesCards(baseParams, session);
-  const abc = useAbcClassification(baseParams, session);
-  const sellThrough = useSellThrough(baseParams, session);
-  const newVsRet = useNewVsReturning({ ...baseParams, bucket: "day" }, session);
-  const fulfillment = useFulfillmentStats(baseParams, session);
-
-  const rangeLabel =
-    range.from && range.to
-      ? `${format(range.from, "MMM d")} – ${format(range.to, "MMM d, yyyy")}`
-      : "Select range";
 
   return (
     <div className="space-y-6">
@@ -118,115 +78,22 @@ export function CommerceAnalyticsClient() {
         </div>
       </div>
 
-      <Tabs
-        value={activeTab}
-        onValueChange={(v) => setActiveTab(v as AnalyticsTab)}
-      >
-        {/* Mobile: FilterChips */}
-        <div className="sm:hidden">
-          <FilterChips<AnalyticsTab>
-            value={activeTab}
-            onChange={setActiveTab}
-            chips={ANALYTICS_TABS}
-            wrap
+      <ExtendedSalesCards
+        data={salesCards.data}
+        isLoading={salesCards.isLoading}
+      />
+
+      <div className="grid items-stretch grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="md:col-span-2">
+          <CommerceSalesChart session={session} activeStoreId={activeStoreId} />
+        </div>
+        <div className="md:col-span-1">
+          <CommerceOrdersByChannelPie
+            session={session}
+            activeStoreId={activeStoreId}
           />
         </div>
-
-        {/* Desktop: TabsList */}
-        <div className="hidden sm:block">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="commerce">Commerce</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="customers">Customers</TabsTrigger>
-            <TabsTrigger value="fulfillment">Fulfillment</TabsTrigger>
-          </TabsList>
-        </div>
-
-        {/* ── Overview ── */}
-        <TabsContent value="overview" className="mt-6 space-y-6">
-          <ExtendedSalesCards
-            data={salesCards.data}
-            isLoading={salesCards.isLoading}
-          />
-
-          <div className="grid items-stretch grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <CommerceSalesChart
-                session={session}
-                activeStoreId={activeStoreId}
-              />
-            </div>
-            <div className="md:col-span-1">
-              <CommerceOrdersByChannelPie
-                session={session}
-                activeStoreId={activeStoreId}
-              />
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* ── Commerce ── */}
-        <TabsContent value="commerce" className="mt-6 space-y-6">
-          <AnalyticsClient
-            externalRange={range as any}
-            shouldShowHeader={false}
-          />
-        </TabsContent>
-
-        {/* ── Products ── */}
-        <TabsContent value="products" className="mt-6 space-y-6">
-          <div>
-            <h3 className="mb-1 text-sm font-semibold">ABC Classification</h3>
-            <p className="mb-4 text-xs text-muted-foreground">
-              A = top 70% revenue · B = next 20% · C = bottom 10%
-            </p>
-            <AbcClassificationTable data={abc.data} isLoading={abc.isLoading} />
-          </div>
-
-          <div>
-            <h3 className="mb-1 text-sm font-semibold">Sell-Through Rate</h3>
-            <p className="mb-4 text-xs text-muted-foreground">
-              Units sold ÷ (units sold + units available) for {rangeLabel}
-            </p>
-            <SellThroughTable
-              data={sellThrough.data}
-              isLoading={sellThrough.isLoading}
-            />
-          </div>
-        </TabsContent>
-
-        {/* ── Customers ── */}
-        <TabsContent value="customers" className="mt-6 space-y-6">
-          <div>
-            <h3 className="mb-1 text-sm font-semibold">New vs Returning</h3>
-            <p className="mb-4 text-xs text-muted-foreground">
-              Customer acquisition and retention for {rangeLabel}
-            </p>
-            <NewVsReturningChart
-              data={newVsRet.data}
-              isLoading={newVsRet.isLoading}
-            />
-          </div>
-        </TabsContent>
-
-        {/* ── Fulfillment ── */}
-        <TabsContent value="fulfillment" className="mt-6 space-y-6">
-          <div>
-            <h3 className="mb-1 text-sm font-semibold">
-              Fulfillment Performance
-            </h3>
-            <p className="mb-4 text-xs text-muted-foreground">
-              Based on time between order placed and status reaching fulfilled
-              for {rangeLabel}
-            </p>
-            <FulfillmentCards
-              data={fulfillment.data}
-              isLoading={fulfillment.isLoading}
-            />
-          </div>
-        </TabsContent>
-      </Tabs>
+      </div>
     </div>
   );
 }

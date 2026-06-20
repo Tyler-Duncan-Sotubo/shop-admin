@@ -1,18 +1,13 @@
-// settings-items.ts
 import {
   FaUsersCog,
   FaClipboardCheck,
   FaBuilding,
   FaPercentage,
   FaFileInvoiceDollar,
-  FaCreditCard,
   FaStore,
-  FaPlug,
-  FaMapMarkedAlt,
   FaUser,
 } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
-import { FaCode } from "react-icons/fa";
 import type { ReactNode } from "react";
 
 export type SettingsItem = {
@@ -71,49 +66,6 @@ export const settingsItems: readonly SettingsItem[] = [
     permissions: ["audit.logs.read"],
   },
 
-  // ── Operations ───────────────────────────────────────────
-  {
-    category: "Operations",
-    title: "Inventory Locations",
-    description:
-      "Manage warehouses and store locations where stock is held and tracked.",
-    link: "/settings/inventory/locations",
-    icon: <FaMapMarkedAlt size={20} />,
-    permissions: ["locations.read"],
-  },
-  {
-    category: "Operations",
-    title: "Payment Methods",
-    description:
-      "Enable and configure payment options including cards, bank transfers, and providers.",
-    link: "/settings/payment-methods",
-    icon: <FaCreditCard size={20} />,
-    permissions: ["payments.read"],
-  },
-
-  // ── Billing & Taxes ──────────────────────────────────────
-  {
-    category: "Billing & Taxes",
-    title: "Invoice Template",
-    description:
-      "Customise your invoice layout, branding, and displayed business information.",
-    link: "/settings/invoice-template",
-    icon: <FaFileInvoiceDollar size={20} />,
-    permissions: [
-      "billing.invoiceTemplates.read",
-      "billing.invoiceBranding.read",
-    ],
-  },
-  {
-    category: "Billing & Taxes",
-    title: "Tax Settings",
-    description:
-      "Set up tax rates, rules, and regions for accurate calculations at checkout.",
-    link: "/settings/tax-settings",
-    icon: <FaPercentage size={20} />,
-    permissions: ["billing.taxes.read", "settings.manage_tax"],
-  },
-
   // ── Marketing ────────────────────────────────────────────
   {
     category: "Marketing",
@@ -122,25 +74,5 @@ export const settingsItems: readonly SettingsItem[] = [
       "Configure your sender email, display name, logo, brand colour, and footer details for campaigns.",
     link: "/settings/email-configuration",
     icon: <MdEmail size={20} />,
-  },
-
-  // ── Developer ────────────────────────────────────────────
-  {
-    category: "Developer",
-    title: "Integrations",
-    description:
-      "Connect third-party services including payment providers, shipping, and other tools.",
-    link: "/settings/integrations",
-    icon: <FaPlug size={20} />,
-    permissions: ["integrations.analytics.read", "integrations.zoho.read"],
-  },
-  {
-    category: "Developer",
-    title: "API & Webhooks",
-    description:
-      "Generate API keys and configure webhooks for external integrations.",
-    link: "/settings/developers",
-    icon: <FaCode size={20} />,
-    permissions: ["apikeys.read"],
   },
 ];

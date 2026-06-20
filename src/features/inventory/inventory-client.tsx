@@ -11,6 +11,7 @@ import InventoryTransferClient from "./transfer/ui/invertory-transfer-client";
 import { FilterChip, FilterChips } from "@/shared/ui/filter-chips";
 import { DispatchesClient } from "./dispatches/ui/dispatches-client";
 import { FaExchangeAlt } from "react-icons/fa";
+import { PlanGate } from "../subscription/ui/plan-gate";
 
 type InventoryTabKey = "overview" | "movements" | "transfers" | "dispatches";
 
@@ -33,8 +34,8 @@ export default function InventoryClient() {
       />
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as InventoryTabKey)}>
-        {/* ✅ Mobile */}
-        <div className="sm:hidden -mx-3 px-3 min-w-0">
+        {/* Mobile */}
+        <div className="min-w-0 px-3 -mx-3 sm:hidden">
           <FilterChips<InventoryTabKey>
             value={tab}
             onChange={setTab}
@@ -44,17 +45,12 @@ export default function InventoryClient() {
           />
         </div>
 
-        {/* ✅ Desktop */}
+        {/* Desktop */}
         <div className="hidden sm:block">
           <TabsList>
             <TabsTrigger value="overview" className="text-base">
               <MdOutlineInventory2 className="mr-2" />
               Overview
-            </TabsTrigger>
-
-            <TabsTrigger value="transfers" className="text-base">
-              <FaExchangeAlt className="mr-2" />
-              Transfers
             </TabsTrigger>
 
             <TabsTrigger value="movements" className="text-base">
@@ -65,6 +61,11 @@ export default function InventoryClient() {
             <TabsTrigger value="dispatches" className="text-base">
               <BsFillBoxSeamFill className="mr-2" />
               Dispatches
+            </TabsTrigger>
+
+            <TabsTrigger value="transfers" className="text-base">
+              <FaExchangeAlt className="mr-2" />
+              Transfers
             </TabsTrigger>
           </TabsList>
         </div>
@@ -78,11 +79,15 @@ export default function InventoryClient() {
         </TabsContent>
 
         <TabsContent value="transfers" className="mt-10">
-          <InventoryTransferClient />
+          <PlanGate feature="multiLocation">
+            <InventoryTransferClient />
+          </PlanGate>
         </TabsContent>
 
         <TabsContent value="dispatches" className="mt-4">
-          <DispatchesClient />
+          <PlanGate feature="dispatch">
+            <DispatchesClient />
+          </PlanGate>
         </TabsContent>
       </Tabs>
     </>
