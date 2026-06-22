@@ -9,7 +9,7 @@ import { useRemoveOrderItem, useUpdateOrderItemQty } from "../hooks/use-orders";
 import { useSession } from "next-auth/react";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { toast } from "sonner";
-import { EditOrderItemPriceModal } from "./edit-order-item-price-modal";
+import { EditOrderItemPriceSheet } from "./edit-order-item-price-modal";
 
 type Item = {
   id: string;
@@ -216,7 +216,7 @@ export function OrderItemsCard({ orderId, currency, items, isLocked }: Props) {
       </div>
 
       {editPriceItem && (
-        <EditOrderItemPriceModal
+        <EditOrderItemPriceSheet
           open={!!editPriceItem}
           onClose={() => setEditPriceItem(null)}
           orderId={orderId}

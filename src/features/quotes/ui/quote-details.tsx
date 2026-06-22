@@ -32,7 +32,7 @@ import { useConvertQuoteToOrder } from "../hooks/use-convert-quote-to-order";
 import { useSendQuoteToZoho } from "../hooks/use-send-quote-to-zoho";
 import { ConvertQuoteToOrderModal } from "./convert-quote-to-order-modal";
 import { QuoteItemsCard } from "./quote-items-card";
-import { AddQuoteItemsModal } from "./add-quote-items";
+import { AddQuoteItemsSheet } from "./add-quote-items";
 import { RefreshCcw } from "lucide-react";
 import { useZohoEnabled } from "@/features/settings/integrations/zoho/hooks/use-zoho-enbled";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
@@ -269,7 +269,7 @@ export default function QuoteDetailsClient({ quoteId }: { quoteId: string }) {
         onSubmit={handleConvert}
       />
 
-      <AddQuoteItemsModal
+      <AddQuoteItemsSheet
         open={addItemsOpen}
         onClose={() => setAddItemsOpen(false)}
         quoteId={quoteId}

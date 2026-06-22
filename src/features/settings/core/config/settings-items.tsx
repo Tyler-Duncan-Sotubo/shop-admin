@@ -2,8 +2,6 @@ import {
   FaUsersCog,
   FaClipboardCheck,
   FaBuilding,
-  FaPercentage,
-  FaFileInvoiceDollar,
   FaStore,
   FaUser,
 } from "react-icons/fa";

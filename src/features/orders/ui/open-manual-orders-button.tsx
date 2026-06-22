@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useManualOrders } from "../hooks/use-manual-orders";
 import { ManualOrderFormValues } from "../schema/manual-orders.schema";
-import { ManualOrderFormModal } from "./manual-order-form-modal";
+import { ManualOrderFormSheet } from "./manual-order-form-modal";
 import { Button } from "@/shared/ui/button";
 
 export function CreateManualOrderButton() {
@@ -29,7 +29,7 @@ export function CreateManualOrderButton() {
         Create Manual Order
       </Button>
 
-      <ManualOrderFormModal
+      <ManualOrderFormSheet
         open={open}
         mode="create"
         onClose={() => setOpen(false)}

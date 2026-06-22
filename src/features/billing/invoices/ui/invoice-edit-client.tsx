@@ -19,7 +19,7 @@ import { useGetTaxes } from "@/features/settings/tax-settings/hooks/use-taxes";
 import { InvoiceLineItemsTable } from "./invoice-line-items";
 import { DownloadInvoicePdfButton } from "./download-invoice-pdf-button";
 import { ShareInvoiceLinkButton } from "./share-invoice-link-button";
-import { RecordPaymentModal } from "./record-payment-modal";
+import { RecordPaymentSheet } from "./record-payment-modal";
 import { InvoicePaymentsAccordion } from "../../payments/ui/invoice-payments-accordion";
 import { BackButton } from "@/shared/ui/back-button";
 
@@ -251,7 +251,7 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
         isDraft={isDraft}
       />
 
-      <RecordPaymentModal
+      <RecordPaymentSheet
         open={open}
         onClose={() => setOpen(false)}
         invoiceId={invoiceId}

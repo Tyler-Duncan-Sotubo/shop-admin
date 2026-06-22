@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { FormModal } from "@/shared/ui/form-modal";
+import { FormSheet } from "@/shared/ui/form-sheet";
 import { ManualOrderFormModalProps } from "../types/manual-order.type";
 import {
   ManualOrderFormValues,
@@ -33,7 +33,7 @@ import { useGetStoreLocations } from "@/features/inventory/core/hooks/use-invent
 import { AdminCustomerCombobox } from "@/shared/ui/customer-combobox";
 import { Checkbox } from "@/shared/ui/checkbox";
 
-export function ManualOrderFormModal({
+export function ManualOrderFormSheet({
   open,
   mode,
   order,
@@ -102,7 +102,7 @@ export function ManualOrderFormModal({
   };
 
   return (
-    <FormModal
+    <FormSheet
       open={open}
       mode={mode}
       title="Create Manual Order"
@@ -281,6 +281,6 @@ export function ManualOrderFormModal({
           />
         </div>
       </Form>
-    </FormModal>
+    </FormSheet>
   );
 }

@@ -5,7 +5,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FormModal } from "@/shared/ui/form-modal";
+import { FormSheet } from "@/shared/ui/form-sheet";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 
@@ -37,7 +37,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export function CreateCustomerModal({ open, onClose }: Props) {
+export function CreateCustomerSheet({ open, onClose }: Props) {
   const [serverError, setServerError] = useState("");
   const { createCustomer } = useCreateCustomer();
   const { activeStoreId } = useStoreScope();
@@ -88,7 +88,7 @@ export function CreateCustomerModal({ open, onClose }: Props) {
   }, [emailValue]);
 
   return (
-    <FormModal
+    <FormSheet
       open={open}
       onClose={() => {
         resetForm();
@@ -102,7 +102,6 @@ export function CreateCustomerModal({ open, onClose }: Props) {
         void form.handleSubmit(handleSubmit)();
       }}
       submitLabel="Create customer"
-      // If you upgrade your mutation hook to expose loading, pass it here.
       isSubmitting={false}
     >
       <Form {...form}>
@@ -202,6 +201,6 @@ export function CreateCustomerModal({ open, onClose }: Props) {
           ) : null}
         </div>
       </Form>
-    </FormModal>
+    </FormSheet>
   );
 }

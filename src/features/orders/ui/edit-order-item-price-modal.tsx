@@ -3,15 +3,17 @@
 
 import { useState } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+} from "@/shared/ui/sheet";
+import { ScrollArea } from "@/shared/ui/scroll-area";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { useUpdateOrderItem, useUpdateOrderItemQty } from "../hooks/use-orders";
+import { useUpdateOrderItem } from "../hooks/use-orders";
 import { useSession } from "next-auth/react";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { toast } from "sonner";
@@ -27,7 +29,7 @@ type Props = {
   currency?: string;
 };
 
-export function EditOrderItemPriceModal({
+export function EditOrderItemPriceSheet({
   open,
   onClose,
   orderId,
@@ -45,8 +47,7 @@ export function EditOrderItemPriceModal({
 
   const originalPrice = Number(currentUnitPrice ?? 0);
   const newPrice = Number(value);
-  const hasChange =
-    value !== "" && !isNaN(newPrice) && newPrice !== originalPrice;
+  const hasChange = value !== "" && !isNaN(newPrice) && newPrice !== originalPrice;
   const saving = hasChange && newPrice < originalPrice;
   const savingAmount = saving ? originalPrice - newPrice : 0;
 
@@ -62,13 +63,8 @@ export function EditOrderItemPriceModal({
       setError("Enter a valid price");
       return;
     }
-
     try {
-      await updateItem.mutateAsync({
-        orderId,
-        itemId,
-        unitPrice: num,
-      });
+      await updateItem.mutateAsync({ orderId, itemId, unitPrice: num });
       toast.success("Price updated");
       handleClose();
     } catch (e) {
@@ -77,95 +73,81 @@ export function EditOrderItemPriceModal({
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        if (!v) handleClose();
-      }}
-    >
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Edit Item Price</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+      <SheetContent className="flex flex-col h-full p-0 gap-0 w-full sm:max-w-[420px] bg-white">
+        <SheetHeader className="px-4 pt-6 pb-4 border-b shrink-0">
+          <SheetTitle>Edit Item Price</SheetTitle>
+        </SheetHeader>
 
-        <div className="space-y-4 py-2">
-          {/* Item name */}
-          <div className="rounded-md bg-muted px-3 py-2 text-sm">
-            <span className="text-muted-foreground">Item: </span>
-            <span className="font-medium">{itemName}</span>
-          </div>
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-4 py-4 space-y-4">
+            <div className="rounded-md bg-muted px-3 py-2 text-sm">
+              <span className="text-muted-foreground">Item: </span>
+              <span className="font-medium">{itemName}</span>
+            </div>
 
-          {/* Original price */}
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Original price</span>
-            <span className="font-medium">
-              {formatMoneyNGN(originalPrice, currency ?? "NGN")}
-            </span>
-          </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Original price</span>
+              <span className="font-medium">
+                {formatMoneyNGN(originalPrice, currency ?? "NGN")}
+              </span>
+            </div>
 
-          {/* New price input */}
-          <div className="space-y-1.5">
-            <Label>New price ({currency ?? "NGN"})</Label>
-            <Input
-              type="number"
-              min={0}
-              value={value}
-              disabled={updateItem.isPending}
-              onChange={(e) => {
-                setValue(e.target.value);
-                setError(null);
-              }}
-              placeholder={`e.g. ${originalPrice}`}
-            />
-          </div>
+            <div className="space-y-1.5">
+              <Label>New price ({currency ?? "NGN"})</Label>
+              <Input
+                type="number"
+                min={0}
+                value={value}
+                disabled={updateItem.isPending}
+                onChange={(e) => { setValue(e.target.value); setError(null); }}
+                placeholder={`e.g. ${originalPrice}`}
+              />
+            </div>
 
-          {/* Preview */}
-          {hasChange && (
-            <div className="rounded-md border px-3 py-2 space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Was</span>
-                <span className="line-through text-muted-foreground">
-                  {formatMoneyNGN(originalPrice, currency ?? "NGN")}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Now</span>
-                <span
-                  className={`font-medium ${saving ? "text-emerald-600" : "text-amber-600"}`}
-                >
-                  {formatMoneyNGN(newPrice, currency ?? "NGN")}
-                </span>
-              </div>
-              {saving && (
-                <div className="flex justify-between border-t pt-1 mt-1">
-                  <span className="text-muted-foreground">Customer saves</span>
-                  <span className="font-medium text-emerald-600">
-                    {formatMoneyNGN(savingAmount, currency ?? "NGN")}
+            {hasChange && (
+              <div className="rounded-md border px-3 py-2 space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Was</span>
+                  <span className="line-through text-muted-foreground">
+                    {formatMoneyNGN(originalPrice, currency ?? "NGN")}
                   </span>
                 </div>
-              )}
-            </div>
-          )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Now</span>
+                  <span className={`font-medium ${saving ? "text-emerald-600" : "text-amber-600"}`}>
+                    {formatMoneyNGN(newPrice, currency ?? "NGN")}
+                  </span>
+                </div>
+                {saving && (
+                  <div className="flex justify-between border-t pt-1 mt-1">
+                    <span className="text-muted-foreground">Customer saves</span>
+                    <span className="font-medium text-emerald-600">
+                      {formatMoneyNGN(savingAmount, currency ?? "NGN")}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
-        </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
+        </ScrollArea>
 
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={updateItem.isPending}
-          >
+        <SheetFooter className="px-4 py-4 border-t shrink-0 flex-row justify-end gap-2">
+          <Button type="button" variant="outline" onClick={handleClose} disabled={updateItem.isPending}>
             Cancel
           </Button>
           <Button
+            type="button"
             onClick={handleSubmit}
+            isLoading={updateItem.isPending}
             disabled={updateItem.isPending || !hasChange}
           >
-            {updateItem.isPending ? "Saving..." : "Save"}
+            Save
           </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

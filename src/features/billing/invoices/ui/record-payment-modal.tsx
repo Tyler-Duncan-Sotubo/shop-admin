@@ -4,7 +4,7 @@
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FormModal } from "@/shared/ui/form-modal";
+import { FormSheet } from "@/shared/ui/form-sheet";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
 import {
@@ -40,7 +40,7 @@ type Props = {
   defaultAmountMinor?: number;
 };
 
-export function RecordPaymentModal({
+export function RecordPaymentSheet({
   open,
   onClose,
   invoiceId,
@@ -94,7 +94,7 @@ export function RecordPaymentModal({
   });
 
   return (
-    <FormModal
+    <FormSheet
       open={open}
       onClose={() => {
         if (!isSubmitting) {
@@ -245,6 +245,6 @@ export function RecordPaymentModal({
           ) : null}
         </div>
       </Form>
-    </FormModal>
+    </FormSheet>
   );
 }

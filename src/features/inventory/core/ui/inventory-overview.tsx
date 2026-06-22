@@ -20,7 +20,7 @@ import type {
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { ArrowRightLeft } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { CreateTransferModal } from "../../transfer/ui/create-transfer-modal";
+import { CreateTransferSheet } from "../../transfer/ui/create-transfer-modal";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { FaStore, FaWarehouse } from "react-icons/fa";
 
@@ -248,7 +248,7 @@ export function InventoryOverview() {
         />
       </Tabs>
 
-      <CreateTransferModal
+      <CreateTransferSheet
         open={openTransfer}
         onClose={() => setOpenTransfer(false)}
         activeStoreId={activeStoreId as string}

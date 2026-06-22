@@ -53,7 +53,7 @@ export function StoreVariantCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between h-9"
+          className="w-full justify-between h-10 md:h-12"
           disabled={disabled || !storeId}
         >
           {selected ? (
@@ -94,7 +94,7 @@ export function StoreVariantCombobox({
         align="start"
         side="bottom"
         sideOffset={4}
-        avoidCollisions={false}
+        collisionPadding={8}
       >
         <Command shouldFilter={false}>
           <CommandInput

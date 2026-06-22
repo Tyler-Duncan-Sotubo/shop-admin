@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { useAdminCustomers } from "../hooks/use-admin-customers";
 import { adminCustomersColumns } from "./admin-customers-columns";
 import { FaUsers } from "react-icons/fa";
-import { CreateCustomerModal } from "./create-customer-modal";
+import { CreateCustomerSheet } from "./create-customer-modal";
 import { FaPlus } from "react-icons/fa6";
 import { Button } from "@/shared/ui/button";
 import { LuImport } from "react-icons/lu";
@@ -131,7 +131,7 @@ export default function AdminCustomersClient() {
           endpoint={`/api/admin/customers/bulk/${activeStoreId ?? "null"}`}
           onSuccess={() => refetch()}
         />
-        <CreateCustomerModal open={open} onClose={() => setOpen(false)} />
+        <CreateCustomerSheet open={open} onClose={() => setOpen(false)} />
       </section>
     );
   }
@@ -178,7 +178,7 @@ export default function AdminCustomersClient() {
         endpoint={`/api/admin/customers/bulk/${activeStoreId ?? "null"}`}
         onSuccess={() => refetch()}
       />
-      <CreateCustomerModal open={open} onClose={() => setOpen(false)} />
+      <CreateCustomerSheet open={open} onClose={() => setOpen(false)} />
     </section>
   );
 }

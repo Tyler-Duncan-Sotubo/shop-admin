@@ -16,14 +16,14 @@ import { OrderAuditCard } from "./order-audit-card";
 import { formatMoneyNGN } from "@/shared/utils/format-to-naira";
 import { Button } from "@/shared/ui/button";
 import { useState } from "react";
-import { AddManualOrderItemsModal } from "./add-manual-order-items-modal";
+import { AddManualOrderItemsSheet } from "./add-manual-order-items-modal";
 import { useManualOrders } from "../hooks/use-manual-orders";
 import { EditOrderCustomerShippingModal } from "./edit-order-customer-shipping-modal";
 import { StockWarning } from "./stock-warning";
 import { useAuthPermissions } from "@/lib/auth/use-permissions";
 import { useOrderPermissions } from "../hooks/use-order-permissions";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
-import { ApplyDiscountModal } from "./apply-discount-modal";
+import { ApplyDiscountSheet } from "./apply-discount-modal";
 import { BackButton } from "@/shared/ui/back-button";
 import { EditShippingFeeModal } from "./edit-shipping-fee-modal";
 
@@ -287,7 +287,7 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
         </div>
       </div>
 
-      <AddManualOrderItemsModal
+      <AddManualOrderItemsSheet
         open={isOpen}
         onClose={() => setIsOpen(false)}
         orderId={order.id}
@@ -302,7 +302,7 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
         storeId={order.storeId ?? null}
       />
 
-      <ApplyDiscountModal
+      <ApplyDiscountSheet
         open={discountOpen}
         onClose={() => setDiscountOpen(false)}
         orderId={order.id}
