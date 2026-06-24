@@ -90,6 +90,15 @@ export const dispatchesColumns: ColumnDef<DispatchListItem>[] = [
     cell: ({ row }) => <StatusBadge status={row.original.status} />,
   },
   {
+    id: "origin",
+    header: "Origin",
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">
+        {row.original.originLocationName ?? "—"}
+      </span>
+    ),
+  },
+  {
     id: "requested",
     header: "Requested",
     cell: ({ row }) => (

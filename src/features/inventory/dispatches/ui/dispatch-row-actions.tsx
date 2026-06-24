@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// features/inventory/dispatches/ui/dispatch-row-actions.tsx
 "use client";
 
 import { useState } from "react";
@@ -9,7 +8,7 @@ import {
   type DispatchListItem,
 } from "../hooks/use-dispatches";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
-import { ConfirmOrderActionDialog } from "@/features/orders/ui/confirm-order-action-dialog";
+import { ConfirmDispatchSheet } from "./confirm-dispatch-sheet";
 import { toast } from "sonner";
 
 export function DispatchRowActions({
@@ -23,6 +22,11 @@ export function DispatchRowActions({
 
   if (dispatch.status !== "pending") return null;
 
+  const error =
+    (confirmMut.error as any)?.response?.data?.error?.message ??
+    (confirmMut.error as Error)?.message ??
+    null;
+
   return (
     <>
       <Button
@@ -33,17 +37,14 @@ export function DispatchRowActions({
         Confirm Dispatch
       </Button>
 
-      <ConfirmOrderActionDialog
+      <ConfirmDispatchSheet
         open={open}
-        onOpenChange={setOpen}
-        title="Confirm dispatch?"
-        description="Confirm this order has been packed and is leaving the warehouse. Stock will be deducted."
-        confirmLabel="Yes, confirm dispatch"
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (!v) confirmMut.reset();
+        }}
         isLoading={confirmMut.isPending}
-        error={
-          (confirmMut.error as any)?.response?.data?.error?.message ??
-          (confirmMut.error as Error)?.message
-        }
+        error={error}
         onConfirm={() =>
           confirmMut.mutate(
             { orderId: dispatch.orderId, storeId: dispatch.storeId },
@@ -57,6 +58,10 @@ export function DispatchRowActions({
                   err?.response?.data?.error?.message ??
                   err?.message ??
                   "Failed to confirm dispatch";
+                if (message.includes(" | ")) {
+                  toast.error("Not enough stock — see details in panel");
+                  return;
+                }
                 toast.error(message);
               },
             },

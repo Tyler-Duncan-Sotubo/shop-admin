@@ -24,6 +24,7 @@ export type DispatchListItem = {
   currency: string | null;
   total: string | null;
   itemCount: number;
+  originLocationName: string | null;
   shippingAddress: Record<string, any> | null;
 };
 

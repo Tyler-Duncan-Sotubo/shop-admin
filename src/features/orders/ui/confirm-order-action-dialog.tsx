@@ -81,7 +81,23 @@ export function ConfirmOrderActionDialog({
                 />
               </div>
             )}
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && (
+              error.includes(" | ") ? (
+                <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 space-y-1.5">
+                  <p className="text-xs font-semibold text-destructive">Insufficient stock:</p>
+                  <ul className="space-y-1">
+                    {error.split(" | ").map((line, i) => (
+                      <li key={i} className="flex gap-2 text-xs text-destructive">
+                        <span className="shrink-0 mt-0.5">•</span>
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="text-sm text-destructive">{error}</p>
+              )
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
