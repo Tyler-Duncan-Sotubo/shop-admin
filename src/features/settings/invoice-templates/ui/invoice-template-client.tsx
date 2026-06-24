@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Separator } from "@/shared/ui/separator";
 import { TemplatePicker } from "./template-picker";
 import { BrandingForm } from "./branding-form";
+import { BankAccountsCard } from "./bank-accounts-card";
 import { InvoicePreviewPane } from "./invoice-preview-pane";
 import {
   useGetInvoiceBranding,
@@ -103,19 +104,21 @@ export function InvoiceTemplateClient() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="branding" className="mt-4">
+              <TabsContent value="branding" className="mt-4 space-y-8">
                 <BrandingForm
                   loading={brandingLoading}
                   initial={branding}
                   onSubmit={async (values) => {
                     await upsert.mutateAsync({
                       ...values,
-                      templateId: selectedTemplateId, // keep selection in sync
+                      templateId: selectedTemplateId,
                     });
                   }}
                   isSubmitting={upsert.isPending}
                 />
                 <InvoiceTemplateLogoUploader storeId={activeStoreId} />
+                <Separator />
+                <BankAccountsCard />
               </TabsContent>
             </Tabs>
           </Card>

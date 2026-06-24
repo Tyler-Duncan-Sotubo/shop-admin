@@ -20,6 +20,7 @@ import { InvoiceLineItemsTable } from "./invoice-line-items";
 import { DownloadInvoicePdfButton } from "./download-invoice-pdf-button";
 import { ShareInvoiceLinkButton } from "./share-invoice-link-button";
 import { RecordPaymentSheet } from "./record-payment-modal";
+import { IssueInvoiceSheet } from "./issue-invoice-sheet";
 import { InvoicePaymentsAccordion } from "../../payments/ui/invoice-payments-accordion";
 import { BackButton } from "@/shared/ui/back-button";
 
@@ -79,6 +80,7 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
   const axios = useAxiosAuth();
   const { activeStoreId } = useStoreScope();
   const [open, setOpen] = useState(false);
+  const [issueSheetOpen, setIssueSheetOpen] = useState(false);
 
   const [invoiceDate, setInvoiceDate] = useState<Date | null>(null);
   const [dueDate, setDueDate] = useState<Date | null>(null);
@@ -155,17 +157,8 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
                 <span className="ml-2">Save</span>
               </Button>
 
-              <Button
-                onClick={async () => {
-                  await issue.mutateAsync({ invoiceId, input: {} });
-                }}
-                disabled={issue.isPending}
-              >
-                {issue.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
-                )}
+              <Button onClick={() => setIssueSheetOpen(true)} disabled={issue.isPending}>
+                <Check className="h-4 w-4" />
                 <span className="ml-2">Issue invoice</span>
               </Button>
             </>
@@ -257,6 +250,16 @@ export function InvoiceEditClient({ invoiceId }: { invoiceId: string }) {
         invoiceId={invoiceId}
         currency={inv.currency}
         defaultAmountMinor={inv.balanceMinor}
+      />
+
+      <IssueInvoiceSheet
+        open={issueSheetOpen}
+        onOpenChange={setIssueSheetOpen}
+        isLoading={issue.isPending}
+        onConfirm={async (bankAccountId) => {
+          await issue.mutateAsync({ invoiceId, input: { bankAccountId } });
+          setIssueSheetOpen(false);
+        }}
       />
     </div>
   );
