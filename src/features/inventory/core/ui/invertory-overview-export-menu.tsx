@@ -5,6 +5,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { BiExport } from "react-icons/bi";
@@ -12,47 +14,36 @@ import { useDownloadFile } from "@/shared/utils/useDownloadFile";
 import { useSession } from "next-auth/react";
 
 interface InventoryOverviewExportMenuProps {
-  storeId?: string;
   locationId?: string;
-  status?: "active" | "draft" | "archived";
-  lowStockOnly?: boolean;
 }
 
+type ReportKey =
+  | "stock-snapshot"
+  | "low-stock"
+  | "valuation"
+  | "dead-stock"
+  | "movements"
+  | "transfer-summary"
+  | "dispatch-summary";
+
+type Format = "csv" | "excel" | "pdf";
+
 export function InventoryOverviewExportMenu({
-  storeId,
   locationId,
-  status,
-  lowStockOnly,
 }: InventoryOverviewExportMenuProps) {
   const { data: session } = useSession();
   const token = session?.backendTokens?.accessToken;
   const { download, isLoading: isDownloading } = useDownloadFile(token);
 
-  const buildUrl = (
-    report: "stock-levels" | "low-stock",
-    format: "csv" | "excel",
-  ) => {
+  const buildUrl = (report: ReportKey, format: Format) => {
     const params = new URLSearchParams();
-
-    if (storeId) params.append("storeId", storeId);
-
-    if (report === "stock-levels") {
-      if (locationId) params.append("locationId", locationId);
-      if (status) params.append("status", status);
-      if (lowStockOnly) params.append("lowStockOnly", "true");
-    }
-
+    if (locationId) params.append("locationId", locationId);
     params.append("format", format);
-
     return `/api/inventory/reports/${report}?${params.toString()}`;
   };
 
-  const handleExport = async (
-    report: "stock-levels" | "low-stock",
-    format: "csv" | "excel",
-  ) => {
-    await download(buildUrl(report, format));
-  };
+  const go = (report: ReportKey, format: Format) =>
+    download(buildUrl(report, format));
 
   return (
     <DropdownMenu>
@@ -67,18 +58,79 @@ export function InventoryOverviewExportMenu({
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => handleExport("stock-levels", "excel")}>
-          Stock Levels (Excel)
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuLabel>Stock Reports</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => go("stock-snapshot", "excel")}>
+          Stock Snapshot (Excel)
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleExport("stock-levels", "csv")}>
-          Stock Levels (CSV)
+        <DropdownMenuItem onClick={() => go("stock-snapshot", "csv")}>
+          Stock Snapshot (CSV)
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleExport("low-stock", "excel")}>
-          Low Stock Summary (Excel)
+        <DropdownMenuItem onClick={() => go("stock-snapshot", "pdf")}>
+          Stock Snapshot (PDF)
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleExport("low-stock", "csv")}>
-          Low Stock Summary (CSV)
+
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Alerts</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => go("low-stock", "excel")}>
+          Low Stock (Excel)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("low-stock", "csv")}>
+          Low Stock (CSV)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("low-stock", "pdf")}>
+          Low Stock (PDF)
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Valuation &amp; Ageing</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => go("valuation", "excel")}>
+          Inventory Valuation (Excel)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("valuation", "csv")}>
+          Inventory Valuation (CSV)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("valuation", "pdf")}>
+          Inventory Valuation (PDF)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("dead-stock", "excel")}>
+          Dead Stock (Excel)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("dead-stock", "csv")}>
+          Dead Stock (CSV)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("dead-stock", "pdf")}>
+          Dead Stock (PDF)
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Activity</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => go("movements", "excel")}>
+          Stock Movements (Excel)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("movements", "csv")}>
+          Stock Movements (CSV)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("movements", "pdf")}>
+          Stock Movements (PDF)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("transfer-summary", "excel")}>
+          Transfer Summary (Excel)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("transfer-summary", "csv")}>
+          Transfer Summary (CSV)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("transfer-summary", "pdf")}>
+          Transfer Summary (PDF)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("dispatch-summary", "excel")}>
+          Dispatch Summary (Excel)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("dispatch-summary", "csv")}>
+          Dispatch Summary (CSV)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => go("dispatch-summary", "pdf")}>
+          Dispatch Summary (PDF)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

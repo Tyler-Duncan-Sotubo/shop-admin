@@ -54,14 +54,21 @@ export const ExportMenu = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        {allowedFormats && allowedFormats.includes("excel") && (
+        {allowedFormats.includes("excel") && (
           <DropdownMenuItem onClick={() => handleExport("excel")}>
             Export as Excel
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem onClick={() => handleExport("csv")}>
-          Export as CSV
-        </DropdownMenuItem>
+        {allowedFormats.includes("csv") && (
+          <DropdownMenuItem onClick={() => handleExport("csv")}>
+            Export as CSV
+          </DropdownMenuItem>
+        )}
+        {allowedFormats.includes("pdf") && (
+          <DropdownMenuItem onClick={() => handleExport("pdf")}>
+            Export as PDF
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

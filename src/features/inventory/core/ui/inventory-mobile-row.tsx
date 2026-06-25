@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import type { InventoryOverviewRow } from "../types/inventory.type";
 import type { InventoryGroupRow } from "./inventory-columns";
 import { InventoryAdjustAction } from "./inventory-adjust-action";
-import { InventoryProductExportAction } from "./inventory-product-export-action";
 
 type RowType = InventoryGroupRow | InventoryOverviewRow;
 
@@ -120,7 +119,7 @@ export function InventoryMobileRow({
           </div>
         </div>
 
-        <div className="mt-3 grid w-[80%] grid-cols-4 items-center gap-2 text-xs">
+        <div className="mt-3 grid w-[80%] grid-cols-3 gap-2 text-xs">
           <div className="flex flex-col">
             <span className="text-muted-foreground">In stock</span>
             <span className="font-medium tabular-nums">{r.inStock}</span>
@@ -132,19 +131,6 @@ export function InventoryMobileRow({
           <div className="flex flex-col">
             <span className="text-muted-foreground">On hand</span>
             <span className="font-medium tabular-nums">{r.onHand}</span>
-          </div>
-          <div
-            className="mt-3"
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-          >
-            <InventoryProductExportAction
-              productId={r.productId}
-              storeId={meta.storeId}
-              locationId={meta.locationId}
-            />
           </div>
         </div>
       </div>
