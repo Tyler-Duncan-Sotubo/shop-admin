@@ -43,7 +43,7 @@ export function useTwoFa(tempToken: string | null) {
         return;
       }
 
-      if (!data.onboardingCompleted) {
+      if (!data.data.user.onboardingCompleted && data.data.user.role === "owner") {
         router.push("/setup");
       } else {
         router.push("/dashboard");

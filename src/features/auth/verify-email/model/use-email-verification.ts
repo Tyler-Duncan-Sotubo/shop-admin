@@ -19,7 +19,7 @@ export function useEmailVerification() {
 
       if (res.status === 201) {
         toast("Email verified successfully!");
-        router.push("/auth/login");
+        router.push("/login");
       }
     } catch (error) {
       if (isAxiosError(error) && error.response) {
