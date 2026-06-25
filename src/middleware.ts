@@ -59,9 +59,12 @@ export async function middleware(request: NextRequest) {
 
       // ── Session expired ─────────────────────────────────
       if (res.status === 401) {
-        return NextResponse.redirect(
+        const redirectRes = NextResponse.redirect(
           new URL("/?reason=session_expired", request.url),
         );
+        redirectRes.cookies.delete("next-auth.session-token");
+        redirectRes.cookies.delete("__Secure-next-auth.session-token");
+        return redirectRes;
       }
 
       if (res.ok) {

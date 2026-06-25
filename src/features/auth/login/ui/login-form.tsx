@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import {
   Form,
@@ -23,6 +24,8 @@ import { useLogin } from "../model/use-login";
 
 function LoginForm() {
   const { login, error } = useLogin();
+  const searchParams = useSearchParams();
+  const sessionExpired = searchParams.get("reason") === "session_expired";
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -39,6 +42,11 @@ function LoginForm() {
     <section className="w-full max-w-lg mx-auto p-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {sessionExpired && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Your session has expired. Please log in again.
+            </div>
+          )}
           <div className="space-y-2">
             <H3 className="text-2xl font-semibold text-center">Welcome back</H3>
             <P className="text-center text-textSecondary">
