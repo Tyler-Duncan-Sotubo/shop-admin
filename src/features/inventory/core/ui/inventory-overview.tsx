@@ -26,7 +26,6 @@ import { FaStore, FaWarehouse } from "react-icons/fa";
 
 import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
 import { InventoryMobileRow } from "./inventory-mobile-row";
-import { InventoryOverviewExportMenu } from "./invertory-overview-export-menu";
 
 export function InventoryOverview() {
   const { data: session, status: authStatus } = useSession();
@@ -230,20 +229,13 @@ export function InventoryOverview() {
             </>
           }
           toolbarRight={
-            <>
-              <InventoryOverviewExportMenu
-                storeId={activeStoreId || undefined}
-                locationId={tabsValue || undefined}
-              />
-
-              <Button
-                onClick={() => setOpenTransfer(true)}
-                disabled={!tabsValue}
-              >
-                <ArrowRightLeft className="mr-2" size={16} />
-                Transfer
-              </Button>
-            </>
+            <Button
+              onClick={() => setOpenTransfer(true)}
+              disabled={!tabsValue}
+            >
+              <ArrowRightLeft className="mr-2" size={16} />
+              Transfer
+            </Button>
           }
         />
       </Tabs>

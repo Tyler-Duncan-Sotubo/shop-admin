@@ -16,7 +16,6 @@ import { ledgerColumns } from "./ledger-columns";
 
 import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
 import { LedgerMobileRow } from "./ledger-mobile-row";
-import { ExportMenu } from "@/shared/ui/export-menu";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 
 export default function LedgerClient() {
@@ -96,26 +95,15 @@ export default function LedgerClient() {
             </>
           }
           toolbarRight={
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-              <div className="w-full sm:w-[360px]">
-                <Input
-                  value={qInput}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setQInput(value);
-                    debounced(value);
-                  }}
-                  placeholder="Search note or meta..."
-                />
-              </div>
-
-              <ExportMenu
-                exportPath="/api/inventory/reports/movements"
-                query={{
-                  storeId: activeStoreId || undefined,
-                  types: tab !== "all" ? tab : undefined,
+            <div className="w-full sm:w-[360px]">
+              <Input
+                value={qInput}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setQInput(value);
+                  debounced(value);
                 }}
-                allowedFormats={["csv", "excel"]}
+                placeholder="Search note or meta..."
               />
             </div>
           }

@@ -3,7 +3,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { InventoryAdjustAction } from "./inventory-adjust-action";
-import { InventoryProductExportAction } from "./inventory-product-export-action";
 import { cn } from "@/lib/utils";
 import type { InventoryOverviewRow } from "../types/inventory.type";
 
@@ -111,15 +110,7 @@ export const inventoryColumns = (
       const r = row.original;
 
       if (isGroupRow(r)) {
-        return (
-          <div className="flex justify-end">
-            <InventoryProductExportAction
-              productId={r.productId}
-              storeId={storeId}
-              locationId={locationId}
-            />
-          </div>
-        );
+        return null;
       }
 
       return (

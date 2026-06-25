@@ -12,6 +12,7 @@ import { FilterChip, FilterChips } from "@/shared/ui/filter-chips";
 import { DispatchesClient } from "./dispatches/ui/dispatches-client";
 import { FaExchangeAlt } from "react-icons/fa";
 import { PlanGate } from "../subscription/ui/plan-gate";
+import { InventoryExportModal } from "./ui/inventory-export-modal";
 
 type InventoryTabKey = "overview" | "movements" | "transfers" | "dispatches";
 
@@ -31,7 +32,9 @@ export default function InventoryClient() {
         title="Inventory"
         description="Track stock levels, movements, and locations."
         tooltip="Inventory shows where your stock is, how it moves, and how much is available."
-      />
+      >
+        <InventoryExportModal />
+      </PageHeader>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as InventoryTabKey)}>
         {/* Mobile */}
