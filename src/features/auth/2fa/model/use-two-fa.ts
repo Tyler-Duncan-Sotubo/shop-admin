@@ -26,7 +26,6 @@ export function useTwoFa(tempToken: string | null) {
 
       if (data.status === "error") {
         setVerifyError("Invalid code");
-        console.error("Verification error payload:", data);
         return;
       }
 
@@ -38,7 +37,6 @@ export function useTwoFa(tempToken: string | null) {
       });
 
       if (signInRes?.error) {
-        console.error("signIn error:", signInRes.error);
         setVerifyError(signInRes.error);
         return;
       }
@@ -54,7 +52,6 @@ export function useTwoFa(tempToken: string | null) {
           error.response.data?.error?.message ?? "Verification failed"
         );
       } else {
-        console.error("Verification unknown error:", error);
         setVerifyError(getErrorMessage(error));
       }
     }

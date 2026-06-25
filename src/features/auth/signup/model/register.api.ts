@@ -3,11 +3,10 @@ import { RegisterValues } from "./register.schema";
 
 export const registerApi = {
   async register(values: RegisterValues, slug: string) {
-    const res = await axiosInstance.post(
+    return axiosInstance.post(
       "/api/companies/register",
       { ...values, slug, role: "owner", country: "Nigeria" },
       { withCredentials: true }
     );
-    return res.data;
   },
 };
