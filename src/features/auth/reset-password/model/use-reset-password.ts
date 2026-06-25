@@ -27,7 +27,7 @@ export function useResetPassword(token: string) {
       });
 
       if (res.status === 200) {
-        router.push(`${process.env.NEXT_PUBLIC_CLIENT_URL}/login`);
+        router.push("/login");
       }
     } catch (err) {
       if (isAxiosError(err) && err.response) {

@@ -41,7 +41,6 @@ export function useVerifyInvitation(token: string) {
     hasVerified.current = true;
 
     const verifyInvite = async () => {
-      console.log(`Verifying invite with token: ${token}`);
       try {
         const response = await axiosInstance.post("/api/auth/invite-user", {
           token,
@@ -56,8 +55,7 @@ export function useVerifyInvitation(token: string) {
           password: "",
           password_confirmation: "",
         });
-      } catch (err) {
-        console.log(err);
+      } catch {
         setError("Invalid or expired invitation.");
       } finally {
         setLoading(false);

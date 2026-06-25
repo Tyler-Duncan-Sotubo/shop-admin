@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -30,7 +29,6 @@ import { useRegister } from "../model/useRegister";
 function RegisterForm() {
   const { register, error } = useRegister();
   const [stage, setStage] = useState<0 | 1>(0);
-  const [stageError, setStageError] = useState<string | null>(null);
 
   const form = useForm<RegisterValues>({
     resolver: zodResolver(RegisterSchema),
@@ -48,43 +46,12 @@ function RegisterForm() {
     shouldUnregister: false,
   });
 
-  // ✅ Now only checks step 1 fields: basic identity + company + terms
-  function basicStageOneCheck(values: RegisterValues): string | null {
-    const { firstName, lastName, email, companyName, terms } = values;
-
-    if (
-      !firstName?.trim() ||
-      !lastName?.trim() ||
-      !email?.trim() ||
-      !companyName?.trim()
-    ) {
-      return "Please fill in all required fields.";
-    }
-
-    const emailOk = /\S+@\S+\.\S+/.test(email);
-    if (!emailOk) return "Please enter a valid email address.";
-
-    if (!terms) {
-      return "You must accept the Privacy Policy to continue.";
-    }
-
-    return null;
-  }
-
   async function handleNext() {
-    setStageError(null);
-    const values = form.getValues();
-
-    const err = basicStageOneCheck(values);
-    if (err) {
-      setStageError(err);
-      return;
-    }
-    setStage(1);
+    const valid = await form.trigger(["firstName", "lastName", "email", "companyName", "terms"]);
+    if (valid) setStage(1);
   }
 
   function handleBack() {
-    setStageError(null);
     setStage(0);
   }
 
@@ -123,7 +90,7 @@ function RegisterForm() {
               {/* Step 1: User + company + terms + marketing */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
-                  control={control as any}
+                  control={control}
                   name="firstName"
                   render={({ field }) => (
                     <FormItem>
@@ -249,9 +216,6 @@ function RegisterForm() {
                   )}
                 />
               </div>
-
-              {/* Local stage error (Next checks) */}
-              {stageError ? <FormError message={stageError} /> : null}
 
               <div className="flex justify-end gap-3">
                 <Button type="button" onClick={handleNext}>

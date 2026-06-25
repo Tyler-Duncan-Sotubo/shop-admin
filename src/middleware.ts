@@ -7,7 +7,7 @@ import { getToken } from "next-auth/jwt";
 const PUBLIC_ROUTES = [
   "/",
   "/login",
-  "/register",
+  "/signup",
   "/2fa",
   "/no-store-access",
   "/billing",
