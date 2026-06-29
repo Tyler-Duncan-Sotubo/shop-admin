@@ -5,6 +5,12 @@ const arrayOfStrings = z.preprocess(
   z.array(z.string()),
 );
 
+const numericString = z.preprocess(
+  (val) =>
+    val === null || val === undefined || val === "" ? val : String(val),
+  z.string().nullable().optional(),
+);
+
 export const CreateProductSchema = z.object({
   name: z.string().min(2, "Name is required"),
   description: z.string().nullable().optional(),
