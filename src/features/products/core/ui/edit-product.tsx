@@ -127,6 +127,7 @@ export function EditProduct({ productId }: Props) {
     if (!product) return;
 
     const md = (product as any).metadata ?? {};
+    const toStr = (v: unknown) => (v != null ? String(v) : "");
 
     form.reset(
       {
@@ -148,14 +149,14 @@ export function EditProduct({ productId }: Props) {
         // ✅ simple product fields
         sku: (product as any).sku ?? "",
         barcode: (product as any).barcode ?? "",
-        regularPrice: (product as any).regularPrice ?? "",
-        salePrice: (product as any).salePrice ?? "",
-        stockQuantity: (product as any).stockQuantity ?? "",
-        lowStockThreshold: (product as any).lowStockThreshold ?? "",
-        weight: (product as any).weight ?? "",
-        length: (product as any).length ?? "",
-        width: (product as any).width ?? "",
-        height: (product as any).height ?? "",
+        regularPrice: toStr((product as any).regularPrice),
+        salePrice: toStr((product as any).salePrice),
+        stockQuantity: toStr((product as any).stockQuantity),
+        lowStockThreshold: toStr((product as any).lowStockThreshold),
+        weight: toStr((product as any).weight),
+        length: toStr((product as any).length),
+        width: toStr((product as any).width),
+        height: toStr((product as any).height),
       },
       { keepValues: false }, // 👈 forces useWatch to pick up productType change
     );
