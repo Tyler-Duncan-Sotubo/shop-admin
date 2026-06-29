@@ -5,6 +5,11 @@ const arrayOfStrings = z.preprocess(
   z.array(z.string()),
 );
 
+const numericString = z.preprocess(
+  (val) => (val === null || val === undefined || val === "" ? val : String(val)),
+  z.string().nullable().optional(),
+);
+
 export const CreateProductSchema = z.object({
   name: z.string().min(2, "Name is required"),
   description: z.string().nullable().optional(),
@@ -60,16 +65,16 @@ export const CreateProductSchema = z.object({
   sku: z.string().nullable().optional(),
   barcode: z.string().nullable().optional(),
 
-  regularPrice: z.string().nullable().optional(), // keep as string to match your variant dialog style
-  salePrice: z.string().nullable().optional(),
+  regularPrice: numericString,
+  salePrice: numericString,
 
-  stockQuantity: z.string().nullable().optional(),
-  lowStockThreshold: z.string().nullable().optional(),
+  stockQuantity: numericString,
+  lowStockThreshold: numericString,
 
-  weight: z.string().nullable().optional(),
-  length: z.string().nullable().optional(),
-  width: z.string().nullable().optional(),
-  height: z.string().nullable().optional(),
+  weight: numericString,
+  length: numericString,
+  width: numericString,
+  height: numericString,
 
   moq: z.transform(Number).pipe(z.number()),
 });

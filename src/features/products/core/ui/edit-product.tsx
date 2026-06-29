@@ -2,6 +2,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { SubmitHandler, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
@@ -63,6 +64,7 @@ const MAX_VARIABLE_IMAGES = 3;
 
 export function EditProduct({ productId }: Props) {
   const axios = useAxiosAuth();
+  const queryClient = useQueryClient();
   const { activeStoreId } = useStoreScope();
   const { data: session, status } = useSession();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -71,6 +73,7 @@ export function EditProduct({ productId }: Props) {
   const { createCategory } = useCategories(session, axios, activeStoreId);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
 
   // new images only (local)
   const [localImages, setLocalImages] = useState<LocalImage[]>([]);
@@ -176,13 +179,13 @@ export function EditProduct({ productId }: Props) {
         shouldValidate: true,
       });
     }
-    if (maxImages === 3) {
+    if (watchedProductType === "variable") {
       form.setValue("defaultImageIndex", 0, {
         shouldDirty: true,
         shouldValidate: true,
       });
     }
-  }, [maxImages, localImages, form]);
+  }, [maxImages, localImages, form, watchedProductType]);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -220,12 +223,29 @@ export function EditProduct({ productId }: Props) {
 
   const setDefaultImageIndex = useCallback(
     (index: number) => {
-      form.setValue("defaultImageIndex", maxImages === 3 ? 0 : index, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+      form.setValue(
+        "defaultImageIndex",
+        watchedProductType === "variable" ? 0 : index,
+        { shouldDirty: true, shouldValidate: true },
+      );
     },
-    [form, maxImages],
+    [form, watchedProductType],
+  );
+
+  const deleteSavedImage = useCallback(
+    async (imageId: string) => {
+      setDeletingImageId(imageId);
+      try {
+        await axios.delete(`/api/product-images/${imageId}`);
+        await queryClient.invalidateQueries({ queryKey: ["product", productId] });
+        form.setValue("defaultImageIndex", 0, { shouldDirty: true });
+      } catch (e: any) {
+        setSubmitError(e?.response?.data?.message ?? e?.message ?? "Failed to delete image");
+      } finally {
+        setDeletingImageId(null);
+      }
+    },
+    [axios, queryClient, productId, form],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -394,10 +414,10 @@ export function EditProduct({ productId }: Props) {
   );
 
   const displayImages = localImages.length
-    ? localImages.map((u) => ({ src: u.previewUrl, isNew: true }))
+    ? localImages.map((u) => ({ src: u.previewUrl, isNew: true, id: null as string | null }))
     : savedSorted
         .slice(0, maxImages)
-        .map((s: any) => ({ src: s.url ?? s.src, isNew: false }));
+        .map((s: any) => ({ src: s.url ?? s.src, isNew: false, id: s.id as string }));
 
   return (
     <div className="space-y-6">
@@ -913,25 +933,28 @@ export function EditProduct({ productId }: Props) {
                     <div className="grid grid-cols-3 gap-2 w-full">
                       {displayImages.slice(0, maxImages).map((img, idx) => (
                         <div
-                          key={idx}
+                          key={img.id ?? idx}
                           className={cn(
                             "relative rounded-lg overflow-hidden border",
                             idx === currentDefault ? "ring-2 ring-primary" : "",
                           )}
                         >
-                          {localImages.length ? (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (img.isNew) {
                                 removeImage(idx);
-                              }}
-                              className="absolute top-1 right-1 z-10 rounded-full bg-background/80 p-1 hover:bg-background"
-                              aria-label="Remove image"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          ) : null}
+                              } else if (img.id) {
+                                deleteSavedImage(img.id);
+                              }
+                            }}
+                            disabled={!!deletingImageId}
+                            className="absolute top-1 right-1 z-10 rounded-full bg-background/80 p-1 hover:bg-background disabled:opacity-50"
+                            aria-label="Remove image"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
 
                           <button
                             type="button"
