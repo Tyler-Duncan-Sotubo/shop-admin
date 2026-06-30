@@ -160,6 +160,7 @@ export function CustomerBulkUploadModal({
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<string | null>(null);
 
   const reset = () => {
     setStep("upload");
@@ -168,6 +169,7 @@ export function CustomerBulkUploadModal({
     setRows([]);
     setMapping({});
     setError(null);
+    setProgress(null);
   };
 
   const handleClose = () => {
@@ -211,24 +213,36 @@ export function CustomerBulkUploadModal({
   const handleUpload = async () => {
     setIsLoading(true);
     setError(null);
+    setProgress(null);
+
     try {
       const transformed = transformRows(rows, mapping);
 
-      // Convert transformed rows back to a CSV blob and send as FormData
-      const ws = XLSX.utils.json_to_sheet(transformed);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-      const csvOutput = XLSX.utils.sheet_to_csv(ws);
+      const CHUNK_SIZE = 500;
+      const chunks: (typeof transformed)[] = [];
+      for (let i = 0; i < transformed.length; i += CHUNK_SIZE) {
+        chunks.push(transformed.slice(i, i + CHUNK_SIZE));
+      }
 
-      const blob = new Blob([csvOutput], { type: "text/csv" });
-      const formData = new FormData();
-      formData.append("file", blob, "customers.csv");
+      for (let i = 0; i < chunks.length; i++) {
+        setProgress(
+          chunks.length > 1
+            ? `Uploading batch ${i + 1} of ${chunks.length}…`
+            : null,
+        );
 
-      await axios.post(endpoint, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+        const ws = XLSX.utils.json_to_sheet(chunks[i]);
+        const csvOutput = XLSX.utils.sheet_to_csv(ws);
+        const blob = new Blob([csvOutput], { type: "text/csv" });
+        const formData = new FormData();
+        formData.append("file", blob, "customers.csv");
 
-      toast.success("Customers imported successfully");
+        await axios.post(endpoint, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
+
+      toast.success(`${transformed.length} customers imported successfully`);
       onSuccess?.();
       handleClose();
     } catch (err: any) {
@@ -239,6 +253,7 @@ export function CustomerBulkUploadModal({
       );
     } finally {
       setIsLoading(false);
+      setProgress(null);
     }
   };
 
@@ -384,6 +399,11 @@ export function CustomerBulkUploadModal({
               })}
             </div>
           </div>
+        )}
+
+        {/* Batch progress */}
+        {progress && (
+          <p className="text-xs text-gray-500 text-center">{progress}</p>
         )}
 
         {/* Error */}
