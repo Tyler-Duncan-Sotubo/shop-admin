@@ -2,10 +2,12 @@
 export type PlanName = "Free" | "Starter" | "Growth" | "Pro" | "Custom";
 
 export type PlanFeatureKey =
+  | "advancedShipping"
   | "analyticsBasic"
   | "analyticsDeep"
   | "apiAccess"
   | "barcodes"
+  | "blogPosts"
   | "bulkActions"
   | "customDomain"
   | "customOrders"
@@ -63,7 +65,9 @@ export const FEATURE_MIN_PLAN: Record<PlanFeatureKey, PlanName> = {
   sms: "Growth",
   staffActivityLogs: "Growth",
   // ── Pro ───────────────────────────────────────────────────
+  advancedShipping: "Pro",
   apiAccess: "Pro",
+  blogPosts: "Pro",
   customDomain: "Pro",
   webhooks: "Pro",
   zohoIntegration: "Pro",
