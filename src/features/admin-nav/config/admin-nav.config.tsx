@@ -312,4 +312,4 @@ export const main: readonly MenuItem[] = [
     icon: <FaGlobe size={18} />,
     permissions: ["stores.read"],
   },
-] as const;
+];
