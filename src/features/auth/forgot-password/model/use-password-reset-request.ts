@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import useAxiosAuth from "@/shared/hooks/use-axios-auth";
+import { axiosInstance } from "@/shared/api/axios";
 import { isAxiosError } from "@/shared/api/axios";
 import { getErrorMessage } from "@/shared/utils/get-error-message";
 import {
@@ -10,7 +10,6 @@ import {
 } from "./password-reset.api";
 
 export function usePasswordResetRequest() {
-  const axiosInstance = useAxiosAuth();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 

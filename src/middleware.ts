@@ -13,6 +13,8 @@ const PUBLIC_ROUTES = [
   "/billing",
   "/billing/plans",
   "/setup",
+  "/forgot-password",
+  "/reset-password",
 ];
 
 export async function middleware(request: NextRequest) {

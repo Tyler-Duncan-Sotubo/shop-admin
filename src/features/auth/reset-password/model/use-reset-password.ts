@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
-import useAxiosAuth from "@/shared/hooks/use-axios-auth";
+import { axiosInstance } from "@/shared/api/axios";
 import { isAxiosError } from "@/shared/api/axios";
 import { getErrorMessage } from "@/shared/utils/get-error-message";
 import { apiResetPassword } from "./reset-password.api";
@@ -12,7 +12,6 @@ import { newPasswordSchema } from "./reset-password.schema";
 export type NewPasswordFormValues = z.infer<typeof newPasswordSchema>;
 
 export function useResetPassword(token: string) {
-  const axiosInstance = useAxiosAuth();
   const router = useRouter();
   const [error, setError] = useState("");
 

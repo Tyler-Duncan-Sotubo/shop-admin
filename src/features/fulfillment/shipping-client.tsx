@@ -1,112 +1,30 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
+import { useState } from "react";
 import PageHeader from "@/shared/ui/page-header";
-import { FaMapMarkedAlt } from "react-icons/fa";
-import { FaReceipt, FaTruckFast } from "react-icons/fa6";
+import { Tabs, TabsContent } from "@/shared/ui/tabs";
 
-import ShippingZonesClient from "./shipping/zones/ui/shipping-zone-client";
-import ShippingRatesClient from "./shipping/rates/ui/shipping-rates-client";
-import ShippingCarriersClient from "./shipping/carriers/ui/shipping-carriers-client";
+import ShippingOptionsClient from "./shipping/options/ui/shipping-options-client";
+import { type ShippingTab } from "./shipping-tabs";
 import PickupLocationsClient from "./pickup/ui/pickup-locations-client";
 
-import { FilterChips, type FilterChip } from "@/shared/ui/filter-chips";
-import { PlanGate } from "../subscription/ui/plan-gate";
-
-type ShippingTabKey = "zones" | "rates" | "carriers" | "pickup";
-
-const DEFAULT_TAB: ShippingTabKey = "zones";
-
 export default function ShippingClient() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const urlTab = searchParams.get("tab") as ShippingTabKey | null;
-  const [tab, setTab] = useState<ShippingTabKey>(urlTab ?? DEFAULT_TAB);
-
-  // Keep state in sync if user navigates with browser back/forward
-  useEffect(() => {
-    if (urlTab && urlTab !== tab) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTab(urlTab);
-    }
-  }, [tab, urlTab]);
-
-  const onTabChange = (next: ShippingTabKey) => {
-    setTab(next);
-    router.replace(`?tab=${next}`, { scroll: false });
-  };
-
-  // Mobile chips (labels kept short; full labels on desktop tabs)
-  const chips = useMemo<FilterChip<ShippingTabKey>[]>(
-    () => [
-      { value: "zones", label: "Zones" },
-      { value: "rates", label: "Rates" },
-      { value: "carriers", label: "Carriers" },
-      { value: "pickup", label: "Pickup" },
-    ],
-    [],
-  );
+  const [tab, setTab] = useState<ShippingTab>("options");
 
   return (
     <>
       <PageHeader
         title="Shipping"
-        description="Configure where you ship, how much you charge, and which carriers you use."
+        description="Configure shipping options and pickup locations for your customers."
+        tooltip="Customers choose their shipping option at checkout. Each option has a flat fee and applies to the states you select — leave states empty to make it available nationwide."
       />
 
-      <Tabs value={tab} onValueChange={(v) => onTabChange(v as ShippingTabKey)}>
-        {/* ✅ Mobile: Filter chips */}
-        <div className="min-w-0 px-3 -mx-3 sm:hidden">
-          <FilterChips<ShippingTabKey>
-            value={tab}
-            onChange={onTabChange}
-            chips={chips}
-            wrap={false}
-            scrollable
-          />
-        </div>
-
-        {/* ✅ Desktop: TabsList */}
-        <div className="hidden sm:block">
-          <TabsList>
-            <TabsTrigger value="zones" className="text-base">
-              <FaMapMarkedAlt className="mr-2" />
-              Zones
-            </TabsTrigger>
-            <TabsTrigger value="rates" className="text-base">
-              <FaReceipt className="mr-2" />
-              Rates
-            </TabsTrigger>
-            <TabsTrigger value="carriers" className="text-base">
-              <FaTruckFast className="mr-2" />
-              Carriers
-            </TabsTrigger>
-            <TabsTrigger value="pickup" className="text-base">
-              <FaMapMarkedAlt className="mr-2" />
-              Pickup Locations
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        <TabsContent value="zones" className="mt-4">
-          <ShippingZonesClient />
+      <Tabs value={tab} onValueChange={(v) => setTab(v as ShippingTab)}>
+        <TabsContent value="options" className="mt-0">
+          <ShippingOptionsClient tab={tab} onTabChange={setTab} />
         </TabsContent>
-
-        <TabsContent value="rates" className="mt-4">
-          <ShippingRatesClient />
-        </TabsContent>
-
-        <TabsContent value="carriers" className="mt-4">
-          <PlanGate feature="shippingIntegrations">
-            <ShippingCarriersClient />
-          </PlanGate>
-        </TabsContent>
-
-        <TabsContent value="pickup" className="mt-4">
-          <PickupLocationsClient />
+        <TabsContent value="pickup" className="mt-0">
+          <PickupLocationsClient tab={tab} onTabChange={setTab} />
         </TabsContent>
       </Tabs>
     </>

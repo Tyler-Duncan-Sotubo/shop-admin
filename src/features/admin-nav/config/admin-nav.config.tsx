@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ReactNode } from "react";
 import {
   MdDashboard,
@@ -37,63 +36,31 @@ import {
  * Types
  * ------------------------------*/
 export type Permission = string;
+export type BadgeKey = "ordersCount" | "quotesCount" | "dispatchesCount";
 
-type BaseItem = {
+export type NavItem = {
   title: string;
-  name?: string;
   link?: string;
   icon?: ReactNode;
   permissions?: readonly Permission[];
   planFeature?: PlanFeatureKey;
   subItems?: readonly MenuItem[];
-  badgeKey?: "ordersCount";
+  badgeKey?: BadgeKey;
 };
 
 type DividerItem = {
+  type: "divider";
   title: string;
   name?: string;
-  type: "divider";
-  link?: undefined;
-  icon?: undefined;
-  permissions?: undefined;
-  planFeature?: undefined;
-  subItems?: undefined;
 };
 
-export type MenuItem = BaseItem | DividerItem;
+export type MenuItem = NavItem | DividerItem;
 
 /** -----------------------------
- * Type guard
+ * Type guards
  * ------------------------------*/
-const isDivider = (i: MenuItem): i is DividerItem =>
-  (i as any).type === "divider";
-
-/** -----------------------------
- * Helpers
- * ------------------------------*/
-export function withBasePerm(
-  menu: readonly MenuItem[],
-  basePerm: string,
-): MenuItem[];
-export function withBasePerm<M extends MenuItem>(
-  menu: readonly M[],
-  basePerm: string,
-): M[];
-
-export function withBasePerm(menu: readonly MenuItem[], basePerm: string) {
-  return menu.map((item) => {
-    if (isDivider(item)) return item;
-
-    const permissions = Array.from(
-      new Set([...(item.permissions ?? []), basePerm]),
-    );
-    const subItems = item.subItems
-      ? withBasePerm(item.subItems, basePerm)
-      : undefined;
-
-    return { ...item, permissions, subItems } as typeof item;
-  });
-}
+export const isDivider = (i: MenuItem): i is DividerItem =>
+  "type" in i && (i as DividerItem).type === "divider";
 
 /** -----------------------------
  * Filtering by permissions + plan
@@ -107,26 +74,22 @@ export function filterMenu(
     .map<MenuItem | null>((item) => {
       if (isDivider(item)) return item;
 
-      const parentAllowed = hasPermission(userPermissions, item.permissions);
-      if (!parentAllowed) return null;
+      if (!hasPermission(userPermissions, item.permissions)) return null;
 
       if (item.planFeature && userPlanName) {
-        const allowed = planHasFeature(userPlanName, item.planFeature);
-        if (!allowed) return null;
+        if (!planHasFeature(userPlanName, item.planFeature)) return null;
       }
 
-      const visibleSubs: MenuItem[] | undefined = item.subItems
+      const visibleSubs = item.subItems
         ? filterMenu(item.subItems, userPermissions, userPlanName)
         : undefined;
 
       if (!item.link) {
-        const hasClickableChild = (visibleSubs ?? []).some(
-          (s) => !isDivider(s),
-        );
+        const hasClickableChild = (visibleSubs ?? []).some((s) => !isDivider(s));
         if (!hasClickableChild) return null;
       }
 
-      return { ...item, subItems: visibleSubs } as MenuItem;
+      return { ...item, subItems: visibleSubs };
     })
     .filter((x): x is MenuItem => x !== null);
 
@@ -135,22 +98,17 @@ export function filterMenu(
   for (let i = 0; i < filtered.length; i++) {
     const item = filtered[i];
     if (isDivider(item)) {
-      // Look ahead only until the next divider
-      const itemsUntilNextDivider: MenuItem[] = [];
+      let hasItemAfter = false;
       for (let j = i + 1; j < filtered.length; j++) {
         if (isDivider(filtered[j])) break;
-        itemsUntilNextDivider.push(filtered[j]);
+        hasItemAfter = true;
+        break;
       }
-      // Only keep divider if it has at least one non-divider item after it
-      if (itemsUntilNextDivider.length > 0) {
-        cleaned.push(item);
-      }
+      if (hasItemAfter) cleaned.push(item);
     } else {
       cleaned.push(item);
     }
   }
-
-  // Remove trailing divider
   if (cleaned.length > 0 && isDivider(cleaned[cleaned.length - 1])) {
     cleaned.pop();
   }
@@ -162,17 +120,11 @@ export function filterMenu(
 export function flattenSingleSubMenus(menu: MenuItem[]): MenuItem[] {
   return menu.map((item) => {
     if (isDivider(item)) return item;
-
     const subs = item.subItems;
     if (subs && subs.length === 1 && !isDivider(subs[0])) {
-      const onlyChild = subs[0] as BaseItem;
-      return {
-        ...onlyChild,
-        icon: item.icon ?? onlyChild.icon,
-        subItems: undefined,
-      } satisfies MenuItem;
+      const onlyChild = subs[0] as NavItem;
+      return { ...onlyChild, icon: item.icon ?? onlyChild.icon, subItems: undefined };
     }
-
     return item;
   });
 }
@@ -187,14 +139,12 @@ export const main: readonly MenuItem[] = [
     icon: <MdDashboard size={18} />,
     link: "/dashboard",
   },
-
   {
     title: "Products",
     icon: <BsFillBoxSeamFill size={18} />,
     link: "/products",
     permissions: ["products.read", "categories.read", "attributes.read"],
   },
-
   {
     title: "Sales",
     icon: <MdShoppingCart size={18} />,
@@ -212,6 +162,7 @@ export const main: readonly MenuItem[] = [
         icon: <FaReceipt size={18} />,
         permissions: ["quotes.read"],
         planFeature: "quotes",
+        badgeKey: "quotesCount",
       },
       {
         title: "Invoices",
@@ -227,14 +178,12 @@ export const main: readonly MenuItem[] = [
       },
     ],
   },
-
   {
     title: "Customers",
     icon: <TbUsers size={18} />,
     link: "/customers",
     permissions: ["customers.read"],
   },
-
   {
     title: "Inventory",
     icon: <MdOutlineInventory2 size={18} />,
@@ -244,8 +193,8 @@ export const main: readonly MenuItem[] = [
       "inventory.transfers.read",
       "inventory.adjustments.read",
     ],
+    badgeKey: "dispatchesCount",
   },
-
   {
     title: "Analytics",
     icon: <MdBarChart size={18} />,
@@ -273,7 +222,6 @@ export const main: readonly MenuItem[] = [
       },
     ],
   },
-
   {
     title: "Content",
     icon: <FaFileAlt size={18} />,
@@ -288,17 +236,12 @@ export const main: readonly MenuItem[] = [
         title: "Blogpost",
         link: "/content/blog",
         icon: <MdArticle size={18} />,
+        planFeature: "blogPosts",
       },
     ],
   },
 
   // ── Finance ───────────────────────────────────────────────
-  {
-    title: "FinanceDivider",
-    name: "Finance",
-    type: "divider",
-  },
-
   {
     title: "Finance",
     icon: <FaWallet size={18} />,
@@ -330,12 +273,6 @@ export const main: readonly MenuItem[] = [
 
   // ── Operations ────────────────────────────────────────────
   {
-    title: "OperationsDivider",
-    name: "Operations",
-    type: "divider",
-  },
-
-  {
     title: "Operations",
     icon: <FaPlug size={18} />,
     subItems: [
@@ -343,12 +280,7 @@ export const main: readonly MenuItem[] = [
         title: "Shipping",
         link: "/shipping",
         icon: <FaTruckFast size={18} />,
-        permissions: [
-          "shipping.zones.read",
-          "shipping.rates.read",
-          "shipping.carriers.read",
-        ],
-        planFeature: "shippingZones",
+        permissions: ["shipping.zones.read"],
       },
       {
         title: "Locations",
@@ -357,7 +289,6 @@ export const main: readonly MenuItem[] = [
         permissions: ["locations.read"],
         planFeature: "multiLocation",
       },
-
       {
         title: "Integrations",
         link: "/settings/integrations",
@@ -375,12 +306,6 @@ export const main: readonly MenuItem[] = [
   },
 
   // ── Account & Setup ───────────────────────────────────────
-  {
-    title: "AccountDivider",
-    name: "Account & Setup",
-    type: "divider",
-  },
-
   {
     title: "Online Store",
     link: "/online-store",
