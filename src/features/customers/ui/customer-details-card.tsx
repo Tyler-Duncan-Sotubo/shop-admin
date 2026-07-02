@@ -25,6 +25,7 @@ import {
   customerDetailsSchema,
 } from "../schema/customer.schema";
 import { FaEdit } from "react-icons/fa";
+import { formatMoneyNGN } from "@/shared/utils/format-to-naira";
 
 type Props = {
   customer: CustomerDetail;
@@ -124,6 +125,22 @@ export function CustomerDetailsCard({ customer }: Props) {
           <div className="space-y-1">
             <div className="text-xs text-muted-foreground">Last login</div>
             <div className="text-sm">{fmt(customer.lastLogin)}</div>
+          </div>
+
+          <div className="space-y-1">
+            <div className="text-xs text-muted-foreground">Orders</div>
+            <div className="text-sm font-medium tabular-nums">
+              {customer.orderCount ?? 0}
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <div className="text-xs text-muted-foreground">Total spend</div>
+            <div className="text-sm font-medium tabular-nums">
+              {customer.totalSpendMinor
+                ? formatMoneyNGN(Number(customer.totalSpendMinor) / 100)
+                : "—"}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 md:col-span-2">

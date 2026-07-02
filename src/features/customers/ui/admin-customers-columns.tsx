@@ -7,6 +7,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { useRouter } from "next/navigation";
 import { format, isValid, parseISO } from "date-fns";
+import { formatMoneyNGN } from "@/shared/utils/format-to-naira";
 
 function YesNoBadge({
   ok,
@@ -159,6 +160,30 @@ export const adminCustomersColumns: ColumnDef<AdminCustomerRow>[] = [
       return (
         <span className="text-sm">
           {Number.isNaN(d.getTime()) ? iso : d.toLocaleString()}
+        </span>
+      );
+    },
+  },
+
+  {
+    id: "orders",
+    header: "Orders",
+    cell: ({ row }) => (
+      <span className="text-sm tabular-nums">
+        {row.original.orderCount ?? 0}
+      </span>
+    ),
+  },
+  {
+    id: "totalSpend",
+    header: "Total spend",
+    cell: ({ row }) => {
+      const minor = Number(row.original.totalSpendMinor ?? 0);
+      if (minor === 0)
+        return <span className="text-sm text-muted-foreground">—</span>;
+      return (
+        <span className="text-sm font-medium tabular-nums">
+          {formatMoneyNGN(minor / 100)}
         </span>
       );
     },

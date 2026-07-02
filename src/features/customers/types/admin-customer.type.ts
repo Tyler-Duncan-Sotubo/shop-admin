@@ -13,6 +13,8 @@ export type AdminCustomerRow = {
   marketingStatus?: "subscribed" | "unsubscribed" | "pending" | null;
   createdAt: string;
   lastLogin?: string | null;
+  orderCount?: number | null;
+  totalSpendMinor?: number | null;
 };
 
 export type CustomerAddress = {
@@ -61,6 +63,8 @@ export type CustomerDetail = {
   createdAt?: string | Date | null;
   lastLogin?: string | Date | null;
   addresses?: CustomerAddress[];
+  orderCount?: number | null;
+  totalSpendMinor?: number | null;
 };
 
 export type UpdateCustomerPayload = {
