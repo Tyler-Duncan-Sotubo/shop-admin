@@ -103,7 +103,7 @@ export function PaymentsMobileRow({
               onClick={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
             >
-              View
+              {p.orderNumber ?? "View"}
             </Link>
           ) : (
             <span className="text-sm font-medium">—</span>

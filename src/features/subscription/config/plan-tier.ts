@@ -3,10 +3,8 @@
  * If the plan is ever renamed (e.g. "Custom" → "Enterprise"),
  * update ENTERPRISE_PLAN_NAME here and nowhere else.
  */
-export const ENTERPRISE_PLAN_NAME = "Custom" as const;
+export const ENTERPRISE_PLAN_NAME = "Enterprise" as const;
 
-export function isEnterprisePlan(
-  planName: string | null | undefined,
-): boolean {
+export function isEnterprisePlan(planName: string | null | undefined): boolean {
   return planName === ENTERPRISE_PLAN_NAME;
 }

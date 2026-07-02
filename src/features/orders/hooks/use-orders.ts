@@ -515,3 +515,43 @@ export function useUpdateOrderItem(
     },
   });
 }
+
+export function useRecordOrderPayment(
+  session: Session | null,
+  axios: AxiosInstance,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: {
+      orderId: string;
+      amount: number;
+      method: "bank_transfer" | "cash" | "card_manual" | "other";
+      reference?: string;
+      note?: string;
+    }) => {
+      try {
+        const res = await axios.post(
+          `/api/orders/${vars.orderId}/record-payment`,
+          {
+            amount: vars.amount,
+            method: vars.method,
+            reference: vars.reference,
+            note: vars.note,
+          },
+        );
+        return res.data.data;
+      } catch (err) {
+        const e = err as AxiosError<any>;
+        throw new Error(
+          e.response?.data?.error?.message ??
+            e.response?.data?.message ??
+            e.message,
+        );
+      }
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["orders", vars.orderId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}

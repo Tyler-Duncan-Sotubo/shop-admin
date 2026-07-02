@@ -1,7 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/shared/ui/form";
+import { FormModal } from "@/shared/ui/form-modal";
 import type { OrderWithItems } from "../types/order.type";
 import {
   usePayOrder,
@@ -12,6 +32,7 @@ import {
   useCancelOrderWithRefund,
   useDeleteManualOrder,
   useFulfillOrder,
+  useRecordOrderPayment,
 } from "../hooks/use-orders";
 import type { Session } from "next-auth";
 import type { AxiosInstance } from "axios";
@@ -19,6 +40,131 @@ import { ConfirmOrderActionDialog } from "./confirm-order-action-dialog";
 import { H3 } from "@/shared/ui/typography";
 import { useGetMySubscription } from "@/features/subscription/hooks/use-subscriptions";
 import { isEnterprisePlan } from "@/features/subscription/config/plan-tier";
+import { toast } from "sonner";
+
+// ── Record Payment modal ───────────────────────────────────────────────────────
+
+const paymentSchema = z.object({
+  amount: z
+    .string()
+    .min(1, "Amount is required")
+    .refine((v) => !isNaN(parseFloat(v)) && parseFloat(v) > 0, {
+      message: "Must be a valid amount greater than 0",
+    }),
+  method: z.enum(["bank_transfer", "cash", "card_manual", "other"]),
+  reference: z.string().optional(),
+  note: z.string().optional(),
+});
+
+type PaymentFormValues = z.infer<typeof paymentSchema>;
+
+function RecordPaymentModal({
+  open,
+  onClose,
+  orderTotal,
+  alreadyPaid,
+  currency,
+  onSubmit,
+  isLoading,
+  error,
+}: {
+  open: boolean;
+  onClose: () => void;
+  orderTotal: number;
+  alreadyPaid?: number;
+  currency?: string;
+  onSubmit: (values: PaymentFormValues) => void;
+  isLoading: boolean;
+  error?: string | null;
+}) {
+  const remaining = orderTotal - (alreadyPaid ?? 0);
+  const form = useForm<PaymentFormValues>({
+    resolver: zodResolver(paymentSchema),
+    defaultValues: {
+      amount: remaining > 0 ? remaining.toFixed(2) : "",
+      method: "bank_transfer",
+      reference: "",
+      note: "",
+    },
+  });
+
+  return (
+    <FormModal
+      open={open}
+      title="Record Payment"
+      submitLabel="Record Payment"
+      onClose={() => {
+        form.reset();
+        onClose();
+      }}
+      onSubmit={form.handleSubmit(onSubmit)}
+      isSubmitting={isLoading}
+    >
+      <Form {...form}>
+        <FormField
+          name="amount"
+          control={form.control}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Amount ({currency ?? "NGN"})</FormLabel>
+              <FormControl>
+                <Input type="number" min={0.01} step={0.01} placeholder="0.00" {...field} />
+              </FormControl>
+              {remaining > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Remaining balance: {remaining.toLocaleString()} {currency ?? "NGN"}
+                </p>
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          name="method"
+          control={form.control}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Payment method</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card_manual">Card (manual)</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          name="reference"
+          control={form.control}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                Reference{" "}
+                <span className="font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              </FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. bank teller ref, receipt no." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        {error && <p className="text-sm text-destructive">{error}</p>}
+      </Form>
+    </FormModal>
+  );
+}
 
 export function OrderActionsCard({
   order,
@@ -34,6 +180,7 @@ export function OrderActionsCard({
   storeId: string;
 }) {
   const payMut = usePayOrder(session, axios);
+  const recordPaymentMut = useRecordOrderPayment(session, axios);
   const cancelMut = useCancelOrderWithRefund(session, axios);
   const layBuyMut = useConvertToLayBuy(session, axios);
   const requestDispatchMut = useRequestDispatch(session, axios);
@@ -52,8 +199,11 @@ export function OrderActionsCard({
   const [openCancel, setOpenCancel] = useState(false);
   const [openLayBuy, setOpenLayBuy] = useState(false);
 
+  const [openRecordPayment, setOpenRecordPayment] = useState(false);
+
   const isMutating =
     payMut.isPending ||
+    recordPaymentMut.isPending ||
     cancelMut.isPending ||
     layBuyMut.isPending ||
     requestDispatchMut.isPending ||
@@ -111,7 +261,18 @@ export function OrderActionsCard({
           </Button>
         )}
 
-        {canConvertToLayBuy && (
+        {(isPendingPayment || isDraft) && !isCustomPlan && (
+          <Button
+            className="w-full"
+            variant="default"
+            disabled={!canUpdate || isMutating}
+            onClick={() => setOpenRecordPayment(true)}
+          >
+            Record Payment
+          </Button>
+        )}
+
+        {canConvertToLayBuy && isCustomPlan && (
           <Button
             className="w-full"
             variant="outline"
@@ -284,6 +445,40 @@ export function OrderActionsCard({
               },
             },
           )
+        }
+      />
+
+      <RecordPaymentModal
+        open={openRecordPayment}
+        onClose={() => {
+          setOpenRecordPayment(false);
+          recordPaymentMut.reset();
+        }}
+        orderTotal={Number(order.total ?? 0)}
+        currency={order.currency}
+        onSubmit={(values) =>
+          recordPaymentMut.mutate(
+            {
+              orderId: order.id,
+              amount: parseFloat(values.amount),
+              method: values.method,
+              reference: values.reference || undefined,
+              note: values.note || undefined,
+            },
+            {
+              onSuccess: () => {
+                setOpenRecordPayment(false);
+                recordPaymentMut.reset();
+                toast.success("Payment recorded");
+              },
+            },
+          )
+        }
+        isLoading={recordPaymentMut.isPending}
+        error={
+          recordPaymentMut.isError
+            ? ((recordPaymentMut.error as Error)?.message ?? null)
+            : null
         }
       />
     </div>
