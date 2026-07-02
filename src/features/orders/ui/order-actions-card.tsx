@@ -11,11 +11,13 @@ import {
   useCancelDispatch,
   useCancelOrderWithRefund,
   useDeleteManualOrder,
+  useFulfillOrder,
 } from "../hooks/use-orders";
 import type { Session } from "next-auth";
 import type { AxiosInstance } from "axios";
 import { ConfirmOrderActionDialog } from "./confirm-order-action-dialog";
 import { H3 } from "@/shared/ui/typography";
+import { useGetMySubscription } from "@/features/subscription/hooks/use-subscriptions";
 
 export function OrderActionsCard({
   order,
@@ -37,9 +39,14 @@ export function OrderActionsCard({
   const confirmDispatchMut = useConfirmDispatch(session, axios);
   const cancelDispatchMut = useCancelDispatch(session, axios);
   const deleteMut = useDeleteManualOrder(session, axios);
+  const fulfillMut = useFulfillOrder(session, axios);
+
+  const { data: subscription } = useGetMySubscription(session, axios);
+  const isCustomPlan = subscription?.plan.name === "Custom";
 
   const [openDelete, setOpenDelete] = useState(false);
   const [openRequestDispatch, setOpenRequestDispatch] = useState(false);
+  const [openFulfill, setOpenFulfill] = useState(false);
   const [openCancelDispatch, setOpenCancelDispatch] = useState(false);
   const [openCancel, setOpenCancel] = useState(false);
   const [openLayBuy, setOpenLayBuy] = useState(false);
@@ -50,6 +57,7 @@ export function OrderActionsCard({
     layBuyMut.isPending ||
     requestDispatchMut.isPending ||
     cancelDispatchMut.isPending ||
+    fulfillMut.isPending ||
     deleteMut.isPending;
 
   const status = order.status;
@@ -124,7 +132,7 @@ export function OrderActionsCard({
           </Button>
         )}
 
-        {canRequestDispatch && !isAwaitingDispatch && (
+        {canRequestDispatch && !isAwaitingDispatch && isCustomPlan && (
           <Button
             className="w-full"
             variant="secondary"
@@ -132,6 +140,17 @@ export function OrderActionsCard({
             onClick={() => setOpenRequestDispatch(true)}
           >
             Request Dispatch
+          </Button>
+        )}
+
+        {canRequestDispatch && !isAwaitingDispatch && !isCustomPlan && (
+          <Button
+            className="w-full"
+            variant="secondary"
+            disabled={!canUpdate || isMutating}
+            onClick={() => setOpenFulfill(true)}
+          >
+            Fulfill Order
           </Button>
         )}
 
@@ -152,6 +171,21 @@ export function OrderActionsCard({
       </div>
 
       {/* ── Dialogs ── */}
+
+      <ConfirmOrderActionDialog
+        open={openFulfill}
+        onOpenChange={setOpenFulfill}
+        title="Fulfill this order?"
+        description="Stock will be deducted from inventory and the order will be marked as fulfilled."
+        confirmLabel="Yes, fulfill order"
+        isLoading={fulfillMut.isPending}
+        error={(fulfillMut.error as Error)?.message}
+        onConfirm={() =>
+          fulfillMut.mutate(order.id, {
+            onSuccess: () => setOpenFulfill(false),
+          })
+        }
+      />
 
       <ConfirmOrderActionDialog
         open={openRequestDispatch}

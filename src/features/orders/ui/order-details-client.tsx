@@ -60,8 +60,7 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
   const canCheckStock =
     canRead &&
     !!data &&
-    data.channel === "manual" &&
-    data.status !== "paid" &&
+    data.channel !== "online" &&
     data.status !== "fulfilled" &&
     data.status !== "cancelled";
 
@@ -105,7 +104,7 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
         description="Order details and actions."
         tooltip="On hold = pending payment. Completed = fulfilled."
       >
-        {order.channel === "manual" && !isLocked && (
+        {order.channel !== "online" && !isLocked && (
           <div className="flex flex-wrap gap-2">
             {(order.sourceType === "manual" ||
               order.sourceType === "quote") && (

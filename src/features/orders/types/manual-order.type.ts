@@ -26,7 +26,7 @@ export type CreateManualOrderPayload = {
   storeId?: string | null;
   customerId?: string | null;
   currency: string;
-  channel?: "manual" | "pos";
+  channel?: "manual" | "pos" | "whatsapp" | "instagram" | "facebook" | "tiktok" | "chowdeck" | "glovo" | "jumia" | "konga" | "amazon";
   originInventoryLocationId: string;
   shippingAddress?: Record<string, any> | null;
   billingAddress?: Record<string, any> | null;
