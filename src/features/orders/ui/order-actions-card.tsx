@@ -261,7 +261,7 @@ export function OrderActionsCard({
           </Button>
         )}
 
-        {isPendingPayment && !isCustomPlan && (
+        {(isPendingPayment || isDraft) && !isCustomPlan && (
           <Button
             className="w-full"
             variant="default"
@@ -272,7 +272,7 @@ export function OrderActionsCard({
           </Button>
         )}
 
-        {canConvertToLayBuy && (
+        {canConvertToLayBuy && isCustomPlan && (
           <Button
             className="w-full"
             variant="outline"
