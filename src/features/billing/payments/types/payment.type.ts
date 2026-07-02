@@ -11,6 +11,7 @@ export type Payment = {
   companyId: string;
 
   orderId?: string | null;
+  orderNumber?: string | null;
   invoiceId?: string | null;
 
   method: PaymentMethod;

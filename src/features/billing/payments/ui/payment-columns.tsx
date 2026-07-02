@@ -80,7 +80,7 @@ export const paymentColumns = (opts?: {
             className="text-primary underline"
             onClick={(e) => e.stopPropagation()}
           >
-            View
+            {row.original.orderNumber ?? "View"}
           </Link>
         );
       },
