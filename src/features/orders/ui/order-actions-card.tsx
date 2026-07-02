@@ -40,6 +40,8 @@ import { ConfirmOrderActionDialog } from "./confirm-order-action-dialog";
 import { H3 } from "@/shared/ui/typography";
 import { useGetMySubscription } from "@/features/subscription/hooks/use-subscriptions";
 import { isEnterprisePlan } from "@/features/subscription/config/plan-tier";
+import { useGetPayments } from "@/features/billing/payments/hooks/use-payments";
+import { minorToMajor } from "@/features/billing/invoices/schema/invoice.schema";
 import { toast } from "sonner";
 
 // ── Record Payment modal ───────────────────────────────────────────────────────
@@ -191,6 +193,16 @@ export function OrderActionsCard({
 
   const { data: subscription } = useGetMySubscription(session, axios);
   const isCustomPlan = isEnterprisePlan(subscription?.plan.name);
+
+  const { data: orderPayments = [] } = useGetPayments(
+    { orderId: order.id, limit: 50, offset: 0 },
+    session,
+    axios,
+  );
+  const alreadyPaidMinor = orderPayments
+    .filter((p) => p.status === "succeeded")
+    .reduce((sum, p) => sum + (p.amountMinor ?? 0), 0);
+  const alreadyPaid = Number(minorToMajor(alreadyPaidMinor));
 
   const [openDelete, setOpenDelete] = useState(false);
   const [openRequestDispatch, setOpenRequestDispatch] = useState(false);
@@ -455,6 +467,7 @@ export function OrderActionsCard({
           recordPaymentMut.reset();
         }}
         orderTotal={Number(order.total ?? 0)}
+        alreadyPaid={alreadyPaid}
         currency={order.currency}
         onSubmit={(values) =>
           recordPaymentMut.mutate(

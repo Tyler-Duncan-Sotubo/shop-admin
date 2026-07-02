@@ -23,17 +23,15 @@ import { PaymentsMobileRow } from "./payments-mobile-row";
 import { useGeneratePaymentReceiptPdf } from "../hooks/use-payment-receipt";
 
 type Props = {
-  invoiceId: string;
-  /**
-   * Optional: show only confirmed payments in the summary (table still shows all).
-   * If you want to filter table too, we can add a status param to the hook/api.
-   */
+  invoiceId?: string;
+  orderId?: string;
   summaryOnlyConfirmed?: boolean;
   title?: string;
 };
 
 export function InvoicePaymentsAccordion({
   invoiceId,
+  orderId,
   summaryOnlyConfirmed = true,
   title = "Payments received",
 }: Props) {
@@ -42,7 +40,7 @@ export function InvoicePaymentsAccordion({
   const axios = useAxiosAuth();
 
   const { data: payments = [], isLoading } = useGetPayments(
-    { invoiceId, limit: 50, offset: 0 },
+    { invoiceId, orderId, limit: 50, offset: 0 },
     session as Session | null,
     axios as AxiosInstance,
   );

@@ -26,6 +26,9 @@ import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { ApplyDiscountSheet } from "./apply-discount-modal";
 import { BackButton } from "@/shared/ui/back-button";
 import { EditShippingFeeModal } from "./edit-shipping-fee-modal";
+import { InvoicePaymentsAccordion } from "@/features/billing/payments/ui/invoice-payments-accordion";
+import { isEnterprisePlan } from "@/features/subscription/config/plan-tier";
+import { useGetMySubscription } from "@/features/subscription/hooks/use-subscriptions";
 
 function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
   if (status === "paid") return <Badge>Paid</Badge>;
@@ -65,6 +68,9 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
     data.status !== "cancelled";
 
   // All hooks must be called unconditionally before any early return
+  const { data: subscription } = useGetMySubscription(session, axios);
+  const isEnterprise = isEnterprisePlan(subscription?.plan.name);
+
   const { createManualPayment, stockCheck } = useManualOrders(
     orderId,
     data?.status === "pending_payment" ? "Invoice synced" : "Invoice created",
@@ -280,6 +286,13 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
               axios={axios}
               canUpdate={canUpdate}
               storeId={activeStoreId as string}
+            />
+          )}
+          {!isEnterprise && (
+            <InvoicePaymentsAccordion
+              orderId={order.id}
+              summaryOnlyConfirmed={false}
+              title="Payments recorded"
             />
           )}
           <OrderAuditCard events={order.events ?? []} />
