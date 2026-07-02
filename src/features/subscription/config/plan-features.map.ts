@@ -1,5 +1,6 @@
 // features/subscriptions/config/plan-features.map.ts
-export type PlanName = "Free" | "Starter" | "Growth" | "Pro" | "Custom";
+import { ENTERPRISE_PLAN_NAME } from "./plan-tier";
+export type PlanName = "Free" | "Starter" | "Growth" | "Pro" | typeof ENTERPRISE_PLAN_NAME;
 
 export type PlanFeatureKey =
   | "advancedShipping"
@@ -36,7 +37,7 @@ const PLAN_RANK: Record<PlanName, number> = {
   Starter: 1,
   Growth: 2,
   Pro: 3,
-  Custom: 99,
+  [ENTERPRISE_PLAN_NAME]: 99,
 };
 
 export const FEATURE_MIN_PLAN: Record<PlanFeatureKey, PlanName> = {

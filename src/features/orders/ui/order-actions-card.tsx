@@ -18,6 +18,7 @@ import type { AxiosInstance } from "axios";
 import { ConfirmOrderActionDialog } from "./confirm-order-action-dialog";
 import { H3 } from "@/shared/ui/typography";
 import { useGetMySubscription } from "@/features/subscription/hooks/use-subscriptions";
+import { isEnterprisePlan } from "@/features/subscription/config/plan-tier";
 
 export function OrderActionsCard({
   order,
@@ -42,7 +43,7 @@ export function OrderActionsCard({
   const fulfillMut = useFulfillOrder(session, axios);
 
   const { data: subscription } = useGetMySubscription(session, axios);
-  const isCustomPlan = subscription?.plan.name === "Custom";
+  const isCustomPlan = isEnterprisePlan(subscription?.plan.name);
 
   const [openDelete, setOpenDelete] = useState(false);
   const [openRequestDispatch, setOpenRequestDispatch] = useState(false);

@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import useAxiosAuth from "@/shared/hooks/use-axios-auth";
 import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { useGetMySubscription } from "@/features/subscription/hooks/use-subscriptions";
+import { isEnterprisePlan } from "@/features/subscription/config/plan-tier";
 import {
   Form,
   FormField,
@@ -71,7 +72,7 @@ export function ManualOrderFormSheet({
   const { activeStoreId } = useStoreScope();
 
   const { data: subscription } = useGetMySubscription(session, axios);
-  const isCustomPlan = subscription?.plan.name === "Custom";
+  const isCustomPlan = isEnterprisePlan(subscription?.plan.name);
 
   const { data: locations = [], isLoading: locationsLoading } =
     useGetStoreLocations(activeStoreId, session, axios);

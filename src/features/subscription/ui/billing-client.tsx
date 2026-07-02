@@ -20,6 +20,7 @@ import {
 import { StatusBadge } from "./status-badge";
 import type { CompanySubscription } from "../types/subscriptions.types";
 import { BillingHistory } from "./billing-history";
+import { isEnterprisePlan } from "../config/plan-tier";
 
 export default function BillingClient() {
   const { data: session, status: authStatus } = useSession();
@@ -133,7 +134,7 @@ function CurrentPlanSection({
     ? differenceInDays(new Date(endDate), new Date())
     : null;
 
-  const isCustom = plan.name === "Custom";
+  const isCustom = isEnterprisePlan(plan.name);
   const isTrialing = status === "trialing";
   const isExpired = ["expired", "cancelled"].includes(status);
   const isPastDue = status === "past_due";

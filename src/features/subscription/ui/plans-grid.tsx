@@ -6,6 +6,7 @@ import { Button } from "@/shared/ui/button";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SubscriptionPlan } from "../types/subscriptions.types";
+import { isEnterprisePlan } from "../config/plan-tier";
 
 type Props = {
   plans: SubscriptionPlan[];
@@ -14,7 +15,7 @@ type Props = {
 
 export function PlansGrid({ plans, currentPlanId }: Props) {
   const filtered = plans.filter(
-    (p) => p.name !== "Custom" && p.name !== "Free",
+    (p) => !isEnterprisePlan(p.name) && p.name !== "Free",
   );
 
   return (

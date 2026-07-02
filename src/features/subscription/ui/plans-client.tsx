@@ -12,6 +12,7 @@ import { BackButton } from "@/shared/ui/back-button";
 import { Badge } from "@/shared/ui/badge";
 import { toast } from "sonner";
 import { Check, Minus, Sparkles, Info } from "lucide-react";
+import { isEnterprisePlan } from "../config/plan-tier";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -53,7 +54,7 @@ export default function PlansClient() {
   if (authStatus === "loading" || plansLoading) return <Loading />;
 
   const visiblePlans = plans.filter(
-    (p) => p.name !== "Custom" && p.name !== "Free",
+    (p) => !isEnterprisePlan(p.name) && p.name !== "Free",
   );
 
   // ── Handle upgrade ────────────────────────────────────────
