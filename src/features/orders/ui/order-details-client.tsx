@@ -26,9 +26,9 @@ import { useStoreScope } from "@/lib/providers/store-scope-provider";
 import { ApplyDiscountSheet } from "./apply-discount-modal";
 import { BackButton } from "@/shared/ui/back-button";
 import { EditShippingFeeModal } from "./edit-shipping-fee-modal";
-import { InvoicePaymentsAccordion } from "@/features/billing/payments/ui/invoice-payments-accordion";
 import { isEnterprisePlan } from "@/features/subscription/config/plan-tier";
 import { useGetMySubscription } from "@/features/subscription/hooks/use-subscriptions";
+import { OrderPaymentsCard } from "./order-payments-card";
 
 function StatusBadge({ status }: { status: OrderWithItems["status"] }) {
   if (status === "paid") return <Badge>Paid</Badge>;
@@ -289,10 +289,12 @@ export default function OrderDetailsClient({ orderId }: { orderId: string }) {
             />
           )}
           {!isEnterprise && (
-            <InvoicePaymentsAccordion
+            <OrderPaymentsCard
               orderId={order.id}
-              summaryOnlyConfirmed={false}
-              title="Payments recorded"
+              orderTotal={Number(order.total ?? 0)}
+              currency={order.currency}
+              session={session}
+              axios={axios}
             />
           )}
           <OrderAuditCard events={order.events ?? []} />
