@@ -15,6 +15,7 @@ const PUBLIC_ROUTES = [
   "/setup",
   "/forgot-password",
   "/reset-password",
+  "/invite",
 ];
 
 export async function middleware(request: NextRequest) {
