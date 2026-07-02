@@ -552,6 +552,7 @@ export function useRecordOrderPayment(
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["orders", vars.orderId] });
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["billing", "payments", "list"] });
     },
   });
 }
